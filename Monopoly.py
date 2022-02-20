@@ -17,7 +17,7 @@ canvas = tk.Canvas(root, width=750, height=750)
 canvas.place(x=10,y=25)
 canvas.create_image(2,2,image=boardIMG,anchor='nw')
 
-but = ttk.Button(canvas, text="DEATH",style="my.TButton").place(x=287.5,y=349,width=175,height=52)
+but = ttk.Button(canvas, text="Roll Dice",style="my.TButton").place(x=287.5,y=349,width=175,height=52)
 
 
 root.mainloop()
