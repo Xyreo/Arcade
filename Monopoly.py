@@ -1,6 +1,6 @@
 import tkinter as tk
 import tkinter.ttk as ttk
-from PIL import ImageTk, Image, ImageOps
+from PIL import ImageTk, Image
 
 root = tk.Tk()
 root.title("Monopoly")
@@ -9,9 +9,7 @@ root.geometry("1250x800")
 s=ttk.Style()
 s.configure('my.TButton',font=("Helvetica",30))
    
-boardIMG = ImageTk.PhotoImage(
-    ImageOps.expand(
-        Image.open("Images/BoardIMG.jpg"),border=3).resize((750, 750)))
+boardIMG = ImageTk.PhotoImage(Image.open("Images/BoardIMG.jpg"))
 
 canvas = tk.Canvas(root, width=750, height=750) 
 canvas.place(x=10,y=25)
