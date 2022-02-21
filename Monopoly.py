@@ -1,11 +1,16 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 from PIL import ImageTk, Image, ImageOps
+import random
+from time import sleep
+from pygame import mixer
 
 root = tk.Tk()
 root.title("Monopoly")
 root.resizable(False,False)
 root.config(bg='')
+
+mixer.init()
 
 screenwidth = root.winfo_screenwidth()-100
 screenheight = root.winfo_screenheight()-100
@@ -24,11 +29,11 @@ canvas.place(x=10,y=32.5)
 
 boardIMG = ImageTk.PhotoImage(
     ImageOps.expand(
-        Image.open("Images/BoardIMG.jpg").resize((boardside,boardside),Image.ANTIALIAS)))
+        Image.open("Assets/BoardIMG.jpg").resize((boardside,boardside),Image.ANTIALIAS)))
 
 canvas.create_image(2,2,image=boardIMG,anchor='nw')
 
-infoIMG = ImageTk.PhotoImage(file="Images/Info.png")
+infoIMG = ImageTk.PhotoImage(file="Assets/Info.png")
 
 def propertypop(property):
     global popup
@@ -38,7 +43,7 @@ def propertypop(property):
         popup.geometry(f"300x350")
         popup.resizable(False,False)
         popup.protocol('WM_DELETE_WINDOW', removepop)
-
+        
         #canvas.create_text(300,300,text="₩",angle=180)
     else:
         removepop()
@@ -145,9 +150,48 @@ mayfair.place(x=posvar,y=posvar - 2.2*propwidth,anchor='center')
 
 popup = None
 
+dice1 = ImageTk.PhotoImage(Image.open("Assets/dice1.png"))
+dice2 = ImageTk.PhotoImage(Image.open("Assets/dice2.png"))
+dice3 = ImageTk.PhotoImage(Image.open("Assets/dice3.png"))
+dice4 = ImageTk.PhotoImage(Image.open("Assets/dice4.png"))
+dice5 = ImageTk.PhotoImage(Image.open("Assets/dice5.png"))
+dice6 = ImageTk.PhotoImage(Image.open("Assets/dice6.png"))
 
-roll = ttk.Button(canvas, text="Roll Dice",style="my.TButton")
-roll.place(x=boardside/2 - roll.winfo_width() ,y=boardside/2 - roll.winfo_height(),anchor='center')
+diedict = dict(zip((1,2,3,4,5,6),(dice1,dice2,dice3,dice4,dice5,dice6)))
+
+
+def rolldice():
+    global move
+    mixer.music.load("Assets/diceroll.mp3")
+    mixer.music.play(loops=0)
+    diceroll = random.randint(1,6),random.randint(1,6)
+    for i in range(18):
+        die1.configure(image=diedict[random.randint(1,6)])
+        die2.configure(image=diedict[random.randint(1,6)])
+        die1.update()
+        die2.update()
+        sleep(0.12)
+    die1.configure(image=diedict[diceroll[0]])
+    die2.configure(image=diedict[diceroll[1]])
+    move = sum(diceroll)
+
+roll = ttk.Button(canvas, text="Roll Dice",style="my.TButton",command=rolldice)
+roll.place(x=boardside/2 ,y=boardside/2 ,anchor='center')
+roll.update()
+
+die1 = tk.Label(canvas,image=dice6,borderwidth=0)
+die1.place(x = boardside/2 - roll.winfo_width()/2.5, y= boardside/2 - roll.winfo_height()/1.5,anchor='sw')
+
+die2 = tk.Label(canvas,image=dice6,borderwidth=0)
+die2.place(x = boardside/2 + roll.winfo_width()/2.5, y= boardside/2 - roll.winfo_height()/1.5,anchor='se')
+
+
+# button = canvas.create_image(100, 100, anchor='nw', image=playImage)
+# blank = canvas.create_image(100, 100, anchor='nw', image=blankImage, state=NORMAL)
+# canvas.tag_bind(blank, "<Button-1>", shiftImage)
+# canvas.pack()
+
+
 
 
 root.mainloop()
