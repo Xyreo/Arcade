@@ -165,7 +165,7 @@ def rolldice():
     mixer.music.load("Assets/diceroll.mp3")
     mixer.music.play(loops=0)
     diceroll = random.randint(1,6),random.randint(1,6)
-    for i in range(18):
+    for i in range(12):
         die1.configure(image=diedict[random.randint(1,6)])
         die2.configure(image=diedict[random.randint(1,6)])
         die1.update()
