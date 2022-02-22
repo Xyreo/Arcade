@@ -6,6 +6,8 @@ from time import sleep
 from pygame import mixer
 
 root = tk.Tk()
+root.withdraw()
+root.deiconify()
 root.title("Monopoly")
 root.resizable(False,False)
 root.config(bg='')
@@ -160,11 +162,30 @@ dice6 = ImageTk.PhotoImage(Image.open("Assets/dice6.png"))
 diedict = dict(zip((1,2,3,4,5,6),(dice1,dice2,dice3,dice4,dice5,dice6)))
 
 
+redimg = ImageTk.PhotoImage(Image.open("Assets/red.png"))
+greenimg = ImageTk.PhotoImage(Image.open("Assets/green.png"))
+blueimg = ImageTk.PhotoImage(Image.open("Assets/blue.png"))
+yellowimg = ImageTk.PhotoImage(Image.open("Assets/yellow.png"))
+
+red = tk.Button(canvas, image = redimg,border=0,command= lambda: propertypop("Liverpool St. Station"))
+red.place(x=boardside-1.2*propwidth,y=boardside-0.75*propwidth,anchor='center')
+
+green = tk.Button(canvas, image = greenimg,border=0,command= lambda: propertypop("Liverpool St. Station"))
+green.place(x=boardside-0.85*propwidth,y=boardside-0.75*propwidth,anchor='center')
+
+blue = tk.Button(canvas, image = blueimg,border=0,command= lambda: propertypop("Liverpool St. Station"))
+blue.place(x=boardside-1.2*propwidth,y=boardside-0.4*propwidth,anchor='center')
+
+yellow = tk.Button(canvas, image = yellowimg,border=0,command= lambda: propertypop("Liverpool St. Station"))
+yellow.place(x=boardside-0.85*propwidth,y=boardside-0.4*propwidth,anchor='center')
+
+player = ["playername",green,0]
+othermove = 10
 def rolldice():
-    global move
     mixer.music.load("Assets/diceroll.mp3")
     mixer.music.play(loops=0)
     diceroll = random.randint(1,6),random.randint(1,6)
+    # diceroll = 5,6
     for i in range(18):
         die1.configure(image=diedict[random.randint(1,6)])
         die2.configure(image=diedict[random.randint(1,6)])
@@ -173,7 +194,62 @@ def rolldice():
         sleep(0.12)
     die1.configure(image=diedict[diceroll[0]])
     die2.configure(image=diedict[diceroll[1]])
-    move = sum(diceroll)
+    currmove = sum(diceroll)
+    x,y=float(player[1].place_info()['x']),float(player[1].place_info()['y'])
+    for i in range(1,currmove+1):
+        player[2]+=1
+        posi = player[2]%40
+        if player[1] is red:
+            if posi in range(1,10):
+                x-=propwidth
+            elif posi==10:
+                x-=1.75*propwidth
+            elif posi==11:
+                x+=0.4*propwidth
+                y-=1.6*propwidth
+            elif posi in range(12,20):
+                y-=propwidth
+            elif posi==20:
+                x+=0.6*propwidth
+                y-=propwidth
+            elif posi in range(21,30):
+                x+=propwidth
+            elif posi == 30:
+                x+=1.2*propwidth
+                y+=0.4*propwidth
+            elif posi in range(31,40):
+                y+=propwidth
+            else:
+                x-=0.43*propwidth
+                y+=1.2*propwidth
+        elif player[1] is green:
+            if posi in range(1,10):
+                x-=propwidth
+            elif posi==10:
+                x-=2.1*propwidth
+                y-=0.4*propwidth
+            elif posi==11:
+                x+=0.4*propwidth
+                y-=0.9*propwidth
+            elif posi in range(12,20):
+                y-=propwidth
+            elif posi==20:
+                x+=0.6*propwidth
+                y-=1.75*propwidth
+            elif posi in range(21,30):
+                x+=propwidth
+            elif posi == 30:
+                x+=1.5*propwidth
+                y+=0.4*propwidth
+            elif posi in range(31,40):
+                y+=propwidth
+            else:
+                x-=0.43*propwidth
+                y+=1.2*propwidth
+
+        player[1].place(x=x,y=y)
+        player[1].update()
+        sleep(0.2)
 
 roll = ttk.Button(canvas, text="Roll Dice",style="my.TButton",command=rolldice)
 roll.place(x=boardside/2 ,y=boardside/2 ,anchor='center')
@@ -184,13 +260,6 @@ die1.place(x = boardside/2 - roll.winfo_width()/2.5, y= boardside/2 - roll.winfo
 
 die2 = tk.Label(canvas,image=dice6,borderwidth=0)
 die2.place(x = boardside/2 + roll.winfo_width()/2.5, y= boardside/2 - roll.winfo_height()/1.5,anchor='se')
-
-
-# button = canvas.create_image(100, 100, anchor='nw', image=playImage)
-# blank = canvas.create_image(100, 100, anchor='nw', image=blankImage, state=NORMAL)
-# canvas.tag_bind(blank, "<Button-1>", shiftImage)
-# canvas.pack()
-
 
 
 
