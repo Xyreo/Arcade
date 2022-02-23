@@ -154,12 +154,12 @@ popup = None
 #endregion
 
 #region#Dice and tokens
-dice1 = ImageTk.PhotoImage(Image.open("Assets/dice1.png"))
-dice2 = ImageTk.PhotoImage(Image.open("Assets/dice2.png"))
-dice3 = ImageTk.PhotoImage(Image.open("Assets/dice3.png"))
-dice4 = ImageTk.PhotoImage(Image.open("Assets/dice4.png"))
-dice5 = ImageTk.PhotoImage(Image.open("Assets/dice5.png"))
-dice6 = ImageTk.PhotoImage(Image.open("Assets/dice6.png"))
+dice1 = ImageTk.PhotoImage(ImageOps.expand(Image.open("Assets/dice1.png").resize((int(0.9*propwidth),int(0.9*propwidth)),Image.ANTIALIAS)))
+dice2 = ImageTk.PhotoImage(ImageOps.expand(Image.open("Assets/dice2.png").resize((int(0.9*propwidth),int(0.9*propwidth)),Image.ANTIALIAS)))
+dice3 = ImageTk.PhotoImage(ImageOps.expand(Image.open("Assets/dice3.png").resize((int(0.9*propwidth),int(0.9*propwidth)),Image.ANTIALIAS)))
+dice4 = ImageTk.PhotoImage(ImageOps.expand(Image.open("Assets/dice4.png").resize((int(0.9*propwidth),int(0.9*propwidth)),Image.ANTIALIAS)))
+dice5 = ImageTk.PhotoImage(ImageOps.expand(Image.open("Assets/dice5.png").resize((int(0.9*propwidth),int(0.9*propwidth)),Image.ANTIALIAS)))
+dice6 = ImageTk.PhotoImage(ImageOps.expand(Image.open("Assets/dice6.png").resize((int(0.9*propwidth),int(0.9*propwidth)),Image.ANTIALIAS)))
 
 diedict = dict(zip((1,2,3,4,5,6),(dice1,dice2,dice3,dice4,dice5,dice6)))
 
@@ -182,15 +182,15 @@ yellow = tk.Button(canvas, image = yellowimg,border=0,command= lambda: propertyp
 yellow.place(x=boardside-0.85*propwidth,y=boardside-0.4*propwidth,anchor='center')
 #endregion
 
-
-player = ["playername",blue,0]
-othermove = 10
+dictionary = {0:["player1",red,0],1:["player2",green,0],2:["player3",blue,0],3:["playername",yellow,0]}
+check,player = 0,[]
+injail = False
 def rolldice():
-    global currmove
+    global check,player
+    player = dictionary[check%4]
     mixer.music.load("Assets/diceroll.mp3")
     mixer.music.play(loops=0)
     diceroll = random.randint(1,6),random.randint(1,6)
-    diceroll = 5,5
     for i in range(18):
         die1.configure(image=diedict[random.randint(1,6)])
         die2.configure(image=diedict[random.randint(1,6)])
@@ -200,18 +200,23 @@ def rolldice():
     die1.configure(image=diedict[diceroll[0]])
     die2.configure(image=diedict[diceroll[1]])
     currmove = sum(diceroll)
-    move()
-
-def move():
+    move(currmove)
+    check+=1
+#'check' variable for moving token turn by turn for now because checking
+def move(move):
     x,y=float(player[1].place_info()['x']),float(player[1].place_info()['y'])
-    for i in range(1,currmove+1):
+    for i in range(1,move+1):
         player[2]+=1
         posi = player[2]%40
         if player[1] is red:
             if posi in range(1,10):
                 x-=propwidth
             elif posi==10:
-                x-=1.75*propwidth
+                if injail:
+                    x-=1.2*propwidth
+                    y-= 0.4*propwidth
+                else:
+                    x-=1.75*propwidth
             elif posi==11:
                 x+=0.6*propwidth
                 y-=1.5*propwidth
@@ -228,14 +233,18 @@ def move():
             elif posi in range(31,40):
                 y+=propwidth
             else:
-                x-=0.43*propwidth
-                y+=1.2*propwidth
+                x=boardside-1.2*propwidth
+                y=boardside-0.75*propwidth
         elif player[1] is green:
             if posi in range(1,10):
                 x-=propwidth
             elif posi==10:
-                x-=2.1*propwidth
-                y-=0.4*propwidth
+                if injail:
+                    x-=1.2*propwidth
+                    y-= 0.4*propwidth
+                else:
+                    x-=2.1*propwidth
+                    y-=0.4*propwidth
             elif posi==11:
                 x+=0.6*propwidth
                 y-=0.75*propwidth
@@ -248,64 +257,73 @@ def move():
                 x+=propwidth
             elif posi == 30:
                 x+=1.55*propwidth
-                y+=0.05*propwidth
+                y+=0.07*propwidth
             elif posi in range(31,40):
                 y+=propwidth
             else:
-                x-=0.08*propwidth
-                y+=1.55*propwidth
+                x=boardside-0.85*propwidth
+                y=boardside-0.75*propwidth
         elif player[1] is blue:
             if posi in range(1,10):
                 x-=propwidth
             elif posi==10:
-                x-=1.3*propwidth
-                y+=0.2*propwidth
+                if injail:
+                    x-=1.2*propwidth
+                    y-= 0.4*propwidth
+                else:
+                    x-=1.3*propwidth
+                    y+=0.2*propwidth
             elif posi==11:
-                x+=0.6*propwidth
-                y-=0.75*propwidth
+                x-=0.2*propwidth
+                y-=2.05*propwidth
             elif posi in range(12,20):
                 y-=propwidth
             elif posi==20:
-                x+=0.05*propwidth
-                y-=1.45*propwidth
+                x+=0.74*propwidth
+                y-=1.44*propwidth
             elif posi in range(21,30):
                 x+=propwidth
             elif posi == 30:
-                x+=1.55*propwidth
-                y+=0.05*propwidth
+                x+=1.53*propwidth
+                y+=0.75*propwidth
             elif posi in range(31,40):
                 y+=propwidth
             else:
-                x-=0.08*propwidth
-                y+=1.55*propwidth
+                x=boardside-1.2*propwidth
+                y=boardside-0.4*propwidth
         elif player[1] is yellow:
             if posi in range(1,10):
                 x-=propwidth
             elif posi==10:
-                x-=1.2*propwidth
-                y+=0.2*propwidth
+                if injail:
+                    x-=1.2*propwidth
+                    y-= 0.4*propwidth
+                else:
+                    x-=1.2*propwidth
+                    y+=0.2*propwidth
             elif posi==11:
-                x+=0.6*propwidth
-                y-=0.75*propwidth
+                x-=0.65*propwidth
+                y-=1.7*propwidth
             elif posi in range(12,20):
                 y-=propwidth
             elif posi==20:
-                x+=0.05*propwidth
-                y-=1.45*propwidth
+                x+=0.4*propwidth
+                y-=1.8*propwidth
             elif posi in range(21,30):
                 x+=propwidth
             elif posi == 30:
-                x+=1.55*propwidth
-                y+=0.05*propwidth
+                x+=1.87*propwidth
+                y+=0.43*propwidth
             elif posi in range(31,40):
                 y+=propwidth
             else:
-                x-=0.08*propwidth
-                y+=1.55*propwidth
+                x=boardside-0.85*propwidth
+                y=boardside-0.4*propwidth
 
         player[1].place(x=x,y=y)
         player[1].update()
         sleep(0.2)
+    
 
 roll = ttk.Button(canvas, text="Roll Dice",style="my.TButton",command=rolldice)
 roll.place(x=boardside/2 ,y=boardside/2 ,anchor='center')
@@ -317,24 +335,24 @@ die1.place(x = boardside/2 - roll.winfo_width()/2.5, y= boardside/2 - roll.winfo
 die2 = tk.Label(canvas,image=dice6,borderwidth=0)
 die2.place(x = boardside/2 + roll.winfo_width()/2.5, y= boardside/2 - roll.winfo_height()/1.5,anchor='se')
 
-def CLI():
-    global player
-    s = ''
-    while s != 'no':
-        s = input('Enter: ')
-        if s=='red':
-            player[1]=red
-        elif s=='green':
-            player[1]=green
-        elif s=='blue':
-            player[1]=blue
-        else:
-            player[1]=yellow
-        n = input("pos: ")
-        player[2]=int(n)
-        rolldice()
+# def CLI():
+#     global player
+#     s = ''
+#     while s != 'no':
+#         s = input('Enter: ')
+#         if s=='red':
+#             player[1]=red
+#         elif s=='green':
+#             player[1]=green
+#         elif s=='blue':
+#             player[1]=blue
+#         else:
+#             player[1]=yellow
+#         n = input("pos: ")
+#         player[2]=int(n)
+#         rolldice()
     
-t = threading.Thread(target = CLI)
-t.start()
+# t = threading.Thread(target = CLI)
+# t.start()
 
 root.mainloop()
