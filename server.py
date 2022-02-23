@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 
 PORT = 6789
-SERVER = ''
+SERVER = 'localhost' #TODO Option for local host/server
 ADDRESS = (SERVER, PORT)
 FORMAT = "utf-8"
 
@@ -40,17 +40,22 @@ class Room():
     def __init__(self,host):
         self.players = []
         self.host = host
+        self.satus = 'OPEN'
         
     def add(self, ply):
         self.players.append(ply)
+        
+    def details(self):
+        d = {'Host'} #Room no, no of players, host
+        return d
 
 class Threaded_Client(threading.Thread):
     #Class that gets threaded for every new client object
     #Handles all communication from client to servers
     
-    def __init__(self,conn,addr):
+    def __init__(self,conn,addr,name):
         #Object creation with conn -> socket, addr -> player ip address
-        #TODO may add client name option
+        #TODO uuid
         
         threading.Thread.__init__(self)
         global players
@@ -58,6 +63,7 @@ class Threaded_Client(threading.Thread):
         players.append(conn)
         self.conn = conn
         self.addr = addr
+        self.name = name
         self.room = None
         
     def run(self):
@@ -84,13 +90,19 @@ class Threaded_Client(threading.Thread):
         #TODO may implement more customizability (eg. Start Money, No. of Players etc.)
         
         global rooms, p_in_queue
-        self.room = Room(self.addr)
+        self.room = Room(self.addr) #TODO use name if decided upon
         rooms.append(self.room)
+        self.conn.send(pickle.dumps(('ROOM','ACK')))
         
-        #Informs client a new room has been created
+        #Informs all clients in lobby a new room has been created
         #TODO Everything
+        
         for client in p_in_queue:
-            client.send(pickle.dumps())
+            if client.addr != self.addr(): #TODO uuid pls
+                client.send(pickle.dumps(('ROOM','UPDATE'))) #TODO The room object ig ?
+            
+    def instruction_handler():
+        pass
         
 def start_server():
     #Function that listens for incoming connections and threads and redirects them to the Client Handler
@@ -102,7 +114,7 @@ def start_server():
 
         print(f"active connections {threading.activeCount()-2}")
 
-#Threads the server itself to manage the GUI of the server
+#Threads the server itself to manage the GUI of the server seperately
 svr = threading.Thread(target = start_server)
 svr.start()
 

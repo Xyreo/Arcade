@@ -1,0 +1,21 @@
+The Protocol for communication
+
+Base Level communication
+
+All messages will be sent via a tuple, with the first element being the type of command to execute. 
+The heirarchy indicates the index of the element
+The commands are:
+
+1. ROOM:
+    Client -> Server
+    1. CREATE - Informs creation of a new room
+    2. JOIN
+        2.1 LIST - Requests list of existing rooms
+        2.2 <room_id> - Joins the room
+
+    Server -> Client
+    1. ACK - Acknowledges CR   
+    2. UPDATE
+        2.1 REMOVE - Informs about room deletion
+        2.2 ADD - Informs about new creation
+

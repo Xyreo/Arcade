@@ -1,7 +1,7 @@
 import threading, socket, pickle
 
 class Client():
-    #Class that creates the client object for handling communications from the Client's end
+    #Class that creates the client object for handling communications from the client's end
     #Implemented seperately to abstract the communications part from the game logic 
     
     def __init__(self,ADDRESS):
@@ -28,5 +28,3 @@ class Client():
             instruction = self.conn.recv(1024)
             instruction = pickle.loads(instruction)
             
-        
-    
