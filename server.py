@@ -11,10 +11,11 @@ server = socket.socket(socket.AF_INET,
 					socket.SOCK_STREAM)
 server.bind(ADDRESS)
 
-players = {}
-rooms = []
+players = []            #Stores the socks of all the players connected to the server
+p_in_queue = []         #Stores player socks listening for room updations (they are waiting to join rooms)
+rooms = []              #List to store all existing room objects
 
-#region
+#region GUI             #Maybe changed later
 root = tk.Tk()
 width = root.winfo_screenwidth() - 800
 height = root.winfo_screenheight() - 350
@@ -35,6 +36,7 @@ scrollbar.grid(row=0, column=1, sticky='ns')
 #endregion
 
 class Room():
+    #Class that stores Room objects to make functioning in rooms smoothly
     def __init__(self,host):
         self.players = []
         self.host = host
@@ -43,13 +45,25 @@ class Room():
         self.players.append(ply)
 
 class Threaded_Client(threading.Thread):
+    #Class that gets threaded for every new client object
+    #Handles all communication from client to servers
+    
     def __init__(self,conn,addr):
+        #Object creation with conn -> socket, addr -> player ip address
+        #TODO may add client name option
+        
         threading.Thread.__init__(self)
+        global players
+        
+        players.append(conn)
         self.conn = conn
         self.addr = addr
         self.room = None
         
     def run(self):
+        #Function called when <thread>.start() is called
+        #So far just used to redirect user to create/join room
+        
         self.todo = self.conn.recv(1024)
         if 'create' == pickle.loads(self.todo):
             self.create_room()
@@ -58,22 +72,37 @@ class Threaded_Client(threading.Thread):
             self.join_room()
             
     def join_room(self):
-        pass
-    
+        #Function to redirect users to the joining page
+        #TODO Client Instruction
+        
+        global p_in_queue, rooms
+        p_in_queue.append(self.conn)
+           
     def create_room(self):
-        global rooms
+        #Function to create a room
+        #TODO send instruction to host client that room is created
+        #TODO may implement more customizability (eg. Start Money, No. of Players etc.)
+        
+        global rooms, p_in_queue
         self.room = Room(self.addr)
         rooms.append(self.room)
-    
+        
+        #Informs client a new room has been created
+        #TODO Everything
+        for client in p_in_queue:
+            client.send(pickle.dumps())
+        
 def start_server():
+    #Function that listens for incoming connections and threads and redirects them to the Client Handler
+    
     while True:
-        global players
         conn, addr = server.accept()         
         client_thread = Threaded_Client(conn,addr)
         client_thread.start()
 
-        print(f"active connections {threading.activeCount()-1}")
+        print(f"active connections {threading.activeCount()-2}")
 
+#Threads the server itself to manage the GUI of the server
 svr = threading.Thread(target = start_server)
 svr.start()
 
