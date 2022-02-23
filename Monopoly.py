@@ -164,10 +164,10 @@ dice6 = ImageTk.PhotoImage(Image.open("Assets/dice6.png"))
 diedict = dict(zip((1,2,3,4,5,6),(dice1,dice2,dice3,dice4,dice5,dice6)))
 
 
-redimg = ImageTk.PhotoImage(Image.open("Assets/red.png"))
-greenimg = ImageTk.PhotoImage(Image.open("Assets/green.png"))
-blueimg = ImageTk.PhotoImage(Image.open("Assets/blue.png"))
-yellowimg = ImageTk.PhotoImage(Image.open("Assets/yellow.png"))
+redimg = ImageTk.PhotoImage(ImageOps.expand(Image.open("Assets/red.png").resize((boardside//39,boardside//39),Image.ANTIALIAS)))
+greenimg = ImageTk.PhotoImage(ImageOps.expand(Image.open("Assets/green.png").resize((boardside//39,boardside//39),Image.ANTIALIAS)))
+blueimg = ImageTk.PhotoImage(ImageOps.expand(Image.open("Assets/blue.png").resize((boardside//39,boardside//39),Image.ANTIALIAS)))
+yellowimg = ImageTk.PhotoImage(ImageOps.expand(Image.open("Assets/yellow.png").resize((boardside//39,boardside//39),Image.ANTIALIAS)))
 
 red = tk.Button(canvas, image = redimg,border=0,command= lambda: propertypop("Liverpool St. Station"))
 red.place(x=boardside-1.2*propwidth,y=boardside-0.75*propwidth,anchor='center')
