@@ -4,6 +4,7 @@ from PIL import ImageTk, Image, ImageOps
 import random
 from time import sleep
 from pygame import mixer
+import threading
 
 root = tk.Tk()
 root.withdraw()
@@ -56,8 +57,7 @@ def removepop():
     popup.destroy()
     popup = None
 
-#Info Button For Each Property
-
+#region#Info Button For Each Property
 posvar = boardside - propwidth/5.5
 
 oldkent = tk.Button(canvas, image = infoIMG,borderwidth=0,command= lambda: propertypop("Old Kent Road"))
@@ -151,7 +151,9 @@ mayfair = tk.Button(canvas, image = infoIMG,borderwidth=0,command= lambda: prope
 mayfair.place(x=posvar,y=posvar - 2.2*propwidth,anchor='center')
 
 popup = None
+#endregion
 
+#region#Dice and tokens
 dice1 = ImageTk.PhotoImage(Image.open("Assets/dice1.png"))
 dice2 = ImageTk.PhotoImage(Image.open("Assets/dice2.png"))
 dice3 = ImageTk.PhotoImage(Image.open("Assets/dice3.png"))
@@ -178,14 +180,17 @@ blue.place(x=boardside-1.2*propwidth,y=boardside-0.4*propwidth,anchor='center')
 
 yellow = tk.Button(canvas, image = yellowimg,border=0,command= lambda: propertypop("Liverpool St. Station"))
 yellow.place(x=boardside-0.85*propwidth,y=boardside-0.4*propwidth,anchor='center')
+#endregion
 
-player = ["playername",green,0]
+
+player = ["playername",blue,0]
 othermove = 10
 def rolldice():
+    global currmove
     mixer.music.load("Assets/diceroll.mp3")
     mixer.music.play(loops=0)
     diceroll = random.randint(1,6),random.randint(1,6)
-    # diceroll = 5,6
+    diceroll = 5,5
     for i in range(18):
         die1.configure(image=diedict[random.randint(1,6)])
         die2.configure(image=diedict[random.randint(1,6)])
@@ -195,6 +200,9 @@ def rolldice():
     die1.configure(image=diedict[diceroll[0]])
     die2.configure(image=diedict[diceroll[1]])
     currmove = sum(diceroll)
+    move()
+
+def move():
     x,y=float(player[1].place_info()['x']),float(player[1].place_info()['y'])
     for i in range(1,currmove+1):
         player[2]+=1
@@ -205,13 +213,13 @@ def rolldice():
             elif posi==10:
                 x-=1.75*propwidth
             elif posi==11:
-                x+=0.4*propwidth
-                y-=1.6*propwidth
+                x+=0.6*propwidth
+                y-=1.5*propwidth
             elif posi in range(12,20):
                 y-=propwidth
             elif posi==20:
-                x+=0.6*propwidth
-                y-=propwidth
+                x+=0.4*propwidth
+                y-=1.1*propwidth
             elif posi in range(21,30):
                 x+=propwidth
             elif posi == 30:
@@ -229,23 +237,71 @@ def rolldice():
                 x-=2.1*propwidth
                 y-=0.4*propwidth
             elif posi==11:
-                x+=0.4*propwidth
-                y-=0.9*propwidth
+                x+=0.6*propwidth
+                y-=0.75*propwidth
             elif posi in range(12,20):
                 y-=propwidth
             elif posi==20:
-                x+=0.6*propwidth
-                y-=1.75*propwidth
+                x+=0.05*propwidth
+                y-=1.45*propwidth
             elif posi in range(21,30):
                 x+=propwidth
             elif posi == 30:
-                x+=1.5*propwidth
-                y+=0.4*propwidth
+                x+=1.55*propwidth
+                y+=0.05*propwidth
             elif posi in range(31,40):
                 y+=propwidth
             else:
-                x-=0.43*propwidth
-                y+=1.2*propwidth
+                x-=0.08*propwidth
+                y+=1.55*propwidth
+        elif player[1] is blue:
+            if posi in range(1,10):
+                x-=propwidth
+            elif posi==10:
+                x-=1.3*propwidth
+                y+=0.2*propwidth
+            elif posi==11:
+                x+=0.6*propwidth
+                y-=0.75*propwidth
+            elif posi in range(12,20):
+                y-=propwidth
+            elif posi==20:
+                x+=0.05*propwidth
+                y-=1.45*propwidth
+            elif posi in range(21,30):
+                x+=propwidth
+            elif posi == 30:
+                x+=1.55*propwidth
+                y+=0.05*propwidth
+            elif posi in range(31,40):
+                y+=propwidth
+            else:
+                x-=0.08*propwidth
+                y+=1.55*propwidth
+        elif player[1] is yellow:
+            if posi in range(1,10):
+                x-=propwidth
+            elif posi==10:
+                x-=1.2*propwidth
+                y+=0.2*propwidth
+            elif posi==11:
+                x+=0.6*propwidth
+                y-=0.75*propwidth
+            elif posi in range(12,20):
+                y-=propwidth
+            elif posi==20:
+                x+=0.05*propwidth
+                y-=1.45*propwidth
+            elif posi in range(21,30):
+                x+=propwidth
+            elif posi == 30:
+                x+=1.55*propwidth
+                y+=0.05*propwidth
+            elif posi in range(31,40):
+                y+=propwidth
+            else:
+                x-=0.08*propwidth
+                y+=1.55*propwidth
 
         player[1].place(x=x,y=y)
         player[1].update()
@@ -261,6 +317,24 @@ die1.place(x = boardside/2 - roll.winfo_width()/2.5, y= boardside/2 - roll.winfo
 die2 = tk.Label(canvas,image=dice6,borderwidth=0)
 die2.place(x = boardside/2 + roll.winfo_width()/2.5, y= boardside/2 - roll.winfo_height()/1.5,anchor='se')
 
-
+def CLI():
+    global player
+    s = ''
+    while s != 'no':
+        s = input('Enter: ')
+        if s=='red':
+            player[1]=red
+        elif s=='green':
+            player[1]=green
+        elif s=='blue':
+            player[1]=blue
+        else:
+            player[1]=yellow
+        n = input("pos: ")
+        player[2]=int(n)
+        rolldice()
+    
+t = threading.Thread(target = CLI)
+t.start()
 
 root.mainloop()
