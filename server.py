@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 
 PORT = 6789
-SERVER = 'localhost'
+SERVER = ''
 ADDRESS = (SERVER, PORT)
 FORMAT = "utf-8"
 
@@ -12,8 +12,9 @@ server = socket.socket(socket.AF_INET,
 server.bind(ADDRESS)
 
 players = {}
-rooms = {}
+rooms = []
 
+#region
 root = tk.Tk()
 width = root.winfo_screenwidth() - 800
 height = root.winfo_screenheight() - 350
@@ -27,18 +28,26 @@ tree.heading('room_no', text='Room No.')
 tree.heading('host_name', text='Host Name')
 tree.heading('nply', text='Number of Players')
 
+tree.grid(row=0, column=0, sticky='nsew')
+scrollbar = ttk.Scrollbar(root, orient=tk.VERTICAL, command=tree.yview)
+tree.configure(yscroll=scrollbar.set)
+scrollbar.grid(row=0, column=1, sticky='ns')
+#endregion
 
 class Room():
-    def __init__(self):
+    def __init__(self,host):
         self.players = []
+        self.host = host
         
     def add(self, ply):
         self.players.append(ply)
 
 class Threaded_Client(threading.Thread):
     def __init__(self,conn,addr):
-        threading.Thread.__init__(conn,addr)
-        self.conn,self.addr = conn,addr
+        threading.Thread.__init__(self)
+        self.conn = conn
+        self.addr = addr
+        self.room = None
         
     def run(self):
         self.todo = self.conn.recv(1024)
@@ -52,15 +61,14 @@ class Threaded_Client(threading.Thread):
         pass
     
     def create_room(self):
-        pass
+        global rooms
+        self.room = Room(self.addr)
+        rooms.append(self.room)
     
 def start_server():
     while True:
         global players
-        conn, addr = server.accept() 
-        conn.send("NAME".encode(FORMAT))    
-        name = conn.recv(1024).decode(FORMAT)
-        
+        conn, addr = server.accept()         
         client_thread = Threaded_Client(conn,addr)
         client_thread.start()
 
@@ -68,10 +76,5 @@ def start_server():
 
 svr = threading.Thread(target = start_server)
 svr.start()
-
-tree.grid(row=0, column=0, sticky='nsew')
-scrollbar = ttk.Scrollbar(root, orient=tk.VERTICAL, command=tree.yview)
-tree.configure(yscroll=scrollbar.set)
-scrollbar.grid(row=0, column=1, sticky='ns')
 
 root.mainloop()
