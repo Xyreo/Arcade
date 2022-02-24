@@ -1,3 +1,6 @@
+#TODO
+Acknowledgement Protocols + Asynchronous Concepts
+
 The Protocol for communication
 
 Base Level communication
@@ -11,11 +14,13 @@ The commands are:
     1. CREATE - Informs creation of a new room
     2. JOIN
         2.1 LIST - Requests list of existing rooms
-        2.2 <room_id> - Joins the room
+        2.2 <room uuid> - Joins the room
 
-    Server -> Client
-    1. ACK - Acknowledges CR   
-    2. UPDATE
-        2.1 REMOVE - Informs about room deletion
-        2.2 ADD - Informs about new creation
+    3. START - Sent by host to start the game
+
+    Server -> Client 
+
+    1. ADD - Additional rooms created
+    2. REMOVE - Removes filled rooms
+    3. START - Informs game started
 

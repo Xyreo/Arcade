@@ -13,15 +13,19 @@ class Client():
         
         self.conn.connect(ADDRESS)
         self.connected = True
+        self.uuid = None
         
-        listening_thread = threading.Thread(target=self.listener)
-        listening_thread.start()
+        
         
     def create_room(self):
         pass
     
     def join_room(self):
         pass
+    
+    def startrecv(self):
+        listening_thread = threading.Thread(target=self.listener)
+        listening_thread.start()
     
     def listener(self):
         while self.connected:

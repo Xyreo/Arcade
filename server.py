@@ -1,4 +1,4 @@
-import socket, threading, time, pickle
+import socket, threading, time, pickle, random
 import tkinter as tk
 from tkinter import ttk
 
@@ -11,9 +11,9 @@ server = socket.socket(socket.AF_INET,
 					socket.SOCK_STREAM)
 server.bind(ADDRESS)
 
-players = []            #Stores the socks of all the players connected to the server
+players = {}            #Stores the socks of all the players connected to the server
 p_in_queue = []         #Stores player socks listening for room updations (they are waiting to join rooms)
-rooms = []              #List to store all existing room objects
+rooms = {}              #Dicitonary to store all existing room objects
 
 #region GUI             #Maybe changed later
 root = tk.Tk()
@@ -38,78 +38,115 @@ scrollbar.grid(row=0, column=1, sticky='ns')
 class Room():
     #Class that stores Room objects to make functioning in rooms smoothly
     def __init__(self,host):
-        self.players = []
+        self.members = []
         self.host = host
         self.satus = 'OPEN'
+        self.uuid = assign_uuid(list(rooms.keys()))
+        rooms[self.uuid] = self
         
-    def add(self, ply):
-        self.players.append(ply)
+    def add(self, piid):
+        self.members.append(piid)
         
     def details(self):
-        d = {'Host'} #Room no, no of players, host
+        #Function to return a dictionary containing details of the room
+        
+        d = {'host':players[self.host].name,  
+             'numply':len(self.members),
+             'roomnum':self.uuid}
+        
         return d
+    
+    def start(self):
+        self.status = 'INGAME'
+        for i in self.members:
+            players[i].send_instruction(pickle.dumps('ROOM','START'))
 
-class Threaded_Client(threading.Thread):
+class Client(threading.Thread):
     #Class that gets threaded for every new client object
     #Handles all communication from client to servers
     
     def __init__(self,conn,addr,name):
         #Object creation with conn -> socket, addr -> player ip address
-        #TODO uuid
         
         threading.Thread.__init__(self)
         global players
-        
-        players.append(conn)
+            
         self.conn = conn
         self.addr = addr
         self.name = name
         self.room = None
+        self.uuid = assign_uuid(list[players.keys()])
+        self.connected = True
+        
+        players[self.uuid] = self
         
     def run(self):
-        #Function called when <thread>.start() is called
-        #So far just used to redirect user to create/join room
+        #Event Listener
         
-        self.todo = self.conn.recv(1024)
-        if 'create' == pickle.loads(self.todo):
-            self.create_room()
-            
-        elif 'join' == pickle.loads(self.todo):
-            self.join_room()
-            
-    def join_room(self):
+        while self.connected:
+            sent = self.conn.recv(1048)
+            self.instruction_handler(pickle.loads(sent))
+                       
+    def join_room(self,mode):
         #Function to redirect users to the joining page
-        #TODO Client Instruction
         
-        global p_in_queue, rooms
-        p_in_queue.append(self.conn)
+        if mode[0] == 'LIST':
+            global p_in_queue, rooms
+            p_in_queue.append(self)
+            room_list = []
+            for i in rooms.values():
+                if i.status == 'OPEN':
+                    room_list.append(i.details()) 
+            
+            package = ('ROOM','ADD', room_list)                  
+            self.conn.send(pickle.dumps(package))
+            
+        else:
+            self.room = rooms[mode[0]]
+            self.room.add(self.uiid)
            
     def create_room(self):
         #Function to create a room
-        #TODO send instruction to host client that room is created
         #TODO may implement more customizability (eg. Start Money, No. of Players etc.)
         
-        global rooms, p_in_queue
-        self.room = Room(self.addr) #TODO use name if decided upon
-        rooms.append(self.room)
-        self.conn.send(pickle.dumps(('ROOM','ACK')))
+        global p_in_queue
+        self.room = Room(self.uuid)
+        #Informs all clients in lobby a new room has been created        
+        for client in p_in_queue: 
+            i = ('ROOM','ADD',[self.room.details()])
+            client.send_instruction(pickle.dumps(i))
+
+    def instruction_handler(self,instruction):
+        #Parses the request and redirects it appropriately
         
-        #Informs all clients in lobby a new room has been created
-        #TODO Everything
-        
-        for client in p_in_queue:
-            if client.addr != self.addr(): #TODO uuid pls
-                client.send(pickle.dumps(('ROOM','UPDATE'))) #TODO The room object ig ?
+        if instruction[0] == 'ROOM':
             
-    def instruction_handler():
-        pass
+            if instruction[1] == 'JOIN':
+                self.join_room(instruction[2:])
+            
+            elif instruction[1] == 'CREATE':
+                self.create_room()
+            
+            elif instruction[1] == 'START':
+                self.room.start()
+        
+    def send_instruction(self, instruction):
+        self.conn.send(instruction)
+        
+def assign_uuid(l):
+    #Function that returns a unique id for passed object
+    
+    i = random.randint(1000,9999)
+    while i in l:
+        i = random.randint(1000,9999)
+    return i
         
 def start_server():
     #Function that listens for incoming connections and threads and redirects them to the Client Handler
     
     while True:
         conn, addr = server.accept()         
-        client_thread = Threaded_Client(conn,addr)
+        client_thread = Client(conn,addr)
         client_thread.start()
 
         print(f"active connections {threading.activeCount()-2}")
