@@ -21,6 +21,16 @@ The commands are:
     Server -> Client 
 
     1. ADD - Additional rooms created
-    2. REMOVE - Removes filled rooms
+    2. REMOVE - Removes the room which started
     3. START - Informs game started
 
+2. NAME - Informs name 
+
+3. MONOPOLY - 
+    All Monopoly commands will have player uuid as the second element
+
+    Client -> Server -> Other Clients
+
+    1. ROLLDICE - Sends how much to roll the dice by
+    2. BUILD - 
+    3. TRADE - 

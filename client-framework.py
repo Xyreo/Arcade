@@ -15,8 +15,6 @@ class Client():
         self.connected = True
         self.uuid = None
         
-        
-        
     def create_room(self):
         pass
     
