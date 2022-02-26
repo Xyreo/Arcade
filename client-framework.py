@@ -1,4 +1,5 @@
 import threading, socket, pickle
+import mfunctions
 
 class Client():
     #Class that creates the client object for handling communications from the client's end
@@ -16,17 +17,27 @@ class Client():
         self.uuid = None
         
     def create_room(self):
-        pass
+        self.send(('ROOM','CREATE'))
     
-    def join_room(self):
-        pass
+    def fetch_rooms(self):
+        self.send(('ROOM','JOIN','LIST'))
+        
+    def join_room(self,id):
+        self.send(('ROOM','JOIN',id))
+        
+    def start(self):
+        self.send(('ROOM','START'))
     
-    def startrecv(self):
-        listening_thread = threading.Thread(target=self.listener)
-        listening_thread.start()
+    def startrecv(self,updation_callbacks):
+        self.listening_thread = threading.Thread(target=self.listener, args=(updation_callbacks))
+        self.listening_thread.start()
     
-    def listener(self):
+    def send(self,msg):
+        self.conn.send(pickle.dumps(msg))
+        
+    def listener(self,updation_callbacks):
         while self.connected:
             instruction = self.conn.recv(1024)
             instruction = pickle.loads(instruction)
-            
+            if instruction[0] == 'MONOPOLY':
+                mfunctions.clientside(updation_callbacks, instruction[1], instruction[2:])

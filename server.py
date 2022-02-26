@@ -2,7 +2,7 @@
 import socket, threading, time, pickle, random
 import tkinter as tk
 from tkinter import ttk
-import mfunctions as m
+import mfunctions as mnply
 
 PORT = 6789
 SERVER = 'localhost' #TODO Option for local host/server
@@ -48,12 +48,13 @@ class Room():
         
     def add(self, piid):
         self.members.append(piid)
+        self.broadcast_to_members(piid, ('ROOM','ADDROOM',players[piid].details()))
         
     def details(self):
         #Function to return a dictionary containing details of the room
         
         d = {'host':players[self.host].name,  
-             'numply':len(self.members),
+             'players':[players[i].details() for i in players],
              'roomnum': self.uuid}
         
         return d
@@ -117,7 +118,7 @@ class Client(threading.Thread):
             
         else:
             self.room = rooms[mode[0]]
-            self.room.add(self.uiid)
+            self.room.add(self.uuid)
             p_in_queue.remove(self)
            
     def create_room(self):
@@ -148,11 +149,17 @@ class Client(threading.Thread):
             self.name = instruction[1]
             
         elif instruction[0] == 'MONOPOLY':
-            msg = m.serverside(instruction[1:])
+            msg = mnply.serverside(instruction[1:])
             self.room.broadcast_to_members(self.uuid, msg)
         
     def send_instruction(self, instruction):
         self.conn.send(pickle.dumps(instruction))
+        
+    def details(self):
+        d = {'name':self.name,  
+             'piid' : self.uuid}
+        
+        return d
    
 def assign_uuid(l):
     #Function that returns a unique id for passed object
