@@ -3,6 +3,7 @@ import socket, threading, time, pickle, random
 import tkinter as tk
 from tkinter import ttk
 import mfunctions as mnply
+import tttfuncs as ttt
 
 PORT = 6789
 SERVER = 'localhost' #TODO Option for local host/server
@@ -48,7 +49,8 @@ class Room():
         
     def add(self, piid):
         self.members.append(piid)
-        self.broadcast_to_members(piid, ('ROOM','ADDROOM',players[piid].details()))
+        msg = ('ROOM','ADDROOM',players[piid].details())
+        self.broadcast_to_members(piid, msg)
         
     def details(self):
         #Function to return a dictionary containing details of the room
@@ -68,7 +70,7 @@ class Room():
             i.send_instruction(('ROOM','REMOVE',self.uuid))
             
     def broadcast_to_members(self, initiator,msg):
-        for i in self.members():
+        for i in self.members:
             if players[i] != players[initiator]:
                 players[i].send_instruction(msg)
     
@@ -103,7 +105,7 @@ class Client(threading.Thread):
         #Function to redirect users to the joining page
         global p_in_queue, rooms
         
-        if mode[0] == 'LIST':
+        if mode == 'LIST':
             
             if self not in p_in_queue:
                 p_in_queue.append(self)
@@ -117,7 +119,7 @@ class Client(threading.Thread):
             self.send_instruction(package)
             
         else:
-            self.room = rooms[mode[0]]
+            self.room = rooms[mode]
             self.room.add(self.uuid)
             p_in_queue.remove(self)
            
@@ -134,10 +136,10 @@ class Client(threading.Thread):
 
     def instruction_handler(self,instruction):
         #Parses the request and redirects it appropriately
-        
+        print(instruction)
         if instruction[0] == 'ROOM':
             if instruction[1] == 'JOIN':
-                self.join_room(instruction[2:])
+                self.join_room(instruction[2])
             
             elif instruction[1] == 'CREATE':
                 self.create_room()
@@ -151,6 +153,10 @@ class Client(threading.Thread):
         elif instruction[0] == 'MONOPOLY':
             msg = mnply.serverside(instruction[1:])
             self.room.broadcast_to_members(self.uuid, msg)
+            
+        elif instruction[0] == 'TTT':
+            msg = ttt.serverside(instruction[1:])
+            self.room.broadcast_to_members(self.uuid, msg)
         
     def send_instruction(self, instruction):
         self.conn.send(pickle.dumps(instruction))
@@ -158,7 +164,6 @@ class Client(threading.Thread):
     def details(self):
         d = {'name':self.name,  
              'piid' : self.uuid}
-        
         return d
    
 def assign_uuid(l):

@@ -1,5 +1,5 @@
 import threading, socket, pickle
-import mfunctions
+import mfunctions, tttfuncs
 
 class Client():
     #Class that creates the client object for handling communications from the client's end
@@ -29,15 +29,24 @@ class Client():
         self.send(('ROOM','START'))
     
     def startrecv(self,updation_callbacks):
-        self.listening_thread = threading.Thread(target=self.listener, args=(updation_callbacks))
+        t = (updation_callbacks, )
+        self.listening_thread = threading.Thread(target=self.listener, args=t)
         self.listening_thread.start()
     
     def send(self,msg):
         self.conn.send(pickle.dumps(msg))
         
     def listener(self,updation_callbacks):
+        print(updation_callbacks)
         while self.connected:
             instruction = self.conn.recv(1024)
             instruction = pickle.loads(instruction)
-            if instruction[0] == 'MONOPOLY':
+            if instruction[0] == 'ROOM':
+                #TODO Fix Pls Ty
+                updation_callbacks['print'](instruction)
+            
+            elif instruction[0] == 'MONOPOLY':
                 mfunctions.clientside(updation_callbacks, instruction[1], instruction[2:])
+                
+            elif instruction[0] == 'MONOPOLY':
+                tttfuncs.clientside(updation_callbacks, instruction[1], instruction[2:])
