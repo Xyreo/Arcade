@@ -1,0 +1,38 @@
+#TODO
+Acknowledgement Protocols + Asynchronous Concepts
+
+The Protocol for communication
+
+Base Level communication
+
+All messages will be sent via a tuple, with the first element being the type of command to execute. 
+The heirarchy indicates the index of the element
+The commands are:
+
+1. ROOM:
+    #TODO Confirmations? Acknowledgements? Also may add room cancelling and leaving
+
+    Client -> Server
+    1. CREATE - Informs creation of a new room
+    2. JOIN
+        2.1 LIST - Requests list of existing rooms
+        2.2 <room uuid> - Joins the room
+    3. START - Sent by host to start the game
+
+    Server -> Client 
+
+    1. ADD - Additional rooms created
+    2. REMOVE - Removes the room which started
+    3. START - Informs game started
+    4. ADDROOM - Sends the player information to the players in the room 
+
+2. NAME - Informs name 
+
+3. MONOPOLY - 
+    All Monopoly commands will have player uuid as the second element
+
+    Client -> Server -> Other Clients
+
+    1. ROLLDICE - Sends how much to roll the dice by
+    2. BUILD - 
+    3. TRADE - 
