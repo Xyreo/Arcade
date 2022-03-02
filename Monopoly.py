@@ -125,15 +125,15 @@ def propertyframepopup(property):
         elif counter==6:
             canvas.create_text(45,centery,anchor='w',text=i,font=("times",(boardside - 2)//49),)
             canvas.create_text(canvas.winfo_width()/1.375,centery,text="₩",angle=180,font=("courier",(boardside - 2)//49))
-            canvas.create_text(canvas.winfo_width()-45,centery,anchor='e',text=str(j),font=("times",(boardside - 2)//49))
+            canvas.create_text(canvas.winfo_width()-35,centery,anchor='e',text=str(j),font=("times",(boardside - 2)//49))
         elif counter==7:
             canvas.create_text(45,centery,anchor='w',text=i,font=("times",(boardside - 2)//49),fill='green')
             canvas.create_text(canvas.winfo_width()/1.375,centery,text="₩",angle=180,font=("courier",(boardside - 2)//49),fill='green')
-            canvas.create_text(canvas.winfo_width()-45,centery,anchor='e',text=str(j),font=("times",(boardside - 2)//49),fill='green')
+            canvas.create_text(canvas.winfo_width()-35,centery,anchor='e',text=str(j),font=("times",(boardside - 2)//49),fill='green')
         elif counter==8:
             canvas.create_text(45,centery,anchor='w',text=i,font=("times",(boardside - 2)//49),fill='red')
             canvas.create_text(canvas.winfo_width()/1.375,centery,text="₩",angle=180,font=("courier",(boardside - 2)//49),fill='red')
-            canvas.create_text(canvas.winfo_width()-45,centery,anchor='e',text=str(j),font=("times",(boardside - 2)//49),fill='red')
+            canvas.create_text(canvas.winfo_width()-35,centery,anchor='e',text=str(j),font=("times",(boardside - 2)//49),fill='red')
         else:
             canvas.create_text(25,centery,anchor='w',text=i,font=("times",(boardside - 2)//42),)
             canvas.create_text(canvas.winfo_width()/1.375,centery,text="₩",angle=180,font=("courier",(boardside - 2)//42))
