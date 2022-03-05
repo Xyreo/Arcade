@@ -1,24 +1,28 @@
-#region Setup
-import socket, threading, time, pickle, random
+# region Setup
+import socket
+import threading
+import time
+import pickle
+import random
 import tkinter as tk
 from tkinter import ttk
 import mfunctions as mnply
 import tttfuncs as ttt
 
 PORT = 6789
-SERVER = 'localhost' #TODO Option for local host/server
+SERVER = 'localhost'  # TODO Option for local host/server
 ADDRESS = (SERVER, PORT)
 
-server = socket.socket(socket.AF_INET,
-					socket.SOCK_STREAM)
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDRESS)
 
-players = {}            #Stores the socks of all the players connected to the server
-p_in_queue = []         #Stores player socks listening for room updations (they are waiting to join rooms)
-rooms = {}              #Dicitonary to store all existing room objects
-#endregion
+players = {}  # Stores the socks of all the players connected to the server
+# Stores player socks listening for room updations (they are waiting to join rooms)
+p_in_queue = []
+rooms = {}  # Dicitonary to store all existing room objects
+# endregion
 
-#region GUI             #Maybe changed later
+# region GUI             #Maybe changed later
 root = tk.Tk()
 width = root.winfo_screenwidth() - 800
 height = root.winfo_screenheight() - 350
@@ -27,7 +31,7 @@ root.geometry("%dx%d%+d%+d" % (width, height, 100, 100))
 columns = ('room_no', 'host_name', 'nply')
 tree = ttk.Treeview(root, columns=columns, height=height, padding=5)
 tree.column('#0', width=10)
-tree.heading('#0', text = '')
+tree.heading('#0', text='')
 tree.heading('room_no', text='Room No.')
 tree.heading('host_name', text='Host Name')
 tree.heading('nply', text='Number of Players')
@@ -36,157 +40,163 @@ tree.grid(row=0, column=0, sticky='nsew')
 scrollbar = ttk.Scrollbar(root, orient=tk.VERTICAL, command=tree.yview)
 tree.configure(yscroll=scrollbar.set)
 scrollbar.grid(row=0, column=1, sticky='ns')
-#endregion
+# endregion
+
 
 class Room():
-    #Class that stores Room objects to make functioning in rooms smoothly
-    def __init__(self,host):
+    # Class that stores Room objects to make functioning in rooms smoothly
+    def __init__(self, host):
         self.members = [host]
         self.host = host
         self.status = 'OPEN'
         self.uuid = assign_uuid(list(rooms.keys()))
         rooms[self.uuid] = self
-        
-    def add(self, piid):
-        self.members.append(piid)
-        msg = ('ROOM','ADDROOM',players[piid].details())
-        self.broadcast_to_members(piid, msg)
-        
+
+    def add(self, puid):
+        self.members.append(puid)
+        msg = ('ROOM', 'ADDROOM', players[puid].details())
+        self.broadcast_to_members(puid, msg)
+
     def details(self):
-        #Function to return a dictionary containing details of the room
-        
-        d = {'host':players[self.host].name,  
-             'players':[players[i].details() for i in players],
-             'roomnum': self.uuid}
-        
+        # Function to return a dictionary containing details of the room
+
+        d = {
+            'host': players[self.host].name,
+            'players': [players[i].details() for i in players],
+            'roomnum': self.uuid
+        }
+
         return d
-    
+
     def start(self):
         self.status = 'INGAME'
         for i in self.members:
-            players[i].send_instruction(('ROOM','START'))
-            
+            players[i].send_instruction(('ROOM', 'START'))
+
         for i in p_in_queue:
-            i.send_instruction(('ROOM','REMOVE',self.uuid))
-            
-    def broadcast_to_members(self, initiator,msg):
+            i.send_instruction(('ROOM', 'REMOVE', self.uuid))
+
+    def broadcast_to_members(self, initiator, msg):
         for i in self.members:
             if players[i] != players[initiator]:
                 players[i].send_instruction(msg)
-    
+
+
 class Client(threading.Thread):
-    #Class that gets threaded for every new client object
-    #Handles all communication from client to servers
-    
-    def __init__(self,conn,addr):
-        #Object creation with conn -> socket, addr -> player ip address
-        
+    # Class that gets threaded for every new client object
+    # Handles all communication from client to servers
+
+    def __init__(self, conn, addr):
+        # Object creation with conn -> socket, addr -> player ip address
+
         threading.Thread.__init__(self)
         global players
-            
+
         self.conn = conn
         self.addr = addr
         self.name = None
         self.room = None
         self.uuid = assign_uuid(list(players.keys()))
         self.connected = True
-        
+
         players[self.uuid] = self
-        
+
     def run(self):
-        #Event Listener
-        
+        # Event Listener
+
         while self.connected:
             sent = self.conn.recv(1048)
             m = pickle.loads(sent)
             self.instruction_handler(m)
-                       
-    def join_room(self,mode):
-        #Function to redirect users to the joining page
+
+    def join_room(self, mode):
+        # Function to redirect users to the joining page
         global p_in_queue, rooms
-        
+
         if mode == 'LIST':
-            
+
             if self not in p_in_queue:
                 p_in_queue.append(self)
-                
+
             room_list = []
             for i in rooms.values():
                 if i.status == 'OPEN':
-                    room_list.append(i.details()) 
-            
-            package = ('ROOM','ADD', room_list)                 
+                    room_list.append(i.details())
+
+            package = ('ROOM', 'ADD', room_list)
             self.send_instruction(package)
-            
+
         else:
             self.room = rooms[mode]
             self.room.add(self.uuid)
             p_in_queue.remove(self)
-           
+
     def create_room(self):
-        #Function to create a room
-        #TODO may implement more customizability (eg. Start Money, No. of Players etc.)
+        # Function to create a room
+        # TODO may implement more customizability (eg. Start Money, No. of Players etc.)
         global p_in_queue
-        
+
         self.room = Room(self.uuid)
-        #Informs all clients in lobby a new room has been created        
-        for client in p_in_queue: 
-            i = ('ROOM','ADD',[self.room.details()])
+        # Informs all clients in lobby a new room has been created
+        for client in p_in_queue:
+            i = ('ROOM', 'ADD', [self.room.details()])
             client.send_instruction(i)
 
-    def instruction_handler(self,instruction):
-        #Parses the request and redirects it appropriately
+    def instruction_handler(self, instruction):
+        # Parses the request and redirects it appropriately
         print(instruction)
         if instruction[0] == 'ROOM':
             if instruction[1] == 'JOIN':
                 self.join_room(instruction[2])
-            
+
             elif instruction[1] == 'CREATE':
                 self.create_room()
-            
+
             elif instruction[1] == 'START':
                 self.room.start()
-                
+
         elif instruction[0] == 'NAME':
             self.name = instruction[1]
-            
+
         elif instruction[0] == 'MONOPOLY':
             msg = mnply.serverside(instruction[1:])
             self.room.broadcast_to_members(self.uuid, msg)
-            
+
         elif instruction[0] == 'TTT':
             msg = ttt.serverside(instruction[1:])
             self.room.broadcast_to_members(self.uuid, msg)
-        
+
     def send_instruction(self, instruction):
         self.conn.send(pickle.dumps(instruction))
-        
+
     def details(self):
-        d = {'name':self.name,  
-             'piid' : self.uuid}
+        d = {'name': self.name, 'puid': self.uuid}
         return d
-   
+
+
 def assign_uuid(l):
-    #Function that returns a unique id for passed object
-    
-    i = random.randint(1000,9999)
+    # Function that returns a unique id for passed object
+
+    i = random.randint(1000, 9999)
     while i in l:
-        i = random.randint(1000,9999)
+        i = random.randint(1000, 9999)
     return i
-        
+
+
 def start_server():
-    #Function that listens for incoming connections and threads and redirects them to the Client Handler
-    
+    # Function that listens for incoming connections and threads and redirects them to the Client Handler
+
     server.listen()
     while True:
-        conn, addr = server.accept()        
-        client_thread = Client(conn,addr)
+        conn, addr = server.accept()
+        client_thread = Client(conn, addr)
         client_thread.start()
 
         print(f"active connections {threading.activeCount()-2}")
 
-#Threads the server itself to manage the GUI of the server seperately
-svr = threading.Thread(target = start_server)
+
+# Threads the server itself to manage the GUI of the server seperately
+svr = threading.Thread(target=start_server)
 svr.start()
 
 root.mainloop()
