@@ -166,6 +166,10 @@ class Client(threading.Thread):
             msg = ttt.serverside(instruction[1:])
             self.room.broadcast_to_members(self.uuid, msg)
 
+        elif instruction[0] == 'CHESS':
+            msg = ttt.serverside(instruction[1:])
+            self.room.broadcast_to_members(self.uuid, msg)
+
     def send_instruction(self, instruction):
         self.conn.send(pickle.dumps(instruction))
 
