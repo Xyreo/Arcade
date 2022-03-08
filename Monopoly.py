@@ -2,9 +2,12 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import random
 import threading
+import os
 from tkinter import messagebox
 from PIL import ImageTk, Image, ImageOps
 from time import sleep
+
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 from pygame import mixer
 
 root = tk.Tk()  # Start Window
@@ -188,8 +191,9 @@ tk.Button(board_frame,
           image=small_info_tag,
           border=0,
           highlightthickness=0,
-          command=lambda: property_frame_popup("Jail")).place(
-              x=posvar - 11.8 * property_width, y=posvar, anchor='center')
+          command=lambda: jail_rules()).place(x=posvar - 11.8 * property_width,
+                                              y=posvar,
+                                              anchor='center')
 
 tk.Button(board_frame,
           image=small_info_tag,
@@ -339,8 +343,10 @@ tk.Button(board_frame,
           image=small_info_tag,
           border=0,
           highlightthickness=0,
-          command=lambda: property_frame_popup("Go To Jail")).place(
-              x=posvar, y=posvar - 11.825 * property_width, anchor='center')
+          command=lambda: jail_rules()).place(x=posvar,
+                                              y=posvar -
+                                              11.825 * property_width,
+                                              anchor='center')
 
 tk.Button(board_frame,
           image=small_info_tag,
@@ -483,7 +489,10 @@ def utility_rules():
     messagebox.showinfo("UTILITY RULES", "UTILITY RULES")
 
 
-#TODO: Make popups for jail and gotojail
+def jail_rules():
+    messagebox.showinfo("JAIL RULES", "JAIL RULES")
+
+
 #TODO: Make Thread to update all frames, based on game progress
 def property_frame_popup(property):
     global property_frame
