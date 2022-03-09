@@ -29,10 +29,13 @@ class Chess(tk.Tk):
         'black': '#eeeed2',
         'white': '#769656',
         'sblack': '#f6f669',
-        'swhite': '#baca2b'
+        'swhite': '#baca2b',
+        'sbwhite': '#fcfccb',
+        'sbblack': '#e7edb5',
+        'bwhite': 'f9f9ef',
+        'bblack': '#cfdac4',
     }
     size = 0
-    images = {}
 
     def __init__(self):
 
@@ -137,6 +140,10 @@ class Chess(tk.Tk):
 
     def clicked(self, e):
         x, y = Chess.coords_to_grid(e.x, e.y)
+        coord = self.isClicked
+        if self.isClicked:
+            self.board_ids[coord] = self.change_board(coord // 10, coord % 10)
+            self.isClicked = None
 
         if (x * 10 + y) not in self.gamestate.values():
             return
@@ -150,7 +157,10 @@ class Chess(tk.Tk):
         self.board_ids[x * 10 + y] = self.change_board(x, y, select=True)
 
     def released(self, e):
-        print(e.x, e.y)
+        #print(e.x, e.y)
+        if not self.isClicked:
+            return
+
         x1, y1, x2, y2 = Chess.grid_to_coords(self.isClicked // 10,
                                               self.isClicked % 10)
 
@@ -158,14 +168,13 @@ class Chess(tk.Tk):
         self.move_obj(self.pieces[key], (x1 + x2) // 2, (y1 + y2) // 2)
 
     def drag_piece(self, e):
-        x, y = Chess.coords_to_grid(e.x, e.y)
-        #print(ref)
+
         if not self.isClicked:
             return
-
-        else:
-            key = self.key(self.isClicked)
-            self.move_obj(self.pieces[key], e.x, e.y)
+        x, y = self.coords_to_grid(e.x, e.y)
+        self.canvas.scale(self.board_ids[10 * x + y], 0.9, 0.9, 10, 10)
+        key = self.key(self.isClicked)
+        self.move_obj(self.pieces[key], e.x, e.y)
 
     def move_obj(self, obj, x, y):
         self.canvas.moveto(obj.cimage, x - obj.img_obj.width() // 2,

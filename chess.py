@@ -1,149 +1,220 @@
 import tkinter as tk
-from PIL import Image, ImageTk, ImageOps
 import os
+import copy
+from PIL import ImageOps, Image, ImageTk
+from pygments import highlight
 
 
-class Pieces:
-
-    types = ['BLANK', 'ROOK', 'KING', 'QUEEN', 'BISHOP', 'KNIGHT', 'PAWN']
-    images = {}
-
-    @staticmethod
-    def initialise(f):
-        board = [[Pieces() for j in range(8)] for i in range(8)]
-        board[0] = [
-            Pieces('ROOK', 'BLACK'),
-            Pieces('KNIGHT', 'BLACK'),
-            Pieces('BISHOP', 'BLACK'),
-            Pieces('QUEEN', 'BLACK'),
-            Pieces('KING', 'BLACK'),
-            Pieces('BISHOP', 'BLACK'),
-            Pieces('KNIGHT', 'BLACK'),
-            Pieces('ROOK', 'BLACK')
-        ]
-        board[7] = [
-            Pieces('ROOK', 'WHITE'),
-            Pieces('KNIGHT', 'WHITE'),
-            Pieces('BISHOP', 'WHITE'),
-            Pieces('QUEEN', 'WHITE'),
-            Pieces('KING', 'WHITE'),
-            Pieces('BISHOP', 'WHITE'),
-            Pieces('KNIGHT', 'WHITE'),
-            Pieces('ROOK', 'WHITE')
-        ]
-        board[1] = [Pieces('PAWN', 'BLACK') for i in range(8)]
-        board[6] = [Pieces('PAWN', 'WHITE') for i in range(8)]
-        Pieces.images = {('BLACK' + i): Pieces.img('black', i, f)
-                         for i in Pieces.types}
-
-        Pieces.images.update({('WHITE' + i): Pieces.img('white', i, f)
-                              for i in Pieces.types})
-
-        Pieces.images['NONEBLANK'] = Pieces.img('none', 'BLANK', f)
-        #print(Pieces.images)
-
-        return board
-
-    def __init__(self, piece='BLANK', color='NONE'):
-        self.piece = piece
-        self.color = color
-
-    def move(self, board):
-        pass
-
-    def rook_move(self, board):
-        pass
-
-    def king_move(self, board):
-        pass
-
-    def queen_move(self, board):
-        pass
-
-    def bishop_move(self, board):
-        pass
-
-    def knight_move(self, board):
-        pass
-
-    def bishop_move(self, board):
-        pass
+class Piece:
 
     @staticmethod
-    def img(color, piece, f):
+    def img(color, piece):
         path = os.path.join('Chess_Assets', '128h')
-        if piece == 'BLANK':
-            p = os.path.join(path, 'blank.png')
+        size = int((Chess.size / 8) * 0.8)
+        i = (color[0] + '_' + piece + '_png_128px.png').lower()
+        p = os.path.join(path, i)
 
-        else:
-            i = (color[0] + '_' + piece + '_png_128px' + '.png').lower()
-            p = os.path.join(path, i)
-
-        size = f.winfo_width() * 8 // 80
         #print(size)
         return ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open(p).resize((size * 95 // 100, size),
-                                     Image.ANTIALIAS)))
+                Image.open(p).resize((size, size), Image.ANTIALIAS)))
+
+    def __init__(self, piece, color):
+        self.piece = piece
+        self.color = color
+        self.img_id = None
+
+    def createImage(self, canvas, key):
+        x1, y1, x2, y2 = Chess.grid_to_coords(key)
+        self.i = Piece.img(self.color,
+                           self.piece)  #Tkinter Garbage Collection is weird
+        self.img_id = canvas.create_image((x1 + x2) // 2, (y1 + y2) // 2,
+                                          anchor=tk.CENTER,
+                                          image=self.i)
 
 
 class Chess(tk.Tk):
+    color = {
+        'black': '#eeeed2',
+        'white': '#769656',
+        'sblack': '#f6f669',
+        'swhite': '#baca2b',
+        'sbwhite': '#fcfccb',
+        'sbblack': '#e7edb5',
+        'bwhite': '#f9f9ef',
+        'bblack': '#cfdac4',
+    }
+    size = None
 
     def __init__(self):
         super().__init__()
-        self.size = str(self.winfo_screenheight() * 4 // 5)
-        self.geometry(f'{self.size}x{self.size}')
-        self.board = []
 
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=1)
-        self.frame = tk.Frame(self)
-        self.frame.grid(sticky=tk.NSEW)
-        self.frame.grid_columnconfigure(tuple(range(8)), weight=1)
-        self.frame.grid_rowconfigure(tuple(range(8)), weight=1)
-        self.frame.update()
-        self.board_pieces = Pieces.initialise(self.frame)
-        p = os.path.join('Chess_Assets', 'board')
-        self.boardimg = {'WHITE': '#bacbe6', 'BLACK': '#617bed'}
+        self.board = {}
+        self.board_ids = {}
+        self.initialize_canvas()
+        self.initialize_board()
+        self.initialize_images()
+        self.isClicked = None
 
-        for i in range(8):
-            l = []
-
-            for j in range(8):
-                button = tk.Button(
-                    self.frame,
-                    command=lambda n=(i * 8) + j: self.button_handler(n),
-                    height=128,
-                    width=128,
-                    border=0,
-                    background=self.boardimg['WHITE']
-                    if not (i + j) % 2 else self.boardimg['BLACK'],
-                    activebackground=self.boardimg['WHITE']
-                    if not (i + j) % 2 else self.boardimg['BLACK'],
-                    text=self.board_pieces[i][j].piece,
-                )
-
-                button.grid(column=j, row=i, sticky=tk.NSEW)
-                l.append(button)
-            self.board.append(l)
-
-        for i in range(8):
-            for j in range(8):
-                b = self.board[i][j]
-                p = self.board_pieces[i][j]
-                b.configure(image=Pieces.images[p.color + p.piece])
-                pass
-
-    def button_handler(self, n):
-        i, j = n // 8, n % 8
-        print(i, ' ', j)
-        self.board[i][j].configure(
-            bg='RED',
-            #state=tk.DISABLED,
-            command=0,
-            disabledforeground=self.boardimg['WHITE']
-            if not (i + j) % 2 else self.boardimg['BLACK'],
+    def initialize_canvas(self):
+        Chess.size = self.winfo_screenheight() * 4 // 5
+        self.geometry(
+            f'{Chess.size}x{Chess.size}+{self.winfo_screenwidth()//2}+{Chess.size//16}'
         )
+        self.canvas = tk.Canvas(
+            self,
+            highlightthickness=1,
+            #highlightbackground='BLACK',
+            height=Chess.size,
+            width=Chess.size)
+        self.canvas.pack()
+        self.canvas.bind('<Button-1>', self.clicked)
+        self.canvas.bind('<B1-Motion>', self.drag_piece)
+        self.canvas.bind('<ButtonRelease-1>', self.released)
+
+    def initialize_board(self):
+
+        #region Initializing pieces on Board
+        self.selected_sqaures = {}
+        for j in range(8):
+            self.board.update({(i * 10 + j): None for i in range(8)})
+            self.selected_sqaures.update({(i * 10 + j): None
+                                          for i in range(8)})
+
+        self.board.update({
+            0: Piece('ROOK', 'BLACK'),
+            10: Piece('KNIGHT', 'BLACK'),
+            20: Piece('BISHOP', 'BLACK'),
+            30: Piece('QUEEN', 'BLACK'),
+            40: Piece('KING', 'BLACK'),
+            50: Piece('BISHOP', 'BLACK'),
+            60: Piece('KNIGHT', 'BLACK'),
+            70: Piece('ROOK', 'BLACK'),
+            7: Piece('ROOK', 'WHITE'),
+            17: Piece('KNIGHT', 'WHITE'),
+            27: Piece('BISHOP', 'WHITE'),
+            37: Piece('QUEEN', 'WHITE'),
+            47: Piece('KING', 'WHITE'),
+            57: Piece('BISHOP', 'WHITE'),
+            67: Piece('KNIGHT', 'WHITE'),
+            77: Piece('ROOK', 'WHITE'),
+        })
+
+        for i in range(8):
+            self.board[10 * i + 1] = Piece('PAWN', 'BLACK')
+            self.board[10 * i + 6] = Piece('PAWN', 'WHITE')
+        #endregion
+
+        #Board Assets Generation
+        offset = 5
+        for i in range(8):
+            for j in range(8):
+                key = i * 10 + j
+                x1, y1, x2, y2 = Chess.grid_to_coords(i, j)
+                color = 'white' if (i + j) % 2 else 'black'
+
+                base = self.canvas.create_rectangle(x1,
+                                                    y1,
+                                                    x2,
+                                                    y2,
+                                                    fill=Chess.color[color],
+                                                    outline='',
+                                                    state='normal')
+
+                highlight_square = self.canvas.create_rectangle(
+                    x1 + offset,
+                    y1 + offset,
+                    x2 - offset,
+                    y2 - offset,
+                    fill=Chess.color['b' + color],
+                    outline='',
+                    state='hidden')
+
+                self.board_ids[key] = {
+                    'base': base,
+                    'button': highlight_square,
+                }
+
+    def initialize_images(self):
+
+        for key, value in self.board.items():
+            if value == None:
+                continue
+            self.board[key].createImage(self.canvas, key)
+            self.canvas.tag_raise(self.board[key].img_id)
+
+    def set(self, id, state):
+
+        color = 'white' if (id // 10 + id % 10) % 2 else 'black'
+        if state == 'normal':
+            color = Chess.color[color]
+        elif state == 'select':
+            color = Chess.color['s' + color]
+
+        self.canvas.itemconfigure(self.board_ids[id]['base'], fill=color)
+
+    def clicked(self, e):
+        x, y = Chess.coords_to_grid(e.x, e.y)
+        k = 10 * x + y
+        coord = self.isClicked
+        square = self.board_ids
+
+        if k == coord:
+            pass
+        elif coord != None:
+            self.set(coord, 'normal')
+
+        #Mechanism to unselect previously selected square
+        if coord != None:
+            self.set(coord, 'normal')
+
+        #Check for whether or not to select current square
+        if (not self.board[k]):
+            self.isClicked = None
+            return
+
+        #Selection mechanism
+        self.set(k, 'select')
+        self.isClicked = k
+        ''' self.canvas.tag_raise(self.pieces[key].cimage)
+        self.move_obj(self.pieces[key], e.x, e.y)
+        self.board_ids[x * 10 + y] = self.change_board(x, y, select=True)'''
+
+    def released(self, e):
+        #print(e.x, e.y)
+        if not self.isClicked:
+            return
+
+        x1, y1, x2, y2 = Chess.grid_to_coords(self.isClicked)
+
+        self.move_obj(self.board[self.isClicked], (x1 + x2) // 2,
+                      (y1 + y2) // 2)
+
+    def drag_piece(self, e):
+
+        if not self.isClicked:
+            return
+
+        x, y = self.coords_to_grid(e.x, e.y)
+        self.move_obj(self.board[self.isClicked], e.x, e.y)
+
+    def move_obj(self, obj, x, y):
+        self.canvas.moveto(obj.img_id, x - obj.i.width() // 2,
+                           y - obj.i.height() // 2)
+
+    @staticmethod
+    def coords_to_grid(x, y):
+        return (8 * x // (Chess.size), 8 * y // (Chess.size))
+
+    @staticmethod
+    def grid_to_coords(*args):
+        if len(args) == 1:
+            x, y = args[0] // 10, args[0] % 10
+        elif len(args) == 2:
+            x, y = args[0], args[1]
+
+        return (x * Chess.size // 8, y * Chess.size // 8,
+                (x + 1) * Chess.size // 8, (y + 1) * Chess.size // 8)
 
 
 if __name__ == '__main__':
