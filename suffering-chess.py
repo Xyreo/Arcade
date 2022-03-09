@@ -143,6 +143,7 @@ class Chess(tk.Tk):
         #print(ref)
         if not self.isClicked:
             return
+
         else:
             print(x, y)
 
