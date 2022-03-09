@@ -20,7 +20,8 @@ class Piece:
     def __init__(self, piece, color):
         self.piece = piece
         self.color = color
-        self.image = Piece.img(color, piece)
+        self.img_obj = Piece.img(color, piece)
+        self.cimage = 0
 
 
 class Chess(tk.Tk):
@@ -50,9 +51,10 @@ class Chess(tk.Tk):
         self.canvas.pack()
         self.canvas.bind('<Button-1>', self.clicked)
         self.canvas.bind('<B1-Motion>', self.drag_piece)
+        self.canvas.bind('<ButtonRelease-1>', self.released)
         self.initialize_board()
         self.initialize_images()
-        self.isAnySelected = False
+        self.selected = (None, (0, 0))
         self.isClicked = None
 
     def initialize_board(self):
@@ -122,30 +124,52 @@ class Chess(tk.Tk):
             if value == -1:
                 continue
             x1, y1, x2, y2 = Chess.grid_to_coords(value // 10, value % 10)
-            Chess.images[self.pieces[key]] = self.canvas.create_image(
+            '''Chess.images[self.pieces[key]] = self.canvas.create_image(
                 (x1 + x2) // 2, (y1 + y2) // 2,
                 anchor=tk.CENTER,
-                image=self.pieces[key].image)
+                image=self.pieces[key].image)'''
+
+            self.pieces[key].cimage = self.canvas.create_image(
+                (x1 + x2) // 2, (y1 + y2) // 2,
+                anchor=tk.CENTER,
+                image=self.pieces[key].img_obj)
+            #self.canvas.tag_raise(self.pieces[])
 
     def clicked(self, e):
         x, y = Chess.coords_to_grid(e.x, e.y)
+
         if (x * 10 + y) not in self.gamestate.values():
             return
 
         self.isClicked = x * 10 + y
         self.canvas.delete(self.board_ids[x * 10 + y])
-        x1, y1, x2, y2 = Chess.grid_to_coords(x, y)
+        ref = dict(zip(self.gamestate.values(), self.gamestate.keys()))
+        key = ref[self.isClicked]
+        self.canvas.tag_raise(self.pieces[key].cimage)
+        self.move_obj(self.pieces[key], e.x, e.y)
         self.board_ids[x * 10 + y] = self.change_board(x, y, select=True)
+
+    def released(self, e):
+        print(e.x, e.y)
+        x1, y1, x2, y2 = Chess.grid_to_coords(self.isClicked // 10,
+                                              self.isClicked % 10)
+
+        key = self.key(self.isClicked)
+        self.move_obj(self.pieces[key], (x1 + x2) // 2, (y1 + y2) // 2)
 
     def drag_piece(self, e):
         x, y = Chess.coords_to_grid(e.x, e.y)
-        ref = dict(zip(self.gamestate.values(), self.gamestate.keys()))
         #print(ref)
         if not self.isClicked:
             return
 
         else:
-            print(x, y)
+            key = self.key(self.isClicked)
+            self.move_obj(self.pieces[key], e.x, e.y)
+
+    def move_obj(self, obj, x, y):
+        self.canvas.moveto(obj.cimage, x - obj.img_obj.width() // 2,
+                           y - obj.img_obj.height() // 2)
 
     @staticmethod
     def coords_to_grid(x, y):
@@ -178,6 +202,10 @@ class Chess(tk.Tk):
                                                 fill=c)
             self.canvas.tag_lower(rect)
             return rect
+
+    def key(self, grid):
+        ref = dict(zip(self.gamestate.values(), self.gamestate.keys()))
+        return ref[grid]
 
 
 if __name__ == '__main__':
