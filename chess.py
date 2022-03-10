@@ -1,5 +1,4 @@
 from contextlib import suppress
-from selectors import EpollSelector
 import tkinter as tk
 import os
 import copy
@@ -16,6 +15,7 @@ class Chess(tk.Tk):
         'sbblack': '#e7edb5',
         'bwhite': '#cfdac4',
         'bblack': '#f9f9ef',
+        'hint': '#d6d6bd'
     }
     size = None
 
@@ -83,6 +83,7 @@ class Chess(tk.Tk):
 
         #Board Assets Generation
         offset = 4
+        off1 = 30
         for i in range(8):
             for j in range(8):
                 key = i * 10 + j
@@ -106,9 +107,18 @@ class Chess(tk.Tk):
                     outline='',
                     state='hidden')
 
+                hint = self.canvas.create_oval(x1 + off1,
+                                               y1 + off1,
+                                               x2 - off1,
+                                               y2 - off1,
+                                               fill=Chess.color['hint'],
+                                               outline='',
+                                               state='hidden')
+
                 self.board_ids[key] = {
                     'base': base,
                     'button': highlight_square,
+                    'hint': hint,
                 }
 
     def initialize_images(self):
@@ -160,10 +170,16 @@ class Chess(tk.Tk):
             self.secondClick = None
             if coord != None:
                 self.set(coord, 'normal')
+                for i in self.board[coord].move(self):
+                    self.canvas.itemconfigure(self.board_ids[i]['hint'],
+                                              state='hidden')
 
             if self.board[k] != None:
                 self.set(k, 'select')
                 self.isClicked = k
+                for i in self.board[k].move(self):
+                    self.canvas.itemconfigure(self.board_ids[i]['hint'],
+                                              state='normal')
             else:
                 self.isClicked = None
                 return
@@ -175,7 +191,6 @@ class Chess(tk.Tk):
         self.move_obj(self.board[self.isClicked], e.x, e.y)
 
     def released(self, e: tk.Event):
-        print(e.x, e.y)
         if self.isClicked == None:
             return
 
@@ -185,8 +200,12 @@ class Chess(tk.Tk):
 
         if self.secondClick != None:
             if self.isHover == self.isClicked:
-                self.isClicked = None
                 self.set(self.isHover, 'normal')
+                for i in self.board[self.isHover].move(self):
+                    self.canvas.itemconfigure(self.board_ids[i]['hint'],
+                                              state='hidden')
+
+                self.isClicked = None
         else:
             pass
 
@@ -232,11 +251,6 @@ class Chess(tk.Tk):
                 (x + 1) * Chess.size // 8, (y + 1) * Chess.size // 8)
 
 
-if __name__ == '__main__':
-    app = Chess()
-    app.mainloop()
-
-
 class Piece:
 
     @staticmethod
@@ -265,126 +279,136 @@ class Piece:
                                           image=self.i)
 
     def move(self, game: Chess) -> list:
-        moves = []
+        self.potential_moves = []
         k = game.isClicked
-        x, y = k // 10, k % 10
-
-        def side():
-            for i in range(x - 1, -1, -1):
-                if game.board[i * 10 + y] != None:
-                    if game.board[i * 10 + y].color != self.color:
-                        moves.append(i * 10 + y)
-                    break
-                moves.append(i * 10 + y)
-
-            for i in range(x + 1, 9):
-                if game.board[i * 10 + y] != None:
-                    if game.board[i * 10 + y].color != self.color:
-                        moves.append(i * 10 + y)
-                    break
-                moves.append(i * 10 + y)
-
-            for i in range(y - 1, -1, -1):
-                if game.board[x + i] != None:
-                    if game.board[x + i].color != self.color:
-                        moves.append(x + i)
-                    break
-                moves.append(x + i)
-
-            for i in range(y + 1, 9):
-                if game.board[x + i] != None:
-                    if game.board[x + i].color != self.color:
-                        moves.append(x + i)
-                    break
-                moves.append(x + i)
-
-        def diagonal():
-            l = x if x < y else y
-            for i in range(1, l + 1):
-                key = 10 * (x - i) + (y - i)
-                if game.board[key] != None:
-                    if game.board[key].color != self.color:
-                        moves.append(key)
-                    break
-                moves.append(key)
-
-            l = (8 - x) if (8 - x) < y else y
-            for i in range(1, l + 1):
-                key = 10 * (x + i) + (y - i)
-                if game.board[key] != None:
-                    if game.board[key].color != self.color:
-                        moves.append(key)
-                    break
-                moves.append(key)
-
-            l = x if x < (8 - y) else (8 - y)
-            for i in range(1, l + 1):
-                key = 10 * (x - i) + (y + i)
-                if game.board[key] != None:
-                    if game.board[key].color != self.color:
-                        moves.append(key)
-                    break
-                moves.append(key)
-
-            l = (8 - x) if (8 - x) < (8 - y) else (8 - y)
-            for i in range(1, l + 1):
-                key = 10 * (x + i) + (y + i)
-                if game.board[key] != None:
-                    if game.board[key].color != self.color:
-                        moves.append(key)
-                    break
-                moves.append(key)
-
-        def fix():
-            m = []
-            for i in moves:
-                if (0 <= moves // 10 < 8) and (0 <= moves % 10 < 8):
-                    m.append(i)
-            moves = m
-            #PAIN AND SUFFERING HELP ME
+        print(k)
 
         if self.piece == 'KING':
-            moves = [
+            self.potential_moves = [
                 k + 10, k + 11, k + 9, k - 10, k - 9, k - 11, k + 1, k - 1
             ]
-            fix()
+            self.fix()
 
         elif self.piece == 'KNIGHT':
-            moves = [
+            self.potential_moves = [
                 k + 8, k - 8, k + 12, k - 12, k + 19, k - 19, k + 21, k - 21
             ]
-            fix()
+            self.fix()
 
         elif self.piece == 'PAWN':
             sign = 1 if self.color == 'BLACK' else -1
-            moves = [k + sign]
+            self.potential_moves = [k + sign]
             if k % 10 == 1:
-                moves.append[k + 2]
+                self.potential_moves.append(k + 2)
             elif k % 10 == 6:
-                moves.append[k - 2]
+                self.potential_moves.append(k - 2)
 
             with suppress(KeyError):
                 if game.board[k + sign + 10] != None and game.board[
                         k + sign - 10].color != self.color:
-                    moves.append(k + sign + 10)
+                    self.potential_moves.append(k + sign + 10)
 
                 if game.board[k + sign - 10] != None and game.board[
                         k + sign - 10].color != self.color:
-                    moves.append(k + sign - 10)
+                    self.potential_moves.append(k + sign - 10)
 
-            fix()
+            self.fix()
 
         elif self.piece == 'QUEEN':
-            side()
-            diagonal()
+            self.side(game)
+            self.diagonal(game)
 
         elif self.piece == 'ROOK':
-            side()
+            self.side(game)
 
         elif self.piece == 'BISHOP':
-            diagonal()
+            self.diagonal(game)
 
         else:
             return Exception
 
-        return moves
+        return self.potential_moves
+
+    def side(self, game):
+        k = game.isClicked
+        x, y = k // 10, k % 10
+        for i in range(x - 1, -1, -1):
+            if game.board[i * 10 + y] != None:
+                if game.board[i * 10 + y].color != self.color:
+                    self.potential_moves.append(i * 10 + y)
+                break
+            self.potential_moves.append(i * 10 + y)
+
+        for i in range(x + 1, 8):
+            if game.board[i * 10 + y] != None:
+                if game.board[i * 10 + y].color != self.color:
+                    self.potential_moves.append(i * 10 + y)
+                break
+            self.potential_moves.append(i * 10 + y)
+
+        for i in range(y - 1, -1, -1):
+            if game.board[x + i] != None:
+                if game.board[x + i].color != self.color:
+                    self.potential_moves.append(x + i)
+                break
+            self.potential_moves.append(x + i)
+
+        for i in range(y + 1, 8):
+            print(x, y, i)
+            if game.board[x + i] != None:
+                if game.board[x + i].color != self.color:
+                    self.potential_moves.append(x + i)
+                break
+            self.potential_moves.append(x + i)
+
+    def diagonal(self, game):
+        k = game.isClicked
+        x, y = k // 10, k % 10
+        l = x if x < y else y
+        for i in range(1, l):
+            key = 10 * (x - i) + (y - i)
+            if game.board[key] != None:
+                if game.board[key].color != self.color:
+                    self.potential_moves.append(key)
+                break
+            self.potential_moves.append(key)
+
+        l = (8 - x) if (8 - x) < y else y
+        for i in range(1, l):
+            key = 10 * (x + i) + (y - i)
+            if game.board[key] != None:
+                if game.board[key].color != self.color:
+                    self.potential_moves.append(key)
+                break
+            self.potential_moves.append(key)
+
+        l = x if x < (8 - y) else (8 - y)
+        for i in range(1, l):
+            key = 10 * (x - i) + (y + i)
+            if game.board[key] != None:
+                if game.board[key].color != self.color:
+                    self.potential_moves.append(key)
+                break
+            self.potential_moves.append(key)
+
+        l = (8 - x) if (8 - x) < (8 - y) else (8 - y)
+        for i in range(1, l):
+            key = 10 * (x + i) + (y + i)
+            if game.board[key] != None:
+                if game.board[key].color != self.color:
+                    self.potential_moves.append(key)
+                break
+            self.potential_moves.append(key)
+
+    def fix(self):
+        m = []
+        for i in self.potential_moves:
+            if (0 <= i // 10 < 8) and (0 <= i % 10 < 8):
+                m.append(i)
+        self.potential_moves = m
+        #PAIN AND SUFFERING HELP ME
+
+
+if __name__ == '__main__':
+    app = Chess()
+    app.mainloop()

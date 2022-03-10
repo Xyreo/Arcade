@@ -1,27 +1,8 @@
+from contextlib import suppress
 import tkinter as tk
 import os
+import copy
 from PIL import ImageOps, Image, ImageTk
-
-
-class Piece:
-
-    @staticmethod
-    def img(color, piece):
-        path = os.path.join('Chess_Assets', '128h')
-        size = int((Chess.size / 8) * 0.8)
-        i = (color[0] + '_' + piece + '_png_128px.png').lower()
-        p = os.path.join(path, i)
-
-        #print(size)
-        return ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(p).resize((size, size), Image.ANTIALIAS)))
-
-    def __init__(self, piece, color):
-        self.piece = piece
-        self.color = color
-        self.img_obj = Piece.img(color, piece)
-        self.cimage = 0
 
 
 class Chess(tk.Tk):
@@ -32,15 +13,26 @@ class Chess(tk.Tk):
         'swhite': '#baca2b',
         'sbwhite': '#fcfccb',
         'sbblack': '#e7edb5',
-        'bwhite': 'f9f9ef',
-        'bblack': '#cfdac4',
+        'bwhite': '#cfdac4',
+        'bblack': '#f9f9ef',
+        'hint': '#d6d6bd'
     }
-    size = 0
+    size = None
 
     def __init__(self):
-
         super().__init__()
 
+        self.board = {}
+        self.board_ids = {}
+        self.initialize_canvas()
+        self.initialize_board()
+        self.initialize_images()
+        self.isClicked = None
+        self.isHover = None
+        self.secondClick = None  #Purely for cosmetics
+        self.possible_moves = []
+
+    def initialize_canvas(self):
         Chess.size = self.winfo_screenheight() * 4 // 5
         self.geometry(
             f'{Chess.size}x{Chess.size}+{self.winfo_screenwidth()//2}+{Chess.size//16}'
@@ -55,166 +47,366 @@ class Chess(tk.Tk):
         self.canvas.bind('<Button-1>', self.clicked)
         self.canvas.bind('<B1-Motion>', self.drag_piece)
         self.canvas.bind('<ButtonRelease-1>', self.released)
-        self.initialize_board()
-        self.initialize_images()
-        self.selected = (None, (0, 0))
-        self.isClicked = None
 
     def initialize_board(self):
-        self.pieces = {
-            'brook1': Piece('ROOK', 'BLACK'),
-            'bknight1': Piece('KNIGHT', 'BLACK'),
-            'bbishop1': Piece('BISHOP', 'BLACK'),
-            'bqueen': Piece('QUEEN', 'BLACK'),
-            'bking': Piece('KING', 'BLACK'),
-            'bbishop2': Piece('BISHOP', 'BLACK'),
-            'bknight2': Piece('KNIGHT', 'BLACK'),
-            'brook2': Piece('ROOK', 'BLACK'),
-            'wrook1': Piece('ROOK', 'WHITE'),
-            'wknight1': Piece('KNIGHT', 'WHITE'),
-            'wbishop1': Piece('BISHOP', 'WHITE'),
-            'wqueen': Piece('QUEEN', 'WHITE'),
-            'wking': Piece('KING', 'WHITE'),
-            'wbishop2': Piece('BISHOP', 'WHITE'),
-            'wknight2': Piece('KNIGHT', 'WHITE'),
-            'wrook2': Piece('ROOK', 'WHITE'),
-        }
+
+        #region Initializing pieces on Board
+        self.selected_sqaures = {}
+        for j in range(8):
+            self.board.update({(i * 10 + j): None for i in range(8)})
+            self.selected_sqaures.update({(i * 10 + j): None
+                                          for i in range(8)})
+
+        self.board.update({
+            0: Piece('ROOK', 'BLACK'),
+            10: Piece('KNIGHT', 'BLACK'),
+            20: Piece('BISHOP', 'BLACK'),
+            30: Piece('QUEEN', 'BLACK'),
+            40: Piece('KING', 'BLACK'),
+            50: Piece('BISHOP', 'BLACK'),
+            60: Piece('KNIGHT', 'BLACK'),
+            70: Piece('ROOK', 'BLACK'),
+            7: Piece('ROOK', 'WHITE'),
+            17: Piece('KNIGHT', 'WHITE'),
+            27: Piece('BISHOP', 'WHITE'),
+            37: Piece('QUEEN', 'WHITE'),
+            47: Piece('KING', 'WHITE'),
+            57: Piece('BISHOP', 'WHITE'),
+            67: Piece('KNIGHT', 'WHITE'),
+            77: Piece('ROOK', 'WHITE'),
+        })
 
         for i in range(8):
-            self.pieces['wpawn' + str(i)] = Piece('PAWN', 'WHITE')
-            self.pieces['bpawn' + str(i)] = Piece('PAWN', 'BLACK')
+            self.board[10 * i + 1] = Piece('PAWN', 'BLACK')
+            self.board[10 * i + 6] = Piece('PAWN', 'WHITE')
+        #endregion
 
-        self.gamestate = {
-            0: 'brook1',
-            10: 'bknight1',
-            20: 'bbishop1',
-            30: 'bking',
-            40: 'bqueen',
-            50: 'bbishop2',
-            60: 'bknight2',
-            70: 'brook2',
-            7: 'wrook1',
-            17: 'wknight1',
-            27: 'wbishop1',
-            37: 'wking',
-            47: 'wqueen',
-            57: 'wbishop2',
-            67: 'wknight2',
-            77: 'wrook2',
-        }
-
-        for i in range(8):
-            self.gamestate[10 * i + 1] = f'bpawn{i}'
-            self.gamestate[10 * i + 6] = f'wpawn{i}'
-
-        self.gamestate = dict(
-            zip(self.gamestate.values(), self.gamestate.keys()))
-
-        self.board_ids = {}
-
+        #Board Assets Generation
+        offset = 4
+        off1 = 30
         for i in range(8):
             for j in range(8):
                 key = i * 10 + j
-                self.board_ids[key] = self.change_board(i, j)
-            '''self.canvas.create_text((value[0] + value[1]) // 2,
-                                    (value[2] + value[3]) // 2,
-                                    anchor=tk.CENTER,
-                                    text=str(key))'''
+                x1, y1, x2, y2 = Chess.grid_to_coords(i, j)
+                color = 'white' if (i + j) % 2 else 'black'
+
+                base = self.canvas.create_rectangle(x1,
+                                                    y1,
+                                                    x2,
+                                                    y2,
+                                                    fill=Chess.color[color],
+                                                    outline='',
+                                                    state='normal')
+
+                highlight_square = self.canvas.create_rectangle(
+                    x1 + offset,
+                    y1 + offset,
+                    x2 - offset,
+                    y2 - offset,
+                    fill=Chess.color['b' + color],
+                    outline='',
+                    state='hidden')
+
+                hint = self.canvas.create_oval(x1 + off1,
+                                               y1 + off1,
+                                               x2 - off1,
+                                               y2 - off1,
+                                               fill=Chess.color['hint'],
+                                               outline='',
+                                               state='hidden')
+
+                self.board_ids[key] = {
+                    'base': base,
+                    'button': highlight_square,
+                    'hint': hint,
+                }
 
     def initialize_images(self):
 
-        for key, value in self.gamestate.items():
-            if value == -1:
+        for key, value in self.board.items():
+            if value == None:
                 continue
-            x1, y1, x2, y2 = Chess.grid_to_coords(value // 10, value % 10)
-            '''Chess.images[self.pieces[key]] = self.canvas.create_image(
-                (x1 + x2) // 2, (y1 + y2) // 2,
-                anchor=tk.CENTER,
-                image=self.pieces[key].image)'''
+            self.board[key].createImage(self.canvas, key)
+            self.canvas.tag_raise(self.board[key].img_id)
 
-            self.pieces[key].cimage = self.canvas.create_image(
-                (x1 + x2) // 2, (y1 + y2) // 2,
-                anchor=tk.CENTER,
-                image=self.pieces[key].img_obj)
-            #self.canvas.tag_raise(self.pieces[])
+    def set(self, id: int, state: str, preserve_select=False):
+
+        color = 'white' if (id // 10 + id % 10) % 2 else 'black'
+        if state == 'normal':
+            if preserve_select and id == self.isClicked:
+                self.set(id, state='select')
+                return
+
+            color = Chess.color[color]
+            self.canvas.itemconfigure(self.board_ids[id]['button'],
+                                      state='hidden')
+            self.canvas.itemconfigure(self.board_ids[id]['base'], fill=color)
+
+        elif state == 'select':
+            color = Chess.color['s' + color]
+            self.canvas.itemconfigure(self.board_ids[id]['base'], fill=color)
+
+        elif state == 'button':
+            c1 = 'b' + color
+            c2 = color
+            if id == self.isClicked:
+                c1 = 's' + c1
+                c2 = 's' + c2
+
+            self.canvas.itemconfigure(self.board_ids[id]['button'],
+                                      state='normal',
+                                      fill=Chess.color[c2])
+            self.canvas.itemconfigure(self.board_ids[id]['base'],
+                                      fill=Chess.color[c1])
 
     def clicked(self, e):
         x, y = Chess.coords_to_grid(e.x, e.y)
+        k = 10 * x + y
         coord = self.isClicked
-        if self.isClicked:
-            self.board_ids[coord] = self.change_board(coord // 10, coord % 10)
-            self.isClicked = None
 
-        if (x * 10 + y) not in self.gamestate.values():
+        if k == coord:
+            self.secondClick = k
+        else:
+            self.secondClick = None
+            if coord != None:
+                self.set(coord, 'normal')
+                for i in self.board[coord].move(self):
+                    self.canvas.itemconfigure(self.board_ids[i]['hint'],
+                                              state='hidden')
+
+            if self.board[k] != None:
+                self.set(k, 'select')
+                self.isClicked = k
+                for i in self.board[k].move(self):
+                    self.canvas.itemconfigure(self.board_ids[i]['hint'],
+                                              state='normal')
+            else:
+                self.isClicked = None
+                return
+
+        #Selection mechanism
+        self.isHover = k
+        self.canvas.tag_raise(self.board[self.isClicked].img_id)
+        self.set(k, 'button')
+        self.move_obj(self.board[self.isClicked], e.x, e.y)
+
+    def released(self, e: tk.Event):
+        if self.isClicked == None:
             return
 
-        self.isClicked = x * 10 + y
-        self.canvas.delete(self.board_ids[x * 10 + y])
-        ref = dict(zip(self.gamestate.values(), self.gamestate.keys()))
-        key = ref[self.isClicked]
-        self.canvas.tag_raise(self.pieces[key].cimage)
-        self.move_obj(self.pieces[key], e.x, e.y)
-        self.board_ids[x * 10 + y] = self.change_board(x, y, select=True)
+        x1, y1, x2, y2 = Chess.grid_to_coords(self.isClicked)
+        self.move_obj(self.board[self.isClicked], (x1 + x2) // 2,
+                      (y1 + y2) // 2)
 
-    def released(self, e):
-        #print(e.x, e.y)
-        if not self.isClicked:
+        if self.secondClick != None:
+            if self.isHover == self.isClicked:
+                self.set(self.isHover, 'normal')
+                for i in self.board[self.isHover].move(self):
+                    self.canvas.itemconfigure(self.board_ids[i]['hint'],
+                                              state='hidden')
+
+                self.isClicked = None
+        else:
+            pass
+
+        self.set(self.isHover, 'normal', preserve_select=True)
+        self.isHover = None
+
+    def drag_piece(self, e: tk.Event):
+
+        if self.isClicked == None:
             return
 
-        x1, y1, x2, y2 = Chess.grid_to_coords(self.isClicked // 10,
-                                              self.isClicked % 10)
-
-        key = self.key(self.isClicked)
-        self.move_obj(self.pieces[key], (x1 + x2) // 2, (y1 + y2) // 2)
-
-    def drag_piece(self, e):
-
-        if not self.isClicked:
-            return
         x, y = self.coords_to_grid(e.x, e.y)
-        self.canvas.scale(self.board_ids[10 * x + y], 0.9, 0.9, 10, 10)
-        key = self.key(self.isClicked)
-        self.move_obj(self.pieces[key], e.x, e.y)
+        k = x * 10 + y
+
+        if self.isHover != (k):
+            if self.isHover != None:
+                self.set(self.isHover, 'normal', preserve_select=True)
+                self.set(k, 'button')
+
+            else:
+                self.set(k, 'button')
+
+            self.isHover = k
+
+        self.move_obj(self.board[self.isClicked], e.x, e.y)
 
     def move_obj(self, obj, x, y):
-        self.canvas.moveto(obj.cimage, x - obj.img_obj.width() // 2,
-                           y - obj.img_obj.height() // 2)
+        self.canvas.moveto(obj.img_id, x - obj.i.width() // 2,
+                           y - obj.i.height() // 2)
 
     @staticmethod
     def coords_to_grid(x, y):
         return (8 * x // (Chess.size), 8 * y // (Chess.size))
 
     @staticmethod
-    def grid_to_coords(x, y):
+    def grid_to_coords(*args):
+        if len(args) == 1:
+            x, y = args[0] // 10, args[0] % 10
+        elif len(args) == 2:
+            x, y = args[0], args[1]
+
         return (x * Chess.size // 8, y * Chess.size // 8,
                 (x + 1) * Chess.size // 8, (y + 1) * Chess.size // 8)
 
-    def change_board(self, x, y, select=False, button=False):
-        x1, y1, x2, y2 = Chess.grid_to_coords(x, y)
-        color = 'white' if (x + y) % 2 else 'black'
-        try:
-            self.canvas.delete(self.board_ids[x * 10 + y])
-        except KeyError:
-            pass
 
-        if not button:
-            if select:
-                c = Chess.color[f's{color}']
-            else:
-                c = Chess.color[f'{color}']
+class Piece:
 
-            rect = self.canvas.create_rectangle(x1,
-                                                y1,
-                                                x2,
-                                                y2,
-                                                outline='',
-                                                fill=c)
-            self.canvas.tag_lower(rect)
-            return rect
+    @staticmethod
+    def img(color: str, piece: str):
+        path = os.path.join('Chess_Assets', '128h')
+        size = int((Chess.size / 8) * 0.8)
+        i = (color[0] + '_' + piece + '_png_128px.png').lower()
+        p = os.path.join(path, i)
 
-    def key(self, grid):
-        ref = dict(zip(self.gamestate.values(), self.gamestate.keys()))
-        return ref[grid]
+        #print(size)
+        return ImageTk.PhotoImage(
+            ImageOps.expand(
+                Image.open(p).resize((size, size), Image.ANTIALIAS)))
+
+    def __init__(self, piece: str, color: str):
+        self.piece = piece
+        self.color = color
+        self.img_id = None
+
+    def createImage(self, canvas: tk.Canvas, key):
+        x1, y1, x2, y2 = Chess.grid_to_coords(key)
+        self.i = Piece.img(self.color,
+                           self.piece)  #Tkinter Garbage Collection is weird
+        self.img_id = canvas.create_image((x1 + x2) // 2, (y1 + y2) // 2,
+                                          anchor=tk.CENTER,
+                                          image=self.i)
+
+    def move(self, game: Chess) -> list:
+        self.potential_moves = []
+        k = game.isClicked
+        print(k)
+
+        if self.piece == 'KING':
+            self.potential_moves = [
+                k + 10, k + 11, k + 9, k - 10, k - 9, k - 11, k + 1, k - 1
+            ]
+            self.fix()
+
+        elif self.piece == 'KNIGHT':
+            self.potential_moves = [
+                k + 8, k - 8, k + 12, k - 12, k + 19, k - 19, k + 21, k - 21
+            ]
+            self.fix()
+
+        elif self.piece == 'PAWN':
+            sign = 1 if self.color == 'BLACK' else -1
+            self.potential_moves = [k + sign]
+            if k % 10 == 1:
+                self.potential_moves.append(k + 2)
+            elif k % 10 == 6:
+                self.potential_moves.append(k - 2)
+
+            with suppress(KeyError):
+                if game.board[k + sign + 10] != None and game.board[
+                        k + sign - 10].color != self.color:
+                    self.potential_moves.append(k + sign + 10)
+
+                if game.board[k + sign - 10] != None and game.board[
+                        k + sign - 10].color != self.color:
+                    self.potential_moves.append(k + sign - 10)
+
+            self.fix()
+
+        elif self.piece == 'QUEEN':
+            self.side(game)
+            self.diagonal(game)
+
+        elif self.piece == 'ROOK':
+            self.side(game)
+
+        elif self.piece == 'BISHOP':
+            self.diagonal(game)
+
+        else:
+            return Exception
+
+        return self.potential_moves
+
+    def side(self, game):
+        k = game.isClicked
+        x, y = k // 10, k % 10
+        for i in range(x - 1, -1, -1):
+            if game.board[i * 10 + y] != None:
+                if game.board[i * 10 + y].color != self.color:
+                    self.potential_moves.append(i * 10 + y)
+                break
+            self.potential_moves.append(i * 10 + y)
+
+        for i in range(x + 1, 8):
+            if game.board[i * 10 + y] != None:
+                if game.board[i * 10 + y].color != self.color:
+                    self.potential_moves.append(i * 10 + y)
+                break
+            self.potential_moves.append(i * 10 + y)
+
+        for i in range(y - 1, -1, -1):
+            if game.board[x + i] != None:
+                if game.board[x + i].color != self.color:
+                    self.potential_moves.append(x + i)
+                break
+            self.potential_moves.append(x + i)
+
+        for i in range(y + 1, 8):
+            print(x, y, i)
+            if game.board[x + i] != None:
+                if game.board[x + i].color != self.color:
+                    self.potential_moves.append(x + i)
+                break
+            self.potential_moves.append(x + i)
+
+    def diagonal(self, game):
+        k = game.isClicked
+        x, y = k // 10, k % 10
+        l = x if x < y else y
+        for i in range(1, l):
+            key = 10 * (x - i) + (y - i)
+            if game.board[key] != None:
+                if game.board[key].color != self.color:
+                    self.potential_moves.append(key)
+                break
+            self.potential_moves.append(key)
+
+        l = (8 - x) if (8 - x) < y else y
+        for i in range(1, l):
+            key = 10 * (x + i) + (y - i)
+            if game.board[key] != None:
+                if game.board[key].color != self.color:
+                    self.potential_moves.append(key)
+                break
+            self.potential_moves.append(key)
+
+        l = x if x < (8 - y) else (8 - y)
+        for i in range(1, l):
+            key = 10 * (x - i) + (y + i)
+            if game.board[key] != None:
+                if game.board[key].color != self.color:
+                    self.potential_moves.append(key)
+                break
+            self.potential_moves.append(key)
+
+        l = (8 - x) if (8 - x) < (8 - y) else (8 - y)
+        for i in range(1, l):
+            key = 10 * (x + i) + (y + i)
+            if game.board[key] != None:
+                if game.board[key].color != self.color:
+                    self.potential_moves.append(key)
+                break
+            self.potential_moves.append(key)
+
+    def fix(self):
+        m = []
+        for i in self.potential_moves:
+            if (0 <= i // 10 < 8) and (0 <= i % 10 < 8):
+                m.append(i)
+        self.potential_moves = m
+        #PAIN AND SUFFERING HELP ME
 
 
 if __name__ == '__main__':
