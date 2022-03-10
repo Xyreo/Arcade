@@ -2,7 +2,6 @@ import tkinter as tk
 import os
 import copy
 from PIL import ImageOps, Image, ImageTk
-from pygments import highlight
 
 
 class Piece:
@@ -41,8 +40,8 @@ class Chess(tk.Tk):
         'swhite': '#baca2b',
         'sbwhite': '#fcfccb',
         'sbblack': '#e7edb5',
-        'bwhite': '#f9f9ef',
-        'bblack': '#cfdac4',
+        'bwhite': '#cfdac4',
+        'bblack': '#f9f9ef',
     }
     size = None
 
@@ -55,6 +54,8 @@ class Chess(tk.Tk):
         self.initialize_board()
         self.initialize_images()
         self.isClicked = None
+        self.isHover = None
+        self.secondClick = None  #Purely for cosmetics
 
     def initialize_canvas(self):
         Chess.size = self.winfo_screenheight() * 4 // 5
@@ -106,7 +107,7 @@ class Chess(tk.Tk):
         #endregion
 
         #Board Assets Generation
-        offset = 5
+        offset = 4
         for i in range(8):
             for j in range(8):
                 key = i * 10 + j
@@ -143,59 +144,98 @@ class Chess(tk.Tk):
             self.board[key].createImage(self.canvas, key)
             self.canvas.tag_raise(self.board[key].img_id)
 
-    def set(self, id, state):
+    def set(self, id, state, preserve_select=False):
 
         color = 'white' if (id // 10 + id % 10) % 2 else 'black'
         if state == 'normal':
+            if preserve_select and id == self.isClicked:
+                self.set(id, state='select')
+                return
+
             color = Chess.color[color]
+            self.canvas.itemconfigure(self.board_ids[id]['button'],
+                                      state='hidden')
+            self.canvas.itemconfigure(self.board_ids[id]['base'], fill=color)
+
         elif state == 'select':
             color = Chess.color['s' + color]
+            self.canvas.itemconfigure(self.board_ids[id]['base'], fill=color)
 
-        self.canvas.itemconfigure(self.board_ids[id]['base'], fill=color)
+        elif state == 'button':
+            c1 = 'b' + color
+            c2 = color
+            if id == self.isClicked:
+                c1 = 's' + c1
+                c2 = 's' + c2
+
+            self.canvas.itemconfigure(self.board_ids[id]['button'],
+                                      state='normal',
+                                      fill=Chess.color[c2])
+            self.canvas.itemconfigure(self.board_ids[id]['base'],
+                                      fill=Chess.color[c1])
 
     def clicked(self, e):
         x, y = Chess.coords_to_grid(e.x, e.y)
         k = 10 * x + y
         coord = self.isClicked
-        square = self.board_ids
 
         if k == coord:
-            pass
-        elif coord != None:
-            self.set(coord, 'normal')
+            self.secondClick = k
+        else:
+            self.secondClick = None
+            if coord != None:
+                self.set(coord, 'normal')
 
-        #Mechanism to unselect previously selected square
-        if coord != None:
-            self.set(coord, 'normal')
-
-        #Check for whether or not to select current square
-        if (not self.board[k]):
-            self.isClicked = None
-            return
+            if self.board[k] != None:
+                self.set(k, 'select')
+                self.isClicked = k
+            else:
+                self.isClicked = None
+                return
 
         #Selection mechanism
-        self.set(k, 'select')
-        self.isClicked = k
-        ''' self.canvas.tag_raise(self.pieces[key].cimage)
-        self.move_obj(self.pieces[key], e.x, e.y)
-        self.board_ids[x * 10 + y] = self.change_board(x, y, select=True)'''
+        self.isHover = k
+        self.canvas.tag_raise(self.board[self.isClicked].img_id)
+        self.set(k, 'button')
+        self.move_obj(self.board[self.isClicked], e.x, e.y)
 
     def released(self, e):
         #print(e.x, e.y)
-        if not self.isClicked:
+        if self.isClicked == None:
             return
 
         x1, y1, x2, y2 = Chess.grid_to_coords(self.isClicked)
-
         self.move_obj(self.board[self.isClicked], (x1 + x2) // 2,
                       (y1 + y2) // 2)
 
+        if self.secondClick != None:
+            if self.isHover == self.isClicked:
+                self.isClicked = None
+                self.set(self.isHover, 'normal')
+        else:
+            pass
+
+        self.set(self.isHover, 'normal', preserve_select=True)
+        self.isHover = None
+
     def drag_piece(self, e):
 
-        if not self.isClicked:
+        if self.isClicked == None:
             return
 
         x, y = self.coords_to_grid(e.x, e.y)
+        k = x * 10 + y
+
+        if self.isHover != (k):
+            if self.isHover != None:
+                self.set(self.isHover, 'normal', preserve_select=True)
+                self.set(k, 'button')
+
+            else:
+                self.set(k, 'button')
+
+            self.isHover = k
+
         self.move_obj(self.board[self.isClicked], e.x, e.y)
 
     def move_obj(self, obj, x, y):
