@@ -1,35 +1,9 @@
+from contextlib import suppress
+from selectors import EpollSelector
 import tkinter as tk
 import os
 import copy
 from PIL import ImageOps, Image, ImageTk
-
-
-class Piece:
-
-    @staticmethod
-    def img(color, piece):
-        path = os.path.join('Chess_Assets', '128h')
-        size = int((Chess.size / 8) * 0.8)
-        i = (color[0] + '_' + piece + '_png_128px.png').lower()
-        p = os.path.join(path, i)
-
-        #print(size)
-        return ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(p).resize((size, size), Image.ANTIALIAS)))
-
-    def __init__(self, piece, color):
-        self.piece = piece
-        self.color = color
-        self.img_id = None
-
-    def createImage(self, canvas, key):
-        x1, y1, x2, y2 = Chess.grid_to_coords(key)
-        self.i = Piece.img(self.color,
-                           self.piece)  #Tkinter Garbage Collection is weird
-        self.img_id = canvas.create_image((x1 + x2) // 2, (y1 + y2) // 2,
-                                          anchor=tk.CENTER,
-                                          image=self.i)
 
 
 class Chess(tk.Tk):
@@ -56,6 +30,7 @@ class Chess(tk.Tk):
         self.isClicked = None
         self.isHover = None
         self.secondClick = None  #Purely for cosmetics
+        self.possible_moves = []
 
     def initialize_canvas(self):
         Chess.size = self.winfo_screenheight() * 4 // 5
@@ -144,7 +119,7 @@ class Chess(tk.Tk):
             self.board[key].createImage(self.canvas, key)
             self.canvas.tag_raise(self.board[key].img_id)
 
-    def set(self, id, state, preserve_select=False):
+    def set(self, id: int, state: str, preserve_select=False):
 
         color = 'white' if (id // 10 + id % 10) % 2 else 'black'
         if state == 'normal':
@@ -199,8 +174,8 @@ class Chess(tk.Tk):
         self.set(k, 'button')
         self.move_obj(self.board[self.isClicked], e.x, e.y)
 
-    def released(self, e):
-        #print(e.x, e.y)
+    def released(self, e: tk.Event):
+        print(e.x, e.y)
         if self.isClicked == None:
             return
 
@@ -218,7 +193,7 @@ class Chess(tk.Tk):
         self.set(self.isHover, 'normal', preserve_select=True)
         self.isHover = None
 
-    def drag_piece(self, e):
+    def drag_piece(self, e: tk.Event):
 
         if self.isClicked == None:
             return
@@ -260,3 +235,156 @@ class Chess(tk.Tk):
 if __name__ == '__main__':
     app = Chess()
     app.mainloop()
+
+
+class Piece:
+
+    @staticmethod
+    def img(color: str, piece: str):
+        path = os.path.join('Chess_Assets', '128h')
+        size = int((Chess.size / 8) * 0.8)
+        i = (color[0] + '_' + piece + '_png_128px.png').lower()
+        p = os.path.join(path, i)
+
+        #print(size)
+        return ImageTk.PhotoImage(
+            ImageOps.expand(
+                Image.open(p).resize((size, size), Image.ANTIALIAS)))
+
+    def __init__(self, piece: str, color: str):
+        self.piece = piece
+        self.color = color
+        self.img_id = None
+
+    def createImage(self, canvas: tk.Canvas, key):
+        x1, y1, x2, y2 = Chess.grid_to_coords(key)
+        self.i = Piece.img(self.color,
+                           self.piece)  #Tkinter Garbage Collection is weird
+        self.img_id = canvas.create_image((x1 + x2) // 2, (y1 + y2) // 2,
+                                          anchor=tk.CENTER,
+                                          image=self.i)
+
+    def move(self, game: Chess) -> list:
+        moves = []
+        k = game.isClicked
+        x, y = k // 10, k % 10
+
+        def side():
+            for i in range(x - 1, -1, -1):
+                if game.board[i * 10 + y] != None:
+                    if game.board[i * 10 + y].color != self.color:
+                        moves.append(i * 10 + y)
+                    break
+                moves.append(i * 10 + y)
+
+            for i in range(x + 1, 9):
+                if game.board[i * 10 + y] != None:
+                    if game.board[i * 10 + y].color != self.color:
+                        moves.append(i * 10 + y)
+                    break
+                moves.append(i * 10 + y)
+
+            for i in range(y - 1, -1, -1):
+                if game.board[x + i] != None:
+                    if game.board[x + i].color != self.color:
+                        moves.append(x + i)
+                    break
+                moves.append(x + i)
+
+            for i in range(y + 1, 9):
+                if game.board[x + i] != None:
+                    if game.board[x + i].color != self.color:
+                        moves.append(x + i)
+                    break
+                moves.append(x + i)
+
+        def diagonal():
+            l = x if x < y else y
+            for i in range(1, l + 1):
+                key = 10 * (x - i) + (y - i)
+                if game.board[key] != None:
+                    if game.board[key].color != self.color:
+                        moves.append(key)
+                    break
+                moves.append(key)
+
+            l = (8 - x) if (8 - x) < y else y
+            for i in range(1, l + 1):
+                key = 10 * (x + i) + (y - i)
+                if game.board[key] != None:
+                    if game.board[key].color != self.color:
+                        moves.append(key)
+                    break
+                moves.append(key)
+
+            l = x if x < (8 - y) else (8 - y)
+            for i in range(1, l + 1):
+                key = 10 * (x - i) + (y + i)
+                if game.board[key] != None:
+                    if game.board[key].color != self.color:
+                        moves.append(key)
+                    break
+                moves.append(key)
+
+            l = (8 - x) if (8 - x) < (8 - y) else (8 - y)
+            for i in range(1, l + 1):
+                key = 10 * (x + i) + (y + i)
+                if game.board[key] != None:
+                    if game.board[key].color != self.color:
+                        moves.append(key)
+                    break
+                moves.append(key)
+
+        def fix():
+            m = []
+            for i in moves:
+                if (0 <= moves // 10 < 8) and (0 <= moves % 10 < 8):
+                    m.append(i)
+            moves = m
+            #PAIN AND SUFFERING HELP ME
+
+        if self.piece == 'KING':
+            moves = [
+                k + 10, k + 11, k + 9, k - 10, k - 9, k - 11, k + 1, k - 1
+            ]
+            fix()
+
+        elif self.piece == 'KNIGHT':
+            moves = [
+                k + 8, k - 8, k + 12, k - 12, k + 19, k - 19, k + 21, k - 21
+            ]
+            fix()
+
+        elif self.piece == 'PAWN':
+            sign = 1 if self.color == 'BLACK' else -1
+            moves = [k + sign]
+            if k % 10 == 1:
+                moves.append[k + 2]
+            elif k % 10 == 6:
+                moves.append[k - 2]
+
+            with suppress(KeyError):
+                if game.board[k + sign + 10] != None and game.board[
+                        k + sign - 10].color != self.color:
+                    moves.append(k + sign + 10)
+
+                if game.board[k + sign - 10] != None and game.board[
+                        k + sign - 10].color != self.color:
+                    moves.append(k + sign - 10)
+
+            fix()
+
+        elif self.piece == 'QUEEN':
+            side()
+            diagonal()
+
+        elif self.piece == 'ROOK':
+            side()
+
+        elif self.piece == 'BISHOP':
+            diagonal()
+
+        else:
+            return Exception
+
+        return moves
