@@ -22,15 +22,13 @@ class Chess(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.board = {}
-        self.board_ids = {}
+        self.board: dict = {}
+        self.board_ids: dict = {}
+        self.possible_moves: list = []
+        self.gamestate = Gamestate(self)
         self.initialize_canvas()
         self.initialize_board()
         self.initialize_images()
-        self.isClicked = None
-        self.isHover = None
-        self.secondClick = None  #Purely for cosmetics
-        self.possible_moves = []
 
     def initialize_canvas(self):
         Chess.size = self.winfo_screenheight() * 4 // 5
@@ -44,6 +42,7 @@ class Chess(tk.Tk):
             height=Chess.size,
             width=Chess.size)
         self.canvas.pack()
+
         self.canvas.bind('<Button-1>', self.clicked)
         self.canvas.bind('<B1-Motion>', self.drag_piece)
         self.canvas.bind('<ButtonRelease-1>', self.released)
@@ -133,7 +132,7 @@ class Chess(tk.Tk):
 
         color = 'white' if (id // 10 + id % 10) % 2 else 'black'
         if state == 'normal':
-            if preserve_select and id == self.isClicked:
+            if preserve_select and id == self.gamestate.selected:
                 self.set(id, state='select')
                 return
 
@@ -149,7 +148,7 @@ class Chess(tk.Tk):
         elif state == 'button':
             c1 = 'b' + color
             c2 = color
-            if id == self.isClicked:
+            if id == self.gamestate.selected:
                 c1 = 's' + c1
                 c2 = 's' + c2
 
@@ -160,81 +159,102 @@ class Chess(tk.Tk):
                                       fill=Chess.color[c1])
 
     def clicked(self, e):
+        self.gamestate.describe()
         x, y = Chess.coords_to_grid(e.x, e.y)
         k = 10 * x + y
-        coord = self.isClicked
+        self.gamestate.update_click(k)
+        self.gamestate.describe()
+        print('-' * 40)
 
-        if k == coord:
-            self.secondClick = k
-        else:
-            self.secondClick = None
-            if coord != None:
-                self.set(coord, 'normal')
-                for i in self.board[coord].move(self):
-                    self.canvas.itemconfigure(self.board_ids[i]['hint'],
-                                              state='hidden')
+        if self.gamestate.state == 'Nothing':
+            if self.gamestate.selected != None:
+                self.unselect()
 
-            if self.board[k] != None:
-                self.set(k, 'select')
-                self.isClicked = k
-                for i in self.board[k].move(self):
-                    self.canvas.itemconfigure(self.board_ids[i]['hint'],
-                                              state='normal')
-            else:
-                self.isClicked = None
-                return
-
-        #Selection mechanism
-        self.isHover = k
-        self.canvas.tag_raise(self.board[self.isClicked].img_id)
-        self.set(k, 'button')
-        self.move_obj(self.board[self.isClicked], e.x, e.y)
-
-    def released(self, e: tk.Event):
-        if self.isClicked == None:
-            return
-
-        x1, y1, x2, y2 = Chess.grid_to_coords(self.isClicked)
-        self.move_obj(self.board[self.isClicked], (x1 + x2) // 2,
-                      (y1 + y2) // 2)
-
-        if self.secondClick != None:
-            if self.isHover == self.isClicked:
-                self.set(self.isHover, 'normal')
-                for i in self.board[self.isHover].move(self):
-                    self.canvas.itemconfigure(self.board_ids[i]['hint'],
-                                              state='hidden')
-
-                self.isClicked = None
-        else:
+        elif self.gamestate.state == 'Move':
             pass
 
-        self.set(self.isHover, 'normal', preserve_select=True)
-        self.isHover = None
+        elif self.gamestate.state == 'PieceSelected':
+            if self.gamestate.selected != k:
+                if self.gamestate.selected != None:
+                    self.unselect()
+                self.gamestate.selected = k
+                self.set(k, 'select')
+                self.set(k, 'button')
+
+            self.canvas.tag_raise(self.board[k].img_id)
+            self.move_obj(self.board[k], e.x, e.y)
+
+    def released(self, e: tk.Event):
+
+        if self.gamestate.state == 'Nothing':
+            return
+
+        elif self.gamestate.state == 'PieceSelected':
+            k = self.gamestate.selected
+            x1, y1, x2, y2 = Chess.grid_to_coords(k)
+            game: Gamestate = self.gamestate
+
+            if game.old_selected == game.selected:
+
+                if game.hover == None:
+                    self.set(self.gamestate.selected,
+                             'normal',
+                             preserve_select=True)
+                    self.gamestate.old_selected = None
+                    self.unselect()
+                    self.gamestate.selected = None
+
+                elif game.hover == game.selected:
+                    self.gamestate.old_selected = None
+                    self.unselect()
+                    self.gamestate.selected = None
+
+                elif game.hover in self.possible_moves:
+                    pass
+
+                else:
+                    pass
+            else:
+                pass
+
+            self.move_obj(self.board[k], (x1 + x2) // 2, (y1 + y2) // 2)
+
+        elif self.gamestate.state == 'Move':
+            pass
+        if self.gamestate.hover != None:
+            self.set(self.gamestate.hover, 'normal', preserve_select=True)
+            self.gamestate.hover = None
+
+        self.gamestate.old_selected = self.gamestate.selected
+        self.gamestate.state = 'Nothing'
+        self.gamestate.old_hover = None
 
     def drag_piece(self, e: tk.Event):
 
-        if self.isClicked == None:
+        if self.gamestate.state == 'Nothing':
             return
 
         x, y = self.coords_to_grid(e.x, e.y)
         k = x * 10 + y
+        self.gamestate.hover = k
 
-        if self.isHover != (k):
-            if self.isHover != None:
-                self.set(self.isHover, 'normal', preserve_select=True)
-                self.set(k, 'button')
+        if self.gamestate.hover != self.gamestate.old_hover:
+            if self.gamestate.hover != None and self.gamestate.old_hover != None:
+                #TODO Switchero
+                self.set(self.gamestate.old_hover,
+                         'normal',
+                         preserve_select=True)
+            self.gamestate.old_hover = self.gamestate.hover
+            self.set(self.gamestate.hover, 'button')
 
-            else:
-                self.set(k, 'button')
-
-            self.isHover = k
-
-        self.move_obj(self.board[self.isClicked], e.x, e.y)
+        self.move_obj(self.board[self.gamestate.selected], e.x, e.y)
 
     def move_obj(self, obj, x, y):
         self.canvas.moveto(obj.img_id, x - obj.i.width() // 2,
                            y - obj.i.height() // 2)
+
+    def unselect(self):
+        self.set(self.gamestate.selected, 'normal')
 
     @staticmethod
     def coords_to_grid(x, y):
@@ -249,6 +269,40 @@ class Chess(tk.Tk):
 
         return (x * Chess.size // 8, y * Chess.size // 8,
                 (x + 1) * Chess.size // 8, (y + 1) * Chess.size // 8)
+
+
+class Gamestate:
+
+    def __init__(self, game: Chess) -> None:
+        self.game: Chess = game
+        self.selected: int = None
+        self.hover: int = None
+        self.state: str = ''
+        self.old_selected = None
+        self.old_hover = None
+
+    def update_click(self, key: int) -> None:
+
+        if self.game.board[key] == None:
+            pass
+
+        elif key in self.game.possible_moves:
+            self.state = 'Move'
+
+        else:
+            self.state = 'PieceSelected'
+
+    def update_release(self, key: int):
+        self.state = ''
+
+    def describe(self):  #Sanity has abandoed me
+        '''print('State: ', self.state)
+        print('Selected: ', self.selected)
+        print('Hover: ', self.hover)
+        print('Old Selected: ', self.old_selected)
+        print('Old Hover: ', self.old_hover)
+        print()'''
+        pass
 
 
 class Piece:
