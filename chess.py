@@ -170,10 +170,7 @@ class Chess(tk.Tk):
                 self.canvas.itemconfigure(self.board_ids[i]["hint"], state="hidden")
             self.possible_moves = []
 
-        print(self.possible_moves)
-
     def move(self, k, snap=False):
-        print("MOVEEE")
         update_dict = {k: self.board[self.selected], self.selected: None}
         self.board.update(update_dict)
         self.display_moves(False)
@@ -193,7 +190,6 @@ class Chess(tk.Tk):
         t = 0.05
         fps = 60
         n = int(t * fps)
-        print(t / n)
         for i in range(1, n + 1):
             start = int(x + (i / n) * x1)
             end = int(y + (i / n) * y1)
@@ -447,18 +443,18 @@ class Piece:
             self.moves.append(i * 10 + y)
 
         for i in range(y - 1, -1, -1):
-            if board[x + i] != None:
-                if board[x + i].color != self.color:
-                    self.moves.append(x + i)
+            if board[10 * x + i] != None:
+                if board[10 * x + i].color != self.color:
+                    self.moves.append(10 * x + i)
                 break
-            self.moves.append(x + i)
+            self.moves.append(10 * x + i)
 
         for i in range(y + 1, 8):
-            if board[x + i] != None:
-                if board[x + i].color != self.color:
-                    self.moves.append(x + i)
+            if board[10 * x + i] != None:
+                if board[10 * x + i].color != self.color:
+                    self.moves.append(10 * x + i)
                 break
-            self.moves.append(x + i)
+            self.moves.append(10 * x + i)
 
     def diagonal(self, context: tuple):
 
