@@ -195,13 +195,9 @@ class Chess(tk.Tk):
             game: Gamestate = self.gamestate
 
             if game.old_selected == game.selected:
-
                 if game.hover == None:
-                    self.set(self.gamestate.selected,
-                             'normal',
-                             preserve_select=True)
-                    self.gamestate.old_selected = None
                     self.unselect()
+                    self.gamestate.old_selected = None
                     self.gamestate.selected = None
 
                 elif game.hover == game.selected:
@@ -214,8 +210,18 @@ class Chess(tk.Tk):
 
                 else:
                     pass
+
             else:
-                pass
+                if game.hover == None:
+                    self.set(self.gamestate.selected,
+                             'normal',
+                             preserve_select=True)
+
+                elif game.hover in self.possible_moves:
+                    pass
+
+                else:
+                    pass
 
             self.move_obj(self.board[k], (x1 + x2) // 2, (y1 + y2) // 2)
 
