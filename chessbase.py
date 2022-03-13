@@ -179,7 +179,6 @@ class Chess(tk.Tk):
             self.possible_moves = self.board[self.selected].generate_moves()
 
             for i in self.possible_moves:
-                print(self.board_ids[i]["hint"])
                 if self.board[i] != None:
                     self.imgs[i] = ImageTk.PhotoImage(
                         ImageOps.expand(
@@ -387,7 +386,6 @@ class Piece:
         i = (color[0] + "_" + piece + "_png_128px.png").lower()
         p = os.path.join(path, i)
 
-        # print(size)
         return ImageTk.PhotoImage(
             ImageOps.expand(Image.open(p).resize((size, size), Image.ANTIALIAS))
         )
@@ -411,11 +409,13 @@ class Piece:
             board: dict[int, Piece] = self.game.board
             k = self.game.selected
             piece = board[k].piece
+            color = self.color
 
         else:
             k = context[0]
             board: dict[int, Piece] = context[1]
             piece = board[k].piece
+            color = board[k].color
 
         if piece == "KING":
             self.moves = [k + 10, k + 11, k + 9, k - 10, k - 9, k - 11, k + 1, k - 1]
@@ -424,24 +424,26 @@ class Piece:
             self.moves = [k + 8, k - 8, k + 12, k - 12, k + 19, k - 19, k + 21, k - 21]
 
         elif piece == "PAWN":
-            sign = 1 if self.color == "BLACK" else -1
-            self.moves = [k + sign]
-            if k % 10 == 1:
+            sign = 1 if color == "BLACK" else -1
+            if board[k + sign] == None:
+                self.moves = [k + sign]
+
+            if k % 10 == 1 and board[k + 1] == None:
                 self.moves.append(k + 2)
-            elif k % 10 == 6:
+            elif k % 10 == 6 and board[k - 1] == None:
                 self.moves.append(k - 2)
 
             if (
                 (k + sign + 10) in board.keys()
                 and board[k + sign + 10] != None
-                and board[k + sign + 10].color != self.color
+                and board[k + sign + 10].color != color
             ):
                 self.moves.append(k + sign + 10)
 
             if (
                 (k + sign - 10) in board.keys()
                 and board[k + sign - 10] != None
-                and board[k + sign - 10].color != self.color
+                and board[k + sign - 10].color != color
             ):
                 self.moves.append(k + sign - 10)
 
@@ -465,37 +467,39 @@ class Piece:
         if context[0] == None:
             board: dict = self.game.board
             k = self.game.selected
-            # print(k)
+            color = self.color
+
         else:
             k = context[0]
             board: dict = context[1]
+            color = board[k].color
 
         x, y = k // 10, k % 10
 
         for i in range(x - 1, -1, -1):
             if board[i * 10 + y] != None:
-                if board[i * 10 + y].color != self.color:
+                if board[i * 10 + y].color != color:
                     self.moves.append(i * 10 + y)
                 break
             self.moves.append(i * 10 + y)
 
         for i in range(x + 1, 8):
             if board[i * 10 + y] != None:
-                if board[i * 10 + y].color != self.color:
+                if board[i * 10 + y].color != color:
                     self.moves.append(i * 10 + y)
                 break
             self.moves.append(i * 10 + y)
 
         for i in range(y - 1, -1, -1):
             if board[10 * x + i] != None:
-                if board[10 * x + i].color != self.color:
+                if board[10 * x + i].color != color:
                     self.moves.append(10 * x + i)
                 break
             self.moves.append(10 * x + i)
 
         for i in range(y + 1, 8):
             if board[10 * x + i] != None:
-                if board[10 * x + i].color != self.color:
+                if board[10 * x + i].color != color:
                     self.moves.append(10 * x + i)
                 break
             self.moves.append(10 * x + i)
@@ -505,19 +509,19 @@ class Piece:
         if context[0] == None:
             board: dict = self.game.board
             k = self.game.selected
-            # print(k)
+            color = self.color
         else:
             k = context[0]
             board: dict = context[1]
+            color = board[k].color
 
         x, y = k // 10, k % 10
 
         l = x if x < y else y
-        print(x, y, l)
         for i in range(1, l + 1):
             key = 10 * (x - i) + (y - i)
             if board[key] != None:
-                if board[key].color != self.color:
+                if board[key].color != color:
                     self.moves.append(key)
                 break
             self.moves.append(key)
@@ -526,7 +530,7 @@ class Piece:
         for i in range(1, l + 1):
             key = 10 * (x + i) + (y - i)
             if board[key] != None:
-                if board[key].color != self.color:
+                if board[key].color != color:
                     self.moves.append(key)
                 break
             self.moves.append(key)
@@ -535,7 +539,7 @@ class Piece:
         for i in range(1, l + 1):
             key = 10 * (x - i) + (y + i)
             if board[key] != None:
-                if board[key].color != self.color:
+                if board[key].color != color:
                     self.moves.append(key)
                 break
             self.moves.append(key)
@@ -544,7 +548,7 @@ class Piece:
         for i in range(1, l + 1):
             key = 10 * (x + i) + (y + i)
             if board[key] != None:
-                if board[key].color != self.color:
+                if board[key].color != color:
                     self.moves.append(key)
                 break
             self.moves.append(key)
@@ -563,16 +567,18 @@ class Piece:
         for i in self.moves:
             if i in board.keys() and (board[i] == None or board[i].color != color):
 
-                if context[0] == None:
+                if context[0] != None:
                     moves.append(i)
                     continue
 
-                b = copy.deepcopy(self.game.board)
-                b[i] = b[self.game.clicked]
-                b[self.game.clicked] = None
+                b = dict(zip(board.keys(), board.values()))
+                b[i] = b[self.game.selected]
+                b[self.game.selected] = None
                 m = []
+                # At this point, b has assumed the move has been played.
                 for j in b.keys():
                     if b[j] != None and b[j].color != self.color:
+
                         m.extend(self.generate_moves((j, b)))
 
                 for j in board.keys():
