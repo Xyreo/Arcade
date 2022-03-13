@@ -1,9 +1,9 @@
-from contextlib import suppress
 import tkinter as tk
-import os
-import copy
-from tkinter.messagebox import NO
+from tkinter.font import NORMAL
 from PIL import ImageOps, Image, ImageTk
+import threading, time, copy, os
+
+from pygame import HIDDEN
 
 
 class Chess(tk.Tk):
@@ -23,8 +23,9 @@ class Chess(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.board: dict = {}
+        self.board: dict[int, Piece] = {}
         self.board_ids: dict = {}
+        self.imgs: dict = {}  # TKINTER SUCKS
         self.possible_moves: list = []
         self.initialize_canvas()
         self.initialize_board()
@@ -89,7 +90,7 @@ class Chess(tk.Tk):
 
         # Board Assets Generation
         offset = 4
-        off1 = 30
+        off1 = 32
         for i in range(8):
             for j in range(8):
                 key = i * 10 + j
@@ -109,17 +110,24 @@ class Chess(tk.Tk):
                     outline="",
                     state="hidden",
                 )
-
-                hint = self.canvas.create_oval(
-                    x1 + off1,
-                    y1 + off1,
-                    x2 - off1,
-                    y2 - off1,
-                    fill=Chess.color["hint"],
-                    outline="",
+                s = os.path.join("Chess_Assets", "circle.png")
+                self.imgs[key] = ImageTk.PhotoImage(
+                    ImageOps.expand(
+                        Image.open(s).resize(
+                            (Chess.size // (8 * 4), Chess.size // (8 * 4)),
+                            Image.ANTIALIAS,
+                        )
+                    )
+                )
+                hint = self.canvas.create_image(
+                    (x1 + x2) // 2,
+                    (y1 + y2) // 2,
+                    image=self.imgs[key],
+                    anchor=tk.CENTER,
                     state="hidden",
                 )
 
+                self.canvas.tag_raise(self.imgs[key])
                 self.board_ids[key] = {
                     "base": base,
                     "button": highlight_square,
@@ -162,19 +170,82 @@ class Chess(tk.Tk):
             )
             self.canvas.itemconfigure(self.board_ids[id]["base"], fill=Chess.color[c1])
 
-    def display_moves(self, show: bool):
+        elif state == "eat":
+            pass
 
-        pass
+    def display_moves(self, show: bool = True):
+
+        if show:
+            self.possible_moves = self.board[self.selected].generate_moves()
+
+            for i in self.possible_moves:
+                print(self.board_ids[i]["hint"])
+                if self.board[i] != None:
+                    self.imgs[i] = ImageTk.PhotoImage(
+                        ImageOps.expand(
+                            Image.open(
+                                os.path.join("Chess_Assets", "circle.png")
+                            ).resize(
+                                (Chess.size // (8), Chess.size // (8)),
+                                Image.ANTIALIAS,
+                            )
+                        )
+                    )
+                    self.canvas.itemconfigure(
+                        self.board_ids[i]["hint"], image=self.imgs[i]
+                    )
+
+                self.canvas.itemconfigure(self.board_ids[i]["hint"], state=tk.NORMAL)
+        else:
+            for i in self.possible_moves:
+                self.imgs[i] = ImageTk.PhotoImage(
+                    ImageOps.expand(
+                        Image.open(os.path.join("Chess_Assets", "circle.png")).resize(
+                            (Chess.size // (8 * 4), Chess.size // (8 * 4)),
+                            Image.ANTIALIAS,
+                        )
+                    )
+                )
+                self.canvas.itemconfigure(self.board_ids[i]["hint"], image=self.imgs[i])
+                self.canvas.itemconfigure(self.board_ids[i]["hint"], state=tk.HIDDEN)
+            self.possible_moves = []
+
+    def move(self, k, snap=False):
+        update_dict = {k: self.board[self.selected], self.selected: None}
+        self.board.update(update_dict)
+        self.display_moves(False)
+        if snap:
+            x1, y1, x2, y2 = Chess.grid_to_coords(k)
+            self.move_obj(self.board[k], (x1 + x2) // 2, (y1 + y2) // 2)
+        else:
+            thr = threading.Thread(target=self.moveanimation, args=(self.selected, k))
+            thr.start()
+
+    def moveanimation(self, s, e):
+        x1, y1, x2, y2 = Chess.grid_to_coords(s)
+        x, y = (x1 + x2) // 2, (y1 + y2) // 2
+        ex1, ey1, ex2, ey2 = Chess.grid_to_coords(e)
+        x1, y1 = (ex1 + ex2) // 2 - x, (ey1 + ey2) // 2 - y
+
+        t = 0.05
+        fps = 60
+        n = int(t * fps)
+        for i in range(1, n + 1):
+            start = int(x + (i / n) * x1)
+            end = int(y + (i / n) * y1)
+            time.sleep(t / n)
+            self.move_obj(self.board[e], start, end)
 
     def clicked(self, e):
         x, y = Chess.coords_to_grid(e.x, e.y)
         k = 10 * x + y
 
-        if self.board[k] == None:  # or self.board[k].color == 'WHITE':
-            pass
-
-        elif k in self.possible_moves:
+        if k in self.possible_moves:
+            self.move(k)
             self.state = "Move"
+
+        elif self.board[k] == None:  # or self.board[k].color == 'WHITE':
+            pass
 
         else:
             self.state = "PieceSelected"
@@ -186,15 +257,14 @@ class Chess(tk.Tk):
                 self.unselect()
                 self.display_moves(False)
 
-        elif self.state == "Move":
-            pass
-
         elif self.state == "PieceSelected":
             if self.selected != k:
                 if self.selected != None:
                     self.unselect()
                     self.display_moves(False)
+
                 self.selected = k
+                self.display_moves()
                 self.set(k, "select")
                 self.set(k, "button")
 
@@ -202,7 +272,7 @@ class Chess(tk.Tk):
             self.move_obj(self.board[k], e.x, e.y)
 
     def released(self, e: tk.Event):
-
+        didMove = False
         if self.state == "Nothing":
             return
 
@@ -224,7 +294,8 @@ class Chess(tk.Tk):
                     self.selected = None
 
                 elif self.hover in self.possible_moves:
-                    pass
+                    self.move(self.hover, True)
+                    didMove = True
 
                 else:
                     pass
@@ -234,12 +305,13 @@ class Chess(tk.Tk):
                     self.set(self.selected, "normal", preserve_select=True)
 
                 elif self.hover in self.possible_moves:
-                    pass
+                    self.move(self.hover, True)
+                    didMove = True
 
                 else:
                     pass
-
-            self.move_obj(self.board[k], (x1 + x2) // 2, (y1 + y2) // 2)
+            if not didMove:
+                self.move_obj(self.board[k], (x1 + x2) // 2, (y1 + y2) // 2)
 
         elif self.state == "Move":
             pass
@@ -253,8 +325,7 @@ class Chess(tk.Tk):
         self.old_hover = None
 
     def drag_piece(self, e: tk.Event):
-
-        if self.state == "Nothing":
+        if self.state == "Nothing" or self.state == "Move":
             return
 
         x, y = self.coords_to_grid(e.x, e.y)
@@ -327,20 +398,24 @@ class Piece:
             self.color, self.piece
         )  # Tkinter Garbage Collection is weird
         self.img_id = canvas.create_image(
-            (x1 + x2) // 2, (y1 + y2) // 2, anchor=tk.CENTER, image=self.i
+            (x1 + x2) // 2,
+            (y1 + y2) // 2,
+            anchor=tk.CENTER,
+            image=self.i,
+            # state=tk.HIDDEN,  # TODO
         )
 
     def generate_moves(self, context: tuple = (None, None)) -> list:
         self.moves = []
         if context[0] == None:
-            board: dict = self.game.board
-            k = self.game.gamestate.selected
-            piece = board[k]
-            print(k)
+            board: dict[int, Piece] = self.game.board
+            k = self.game.selected
+            piece = board[k].piece
+
         else:
             k = context[0]
-            board: dict = context[1]
-            piece = board[k]
+            board: dict[int, Piece] = context[1]
+            piece = board[k].piece
 
         if piece == "KING":
             self.moves = [k + 10, k + 11, k + 9, k - 10, k - 9, k - 11, k + 1, k - 1]
@@ -364,7 +439,7 @@ class Piece:
                 self.moves.append(k + sign + 10)
 
             if (
-                (k + sign + 10) in board.keys()
+                (k + sign - 10) in board.keys()
                 and board[k + sign - 10] != None
                 and board[k + sign - 10].color != self.color
             ):
@@ -389,8 +464,8 @@ class Piece:
     def side(self, context: tuple):
         if context[0] == None:
             board: dict = self.game.board
-            k = self.game.isClicked
-            print(k)
+            k = self.game.selected
+            # print(k)
         else:
             k = context[0]
             board: dict = context[1]
@@ -412,25 +487,25 @@ class Piece:
             self.moves.append(i * 10 + y)
 
         for i in range(y - 1, -1, -1):
-            if board[x + i] != None:
-                if board[x + i].color != self.color:
-                    self.moves.append(x + i)
+            if board[10 * x + i] != None:
+                if board[10 * x + i].color != self.color:
+                    self.moves.append(10 * x + i)
                 break
-            self.moves.append(x + i)
+            self.moves.append(10 * x + i)
 
         for i in range(y + 1, 8):
-            if board[x + i] != None:
-                if board[x + i].color != self.color:
-                    self.moves.append(x + i)
+            if board[10 * x + i] != None:
+                if board[10 * x + i].color != self.color:
+                    self.moves.append(10 * x + i)
                 break
-            self.moves.append(x + i)
+            self.moves.append(10 * x + i)
 
     def diagonal(self, context: tuple):
 
         if context[0] == None:
             board: dict = self.game.board
-            k = self.game.isClicked
-            print(k)
+            k = self.game.selected
+            # print(k)
         else:
             k = context[0]
             board: dict = context[1]
@@ -438,7 +513,8 @@ class Piece:
         x, y = k // 10, k % 10
 
         l = x if x < y else y
-        for i in range(1, l):
+        print(x, y, l)
+        for i in range(1, l + 1):
             key = 10 * (x - i) + (y - i)
             if board[key] != None:
                 if board[key].color != self.color:
@@ -446,8 +522,8 @@ class Piece:
                 break
             self.moves.append(key)
 
-        l = (8 - x) if (8 - x) < y else y
-        for i in range(1, l):
+        l = (7 - x) if (7 - x) < y else y
+        for i in range(1, l + 1):
             key = 10 * (x + i) + (y - i)
             if board[key] != None:
                 if board[key].color != self.color:
@@ -455,8 +531,8 @@ class Piece:
                 break
             self.moves.append(key)
 
-        l = x if x < (8 - y) else (8 - y)
-        for i in range(1, l):
+        l = x if x < (7 - y) else (7 - y)
+        for i in range(1, l + 1):
             key = 10 * (x - i) + (y + i)
             if board[key] != None:
                 if board[key].color != self.color:
@@ -464,8 +540,8 @@ class Piece:
                 break
             self.moves.append(key)
 
-        l = (8 - x) if (8 - x) < (8 - y) else (8 - y)
-        for i in range(1, l):
+        l = (7 - x) if (7 - x) < (7 - y) else (7 - y)
+        for i in range(1, l + 1):
             key = 10 * (x + i) + (y + i)
             if board[key] != None:
                 if board[key].color != self.color:
@@ -485,7 +561,7 @@ class Piece:
 
         moves = []
         for i in self.moves:
-            if i in board.keys() and (board[i] == None or board[i].color == color):
+            if i in board.keys() and (board[i] == None or board[i].color != color):
 
                 if context[0] == None:
                     moves.append(i)

@@ -1,6 +1,9 @@
 import tkinter as tk
+from tkinter.font import NORMAL
 from PIL import ImageOps, Image, ImageTk
 import threading, time, copy, os
+
+from pygame import HIDDEN
 
 
 class Chess(tk.Tk):
@@ -22,6 +25,7 @@ class Chess(tk.Tk):
 
         self.board: dict[int, Piece] = {}
         self.board_ids: dict = {}
+        self.imgs: dict = {}  # TKINTER SUCKS
         self.possible_moves: list = []
         self.initialize_canvas()
         self.initialize_board()
@@ -31,6 +35,7 @@ class Chess(tk.Tk):
         self.state: str = ""
         self.old_selected = None
         self.old_hover = None
+        self.turn = 1
 
     def initialize_canvas(self):
         Chess.size = self.winfo_screenheight() * 4 // 5
@@ -106,17 +111,24 @@ class Chess(tk.Tk):
                     outline="",
                     state="hidden",
                 )
-
-                hint = self.canvas.create_oval(
-                    x1 + off1,
-                    y1 + off1,
-                    x2 - off1,
-                    y2 - off1,
-                    fill=Chess.color["hint"],
-                    outline="",
+                s = "circle.png"
+                self.imgs[key] = ImageTk.PhotoImage(
+                    ImageOps.expand(
+                        Image.open("circle.png").resize(
+                            (Chess.size // (8 * 4), Chess.size // (8 * 4)),
+                            Image.ANTIALIAS,
+                        )
+                    )
+                )
+                hint = self.canvas.create_image(
+                    (x1 + x2) // 2,
+                    (y1 + y2) // 2,
+                    image=self.imgs[key],
+                    anchor=tk.CENTER,
                     state="hidden",
                 )
 
+                self.canvas.tag_raise(self.imgs[key])
                 self.board_ids[key] = {
                     "base": base,
                     "button": highlight_square,
@@ -159,15 +171,42 @@ class Chess(tk.Tk):
             )
             self.canvas.itemconfigure(self.board_ids[id]["base"], fill=Chess.color[c1])
 
+        elif state == "eat":
+            pass
+
     def display_moves(self, show: bool = True):
+
         if show:
             self.possible_moves = self.board[self.selected].generate_moves()
 
             for i in self.possible_moves:
-                self.canvas.itemconfigure(self.board_ids[i]["hint"], state="normal")
+                print(self.board_ids[i]["hint"])
+                if self.board[i] != None:
+                    self.imgs[i] = ImageTk.PhotoImage(
+                        ImageOps.expand(
+                            Image.open("circle.png").resize(
+                                (Chess.size // (8), Chess.size // (8)),
+                                Image.ANTIALIAS,
+                            )
+                        )
+                    )
+                    self.canvas.itemconfigure(
+                        self.board_ids[i]["hint"], image=self.imgs[i]
+                    )
+
+                self.canvas.itemconfigure(self.board_ids[i]["hint"], state=tk.NORMAL)
         else:
             for i in self.possible_moves:
-                self.canvas.itemconfigure(self.board_ids[i]["hint"], state="hidden")
+                self.imgs[i] = ImageTk.PhotoImage(
+                    ImageOps.expand(
+                        Image.open("circle.png").resize(
+                            (Chess.size // (8 * 4), Chess.size // (8 * 4)),
+                            Image.ANTIALIAS,
+                        )
+                    )
+                )
+                self.canvas.itemconfigure(self.board_ids[i]["hint"], image=self.imgs[i])
+                self.canvas.itemconfigure(self.board_ids[i]["hint"], state=tk.HIDDEN)
             self.possible_moves = []
 
     def move(self, k, snap=False):
@@ -358,7 +397,11 @@ class Piece:
             self.color, self.piece
         )  # Tkinter Garbage Collection is weird
         self.img_id = canvas.create_image(
-            (x1 + x2) // 2, (y1 + y2) // 2, anchor=tk.CENTER, image=self.i
+            (x1 + x2) // 2,
+            (y1 + y2) // 2,
+            anchor=tk.CENTER,
+            image=self.i,
+            # state=tk.HIDDEN,  # TODO
         )
 
     def generate_moves(self, context: tuple = (None, None)) -> list:
