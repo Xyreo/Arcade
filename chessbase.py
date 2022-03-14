@@ -12,11 +12,12 @@ class Chess(tk.Tk):
         "white": "#769656",
         "sblack": "#f6f669",
         "swhite": "#baca2b",
-        "sbwhite": "#fcfccb",
-        "sbblack": "#e7edb5",
+        "sbwhite": "#e7edb5",
+        "sbblack": "#fcfccb",
         "bwhite": "#cfdac4",
         "bblack": "#f9f9ef",
         "hint": "#d6d6bd",
+        "check": "#f33e42",
     }
     size = None
 
@@ -35,6 +36,7 @@ class Chess(tk.Tk):
         self.state: str = ""
         self.old_selected = None
         self.old_hover = None
+        self.COLOREDSQUARES: dict = {"check": None, "move": []}
 
     def initialize_canvas(self):
         Chess.size = self.winfo_screenheight() * 4 // 5
@@ -49,6 +51,29 @@ class Chess(tk.Tk):
             width=Chess.size,
         )
         self.canvas.pack()
+        for i in range(8):
+            for j in range(8):
+                s = os.path.join("Chess_Assets", "circle.png")
+                self.imgs[i * 10 + j] = (
+                    ImageTk.PhotoImage(
+                        ImageOps.expand(
+                            Image.open(s).resize(
+                                (Chess.size // (8 * 4), Chess.size // (8 * 4)),
+                                Image.ANTIALIAS,
+                            )
+                        )
+                    ),
+                    ImageTk.PhotoImage(
+                        ImageOps.expand(
+                            Image.open(
+                                os.path.join("Chess_Assets", "circle.png")
+                            ).resize(
+                                (Chess.size // (8), Chess.size // (8)),
+                                Image.ANTIALIAS,
+                            )
+                        )
+                    ),
+                )
 
         self.canvas.bind("<Button-1>", self.clicked)
         self.canvas.bind("<B1-Motion>", self.drag_piece)
@@ -57,10 +82,8 @@ class Chess(tk.Tk):
     def initialize_board(self):
 
         # region Initializing pieces on Board
-        self.selected_sqaures = {}
         for j in range(8):
             self.board.update({(i * 10 + j): None for i in range(8)})
-            self.selected_sqaures.update({(i * 10 + j): None for i in range(8)})
 
         self.board.update(
             {
@@ -90,7 +113,6 @@ class Chess(tk.Tk):
 
         # Board Assets Generation
         offset = 4
-        off1 = 32
         for i in range(8):
             for j in range(8):
                 key = i * 10 + j
@@ -110,19 +132,11 @@ class Chess(tk.Tk):
                     outline="",
                     state="hidden",
                 )
-                s = os.path.join("Chess_Assets", "circle.png")
-                self.imgs[key] = ImageTk.PhotoImage(
-                    ImageOps.expand(
-                        Image.open(s).resize(
-                            (Chess.size // (8 * 4), Chess.size // (8 * 4)),
-                            Image.ANTIALIAS,
-                        )
-                    )
-                )
+
                 hint = self.canvas.create_image(
                     (x1 + x2) // 2,
                     (y1 + y2) // 2,
-                    image=self.imgs[key],
+                    image=self.imgs[key][0],
                     anchor=tk.CENTER,
                     state="hidden",
                 )
@@ -142,26 +156,39 @@ class Chess(tk.Tk):
             self.board[key].createImage(self.canvas, key)
             self.canvas.tag_raise(self.board[key].img_id)
 
-    def set(self, id: int, state: str, preserve_select=False):
+    def set(self, id: int, state: str, preserve_select=False, overide=False):
 
         color = "white" if (id // 10 + id % 10) % 2 else "black"
+
+        if id == self.COLOREDSQUARES["check"]:
+            return
+
         if state == "normal":
+
             if preserve_select and id == self.selected:
                 self.set(id, state="select")
                 return
 
-            color = Chess.color[color]
+            if id not in self.COLOREDSQUARES["move"] or overide:
+                color = Chess.color[color]
+                self.canvas.itemconfigure(self.board_ids[id]["base"], fill=color)
+            else:
+                self.canvas.itemconfigure(
+                    self.board_ids[id]["base"], fill=Chess.color["s" + color]
+                )
+
             self.canvas.itemconfigure(self.board_ids[id]["button"], state="hidden")
-            self.canvas.itemconfigure(self.board_ids[id]["base"], fill=color)
 
         elif state == "select":
             color = Chess.color["s" + color]
             self.canvas.itemconfigure(self.board_ids[id]["base"], fill=color)
 
         elif state == "button":
+
             c1 = "b" + color
             c2 = color
-            if id == self.selected:
+
+            if id == self.selected or id in self.COLOREDSQUARES["move"]:
                 c1 = "s" + c1
                 c2 = "s" + c2
 
@@ -170,8 +197,9 @@ class Chess(tk.Tk):
             )
             self.canvas.itemconfigure(self.board_ids[id]["base"], fill=Chess.color[c1])
 
-        elif state == "eat":
-            pass
+        elif state == "check":
+            color = Chess.color["check"]
+            self.canvas.itemconfigure(self.board_ids[id]["base"], fill=color)
 
     def display_moves(self, show: bool = True):
 
@@ -180,32 +208,18 @@ class Chess(tk.Tk):
 
             for i in self.possible_moves:
                 if self.board[i] != None:
-                    self.imgs[i] = ImageTk.PhotoImage(
-                        ImageOps.expand(
-                            Image.open(
-                                os.path.join("Chess_Assets", "circle.png")
-                            ).resize(
-                                (Chess.size // (8), Chess.size // (8)),
-                                Image.ANTIALIAS,
-                            )
-                        )
-                    )
+
                     self.canvas.itemconfigure(
-                        self.board_ids[i]["hint"], image=self.imgs[i]
+                        self.board_ids[i]["hint"], image=self.imgs[i][1]
                     )
 
                 self.canvas.itemconfigure(self.board_ids[i]["hint"], state=tk.NORMAL)
         else:
             for i in self.possible_moves:
-                self.imgs[i] = ImageTk.PhotoImage(
-                    ImageOps.expand(
-                        Image.open(os.path.join("Chess_Assets", "circle.png")).resize(
-                            (Chess.size // (8 * 4), Chess.size // (8 * 4)),
-                            Image.ANTIALIAS,
-                        )
-                    )
+
+                self.canvas.itemconfigure(
+                    self.board_ids[i]["hint"], image=self.imgs[i][0]
                 )
-                self.canvas.itemconfigure(self.board_ids[i]["hint"], image=self.imgs[i])
                 self.canvas.itemconfigure(self.board_ids[i]["hint"], state=tk.HIDDEN)
             self.possible_moves = []
 
@@ -219,6 +233,33 @@ class Chess(tk.Tk):
         else:
             thr = threading.Thread(target=self.moveanimation, args=(self.selected, k))
             thr.start()
+
+        for i in self.COLOREDSQUARES["move"]:
+            self.set(i, state="normal", overide=True)
+
+        a = (self.selected, k)
+        for i in a:
+            self.set(i, state="select")
+        self.COLOREDSQUARES["move"] = a
+        m = []
+        for i in self.board:
+            if self.board[i] != None and self.board[i].color == self.board[k].color:
+                m.extend(self.board[i].generate_moves(context=(i, self.board)))
+
+        m = list(dict.fromkeys(m))
+        if self.COLOREDSQUARES["check"] != None:
+            a, self.COLOREDSQUARES["check"] = self.COLOREDSQUARES["check"], None
+            self.set(a, "normal")
+
+        for i in m:
+            if (
+                self.board[i] != None
+                and self.board[i].color != self.board[k].color
+                and self.board[i].piece == "KING"
+            ):
+                self.set(i, "check")
+                self.COLOREDSQUARES["check"] = i
+                break
 
     def moveanimation(self, s, e):
         x1, y1, x2, y2 = Chess.grid_to_coords(s)
@@ -264,6 +305,7 @@ class Chess(tk.Tk):
 
                 self.selected = k
                 self.display_moves()
+
                 self.set(k, "select")
                 self.set(k, "button")
 
@@ -339,7 +381,6 @@ class Chess(tk.Tk):
 
         if self.hover != self.old_hover:
             if self.hover != None and self.old_hover != None:
-                # TODO Switchero
                 self.set(self.old_hover, "normal", preserve_select=True)
             self.old_hover = self.hover
             self.set(self.hover, "button")
@@ -566,7 +607,8 @@ class Piece:
         moves = []
         for i in self.moves:
             if i in board.keys() and (board[i] == None or board[i].color != color):
-
+                # print("-" * 20)
+                # print("Move: ", i)
                 if context[0] != None:
                     moves.append(i)
                     continue
@@ -578,19 +620,15 @@ class Piece:
                 # At this point, b has assumed the move has been played.
                 for j in b.keys():
                     if b[j] != None and b[j].color != self.color:
-
                         m.extend(self.generate_moves((j, b)))
 
-                for j in board.keys():
-                    if (
-                        board[j] != None
-                        and board[j].piece == "KING"
-                        and board[j].color == color
-                    ):
-                        if j not in m:
-                            moves.append(i)
+                m = list(dict.fromkeys(m))
+                # print("Opposition moves:", m)
+                for j in m:
+                    if b[j] != None and b[j].piece == "KING" and b[j].color == color:
                         break
-
+                else:
+                    moves.append(i)
         self.moves = moves
 
 
