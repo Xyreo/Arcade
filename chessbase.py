@@ -19,9 +19,9 @@ class Chess(tk.Tk):
     }
     size = None
 
-    def __init__(self):
+    def __init__(self, side):
         super().__init__()
-
+        self.side = side
         self.board: dict[int, Piece] = {}
         self.board_ids: dict = {}
         self.imgs: dict = {}  # TKINTER SUCKS
@@ -115,7 +115,7 @@ class Chess(tk.Tk):
         for i in range(8):
             for j in range(8):
                 key = i * 10 + j
-                x1, y1, x2, y2 = Chess.grid_to_coords(i, j)
+                x1, y1, x2, y2 = self.grid_to_coords(i, j)
                 color = "white" if (i + j) % 2 else "black"
                 self.special_moves = {
                     "castle": {"white": ("Y", "Y"), "black": ("Y", "Y")}
@@ -232,7 +232,7 @@ class Chess(tk.Tk):
 
         # region How the piece moves
         if snap:
-            x1, y1, x2, y2 = Chess.grid_to_coords(k)
+            x1, y1, x2, y2 = self.grid_to_coords(k)
             self.move_obj(self.board[k], (x1 + x2) // 2, (y1 + y2) // 2)
         else:
             thr = threading.Thread(target=self.moveanimation, args=(self.selected, k))
@@ -321,9 +321,9 @@ class Chess(tk.Tk):
         return flag
 
     def moveanimation(self, s, e):
-        x1, y1, x2, y2 = Chess.grid_to_coords(s)
+        x1, y1, x2, y2 = self.grid_to_coords(s)
         x, y = (x1 + x2) // 2, (y1 + y2) // 2
-        ex1, ey1, ex2, ey2 = Chess.grid_to_coords(e)
+        ex1, ey1, ex2, ey2 = self.grid_to_coords(e)
         x1, y1 = (ex1 + ex2) // 2 - x, (ey1 + ey2) // 2 - y
 
         t = 0.05
@@ -336,7 +336,7 @@ class Chess(tk.Tk):
             self.move_obj(self.board[e], start, end)
 
     def clicked(self, e):
-        x, y = Chess.coords_to_grid(e.x, e.y)
+        x, y = self.coords_to_grid(e.x, e.y)
         k = 10 * x + y
 
         if k in self.possible_moves:
@@ -378,7 +378,7 @@ class Chess(tk.Tk):
 
         elif self.state == "PieceSelected":
             k = self.selected
-            x1, y1, x2, y2 = Chess.grid_to_coords(k)
+            x1, y1, x2, y2 = self.grid_to_coords(k)
 
             if self.old_selected == self.selected:
                 if self.hover == None:
@@ -452,16 +452,21 @@ class Chess(tk.Tk):
     def unselect(self):
         self.set(self.selected, "normal")
 
-    @staticmethod
-    def coords_to_grid(x, y):
-        return (8 * x // (Chess.size), 8 * y // (Chess.size))
+    def coords_to_grid(self, x, y):
+        x, y = (8 * x // (Chess.size), 8 * y // (Chess.size))
+        if self.side == "WHITE":
+            return (x, y)
+        else:
+            return (7 - x, 7 - y)
 
-    @staticmethod
-    def grid_to_coords(*args):
+    def grid_to_coords(self, *args):
         if len(args) == 1:
             x, y = args[0] // 10, args[0] % 10
         elif len(args) == 2:
             x, y = args[0], args[1]
+
+        if self.side == "BLACK":
+            x, y = (7 - x, 7 - y)
 
         return (
             x * Chess.size // 8,
@@ -491,7 +496,7 @@ class Piece:
         )
 
     def createImage(self, canvas: tk.Canvas, key):
-        x1, y1, x2, y2 = Chess.grid_to_coords(key)
+        x1, y1, x2, y2 = self.game.grid_to_coords(key)
         self.i = Piece.img(
             self.color, self.piece
         )  # Tkinter Garbage Collection is weird
@@ -708,5 +713,5 @@ class Piece:
 
 
 if __name__ == "__main__":
-    app = Chess()
+    app = Chess("BLACK")
     app.mainloop()
