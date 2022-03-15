@@ -230,15 +230,16 @@ class Chess(tk.Tk):
         self.board.update(update_dict)
         self.display_moves(False)
 
-        # How the piece moves
+        # region How the piece moves
         if snap:
             x1, y1, x2, y2 = Chess.grid_to_coords(k)
             self.move_obj(self.board[k], (x1 + x2) // 2, (y1 + y2) // 2)
         else:
             thr = threading.Thread(target=self.moveanimation, args=(self.selected, k))
             thr.start()
+        # endregion
 
-        # Checking for special moves
+        # region Checking for special moves
         enpassant = self.special_moves["enpassant"]
 
         if enpassant[0] == "Maybe":
@@ -253,6 +254,7 @@ class Chess(tk.Tk):
                 self.board[k + sign] = None
             else:
                 self.special_moves["enpassant"] = ("No", "None")
+        # endregion
 
         # Checking for check
         for i in self.COLOREDSQUARES["move"]:
@@ -262,16 +264,14 @@ class Chess(tk.Tk):
         for i in a:
             self.set(i, state="select")
         self.COLOREDSQUARES["move"] = a
-        m = []
-        for i in self.board:
-            if self.board[i] != None and self.board[i].color == self.board[k].color:
-                m.extend(self.board[i].generate_moves(context=(i, self.board)))
 
+        m = self.get_all_moves_of_color(self.board, self.board[k].color)
         m = list(dict.fromkeys(m))
         if self.COLOREDSQUARES["check"] != None:
             a, self.COLOREDSQUARES["check"] = self.COLOREDSQUARES["check"], None
             self.set(a, "normal")
 
+        check = False
         for i in m:
             if (
                 self.board[i] != None
@@ -280,7 +280,45 @@ class Chess(tk.Tk):
             ):
                 self.set(i, "check")
                 self.COLOREDSQUARES["check"] = i
+                check = True
+
+        flag = False
+        for i in self.board.keys():
+            if self.board[i] != None and self.board[i].color != self.board[k].color:
+                if self.idek(self.board[i], self.board, i):
+                    flag = True
+
+        if not flag:
+            if check:
+                print("Checkmate")
+            else:
+                print("Stalemate")
+
+    def get_all_moves_of_color(self, board, color) -> list:
+        m = []
+        for i in board.keys():
+            if board[i] != None and board[i].color == color:
+                m.extend(board[i].generate_moves(context=(i, board)))
+        return m
+
+    def idek(self, piece, board, k) -> bool:
+        # Returns whether moving the passed piece can prevent check
+
+        m = piece.generate_moves(context=(k, board))
+        flag = False
+        for i in m:
+            b = dict(zip(board.keys(), board.values()))
+            b[i], b[k] = b[k], None
+            color = "BLACK" if b[i].color != "BLACK" else "WHITE"
+            move = self.get_all_moves_of_color(b, color)
+            for j in move:
+                if b[j] != None and b[j].piece == "KING" and b[j].color == piece.color:
+                    break
+            else:
+                flag = True
                 break
+
+        return flag
 
     def moveanimation(self, s, e):
         x1, y1, x2, y2 = Chess.grid_to_coords(s)
@@ -289,7 +327,7 @@ class Chess(tk.Tk):
         x1, y1 = (ex1 + ex2) // 2 - x, (ey1 + ey2) // 2 - y
 
         t = 0.05
-        fps = 60
+        fps = 80
         n = int(t * fps)
         for i in range(1, n + 1):
             start = int(x + (i / n) * x1)
