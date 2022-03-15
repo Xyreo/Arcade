@@ -1,9 +1,7 @@
+from contextlib import suppress
 import tkinter as tk
-from tkinter.font import NORMAL
 from PIL import ImageOps, Image, ImageTk
-import threading, time, copy, os
-
-from pygame import HIDDEN
+import threading, time, os
 
 
 class Chess(tk.Tk):
@@ -37,6 +35,7 @@ class Chess(tk.Tk):
         self.old_selected = None
         self.old_hover = None
         self.COLOREDSQUARES: dict = {"check": None, "move": []}
+        self.special_moves: dict = {"enpassant": (None,), "castle": (None,)}
 
     def initialize_canvas(self):
         Chess.size = self.winfo_screenheight() * 4 // 5
@@ -118,6 +117,9 @@ class Chess(tk.Tk):
                 key = i * 10 + j
                 x1, y1, x2, y2 = Chess.grid_to_coords(i, j)
                 color = "white" if (i + j) % 2 else "black"
+                self.special_moves = {
+                    "castle": {"white": ("Y", "Y"), "black": ("Y", "Y")}
+                }
 
                 base = self.canvas.create_rectangle(
                     x1, y1, x2, y2, fill=Chess.color[color], outline="", state="normal"
@@ -227,6 +229,8 @@ class Chess(tk.Tk):
         update_dict = {k: self.board[self.selected], self.selected: None}
         self.board.update(update_dict)
         self.display_moves(False)
+
+        # How the piece moves
         if snap:
             x1, y1, x2, y2 = Chess.grid_to_coords(k)
             self.move_obj(self.board[k], (x1 + x2) // 2, (y1 + y2) // 2)
@@ -234,6 +238,23 @@ class Chess(tk.Tk):
             thr = threading.Thread(target=self.moveanimation, args=(self.selected, k))
             thr.start()
 
+        # Checking for special moves
+        enpassant = self.special_moves["enpassant"]
+
+        if enpassant[0] == "Maybe":
+            if k == enpassant[1]:
+                self.special_moves["enpassant"] = ("Yes", k)
+            else:
+                self.special_moves["enpassant"] = ("No", None)
+
+        elif enpassant[0] == "Yes":
+            if k == enpassant[1]:
+                sign = -1 if self.board[k].color == "BLACK" else 1
+                self.board[k + sign] = None
+            else:
+                self.special_moves["enpassant"] = ("No", "None")
+
+        # Checking for check
         for i in self.COLOREDSQUARES["move"]:
             self.set(i, state="normal", overide=True)
 
@@ -466,13 +487,32 @@ class Piece:
 
         elif piece == "PAWN":
             sign = 1 if color == "BLACK" else -1
-            if board[k + sign] == None:
-                self.moves = [k + sign]
 
-            if k % 10 == 1 and board[k + 1] == None:
-                self.moves.append(k + 2)
-            elif k % 10 == 6 and board[k - 1] == None:
-                self.moves.append(k - 2)
+            with suppress(KeyError):
+
+                if board[k + sign] == None:
+                    self.moves = [k + sign]
+
+                enpassant = self.game.special_moves["enpassant"]
+                if context[0] == None and enpassant[0] == "Yes":
+                    if k + 10 == enpassant[1]:
+                        self.moves.append(k + 10 + sign)
+                        self.game.special_moves["enpassant"] = ("Yes", k + 10 + sign)
+                    elif k - 10 == enpassant[1]:
+                        self.game.special_moves["enpassant"] = ("Yes", k - 10 + sign)
+                        self.moves.append(k - 10 + sign)
+
+            if k % 10 == 1 and board[k + 1] == None and board[k + 2] == None:
+                if board[k].color == "BLACK":
+                    if context[0] == None:
+                        self.game.special_moves["enpassant"] = ("Maybe", k + 2)
+                    self.moves.append(k + 2)
+
+            elif k % 10 == 6 and board[k - 1] == None and board[k - 2] == None:
+                if board[k].color == "WHITE":
+                    if context[0] == None:
+                        self.game.special_moves["enpassant"] = ("Maybe", k - 2)
+                    self.moves.append(k - 2)
 
             if (
                 (k + sign + 10) in board.keys()
@@ -607,8 +647,6 @@ class Piece:
         moves = []
         for i in self.moves:
             if i in board.keys() and (board[i] == None or board[i].color != color):
-                # print("-" * 20)
-                # print("Move: ", i)
                 if context[0] != None:
                     moves.append(i)
                     continue
@@ -623,7 +661,6 @@ class Piece:
                         m.extend(self.generate_moves((j, b)))
 
                 m = list(dict.fromkeys(m))
-                # print("Opposition moves:", m)
                 for j in m:
                     if b[j] != None and b[j].piece == "KING" and b[j].color == color:
                         break
