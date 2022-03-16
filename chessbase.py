@@ -35,7 +35,7 @@ class Chess(tk.Tk):
         self.old_selected = None
         self.old_hover = None
         self.COLOREDSQUARES: dict = {"check": None, "move": []}
-        self.special_moves: dict = {"enpassant": None, "castle": (None,)}
+        self.special_moves: dict = {"enpassant": None, "castle": []}
         self.last_move: list = [-1, -1]
 
     def initialize_canvas(self):
@@ -87,28 +87,28 @@ class Chess(tk.Tk):
 
         self.board.update(
             {
-                0: Piece("ROOK", "BLACK", self),
-                10: Piece("KNIGHT", "BLACK", self),
-                20: Piece("BISHOP", "BLACK", self),
-                30: Piece("QUEEN", "BLACK", self),
-                40: Piece("KING", "BLACK", self),
-                50: Piece("BISHOP", "BLACK", self),
-                60: Piece("KNIGHT", "BLACK", self),
-                70: Piece("ROOK", "BLACK", self),
-                7: Piece("ROOK", "WHITE", self),
-                17: Piece("KNIGHT", "WHITE", self),
-                27: Piece("BISHOP", "WHITE", self),
-                37: Piece("QUEEN", "WHITE", self),
-                47: Piece("KING", "WHITE", self),
-                57: Piece("BISHOP", "WHITE", self),
-                67: Piece("KNIGHT", "WHITE", self),
-                77: Piece("ROOK", "WHITE", self),
+                0: Piece("ROOK", "BLACK", self, 0),
+                10: Piece("KNIGHT", "BLACK", self, 10),
+                20: Piece("BISHOP", "BLACK", self, 20),
+                30: Piece("QUEEN", "BLACK", self, 30),
+                40: Piece("KING", "BLACK", self, 40),
+                50: Piece("BISHOP", "BLACK", self, 50),
+                60: Piece("KNIGHT", "BLACK", self, 60),
+                70: Piece("ROOK", "BLACK", self, 70),
+                7: Piece("ROOK", "WHITE", self, 7),
+                17: Piece("KNIGHT", "WHITE", self, 17),
+                27: Piece("BISHOP", "WHITE", self, 27),
+                37: Piece("QUEEN", "WHITE", self, 37),
+                47: Piece("KING", "WHITE", self, 47),
+                57: Piece("BISHOP", "WHITE", self, 57),
+                67: Piece("KNIGHT", "WHITE", self, 67),
+                77: Piece("ROOK", "WHITE", self, 77),
             }
         )
 
         for i in range(8):
-            self.board[10 * i + 1] = Piece("PAWN", "BLACK", self)
-            self.board[10 * i + 6] = Piece("PAWN", "WHITE", self)
+            self.board[10 * i + 1] = Piece("PAWN", "BLACK", self, 10 * i + 1)
+            self.board[10 * i + 6] = Piece("PAWN", "WHITE", self, 10 * i + 6)
         # endregion
 
         # Board Assets Generation
@@ -225,6 +225,13 @@ class Chess(tk.Tk):
                     image=self.imgs[enpassant[0]][0],
                     state=tk.NORMAL,
                 )
+            castle = self.special_moves["castle"]
+            for i in castle:
+                self.canvas.itemconfigure(
+                    self.board_ids[i[0]]["hint"],
+                    image=self.imgs[i[0]][0],
+                    state=tk.NORMAL,
+                )
 
         else:
             for i in self.possible_moves:
@@ -239,19 +246,43 @@ class Chess(tk.Tk):
                     image=self.imgs[enpassant[0]][0],
                     state=tk.HIDDEN,
                 )
+            castle = self.special_moves["castle"]
+            for i in castle:
+                self.canvas.itemconfigure(
+                    self.board_ids[i[0]]["hint"],
+                    image=self.imgs[i[0]][0],
+                    state=tk.HIDDEN,
+                )
 
             self.possible_moves = []
             self.special_moves["enpassant"] = None
+            self.special_moves["castle"] = []
 
     def move(self, k, snap=False):
         self.last_move = [self.selected, k]
+        self.board[self.selected].hasMoved = True
+        self.board[self.selected].pos = k
         update_dict = {k: self.board[self.selected], self.selected: None}
         self.board.update(update_dict)
+
         enpassant = self.special_moves["enpassant"]
-        self.display_moves(False)
+        cast = self.special_moves["castle"]
         if enpassant and k == enpassant[0]:
             self.board[enpassant[1]] = None
+        for castle in cast:
+            if k == castle[0]:
+                self.board[castle[2]], self.board[castle[1]] = (
+                    None,
+                    self.board[castle[2]],
+                )
+                thr = threading.Thread(
+                    target=self.moveanimation, args=(castle[2], castle[1])
+                )
+                thr.start()
+                """x1, y1, x2, y2 = self.grid_to_coords(castle[1])
+                self.move_obj(self.board[castle[1]], (x1 + x2) // 2, (y1 + y2) // 2)"""
 
+        self.display_moves(False)
         # region How the piece moves
         if snap:
             x1, y1, x2, y2 = self.grid_to_coords(k)
@@ -261,7 +292,7 @@ class Chess(tk.Tk):
             thr.start()
         # endregion
 
-        # Checking for check
+        # region Checking for check
         for i in self.COLOREDSQUARES["move"]:
             self.set(i, state="normal", overide=True)
 
@@ -298,6 +329,8 @@ class Chess(tk.Tk):
                 print("Checkmate")
             else:
                 print("Stalemate")
+
+        # endregion
 
     def get_all_moves_of_color(self, board, color) -> list:
         m = []
@@ -459,6 +492,9 @@ class Chess(tk.Tk):
         if self.special_moves["enpassant"] != None:
             if k == self.special_moves["enpassant"][0]:
                 return True
+        for i in self.special_moves["castle"]:
+            if k == i[0]:
+                return True
 
         return False
 
@@ -493,12 +529,14 @@ class Chess(tk.Tk):
 
 
 class Piece:
-    def __init__(self, piece: str, color: str, game: Chess):
+    def __init__(self, piece: str, color: str, game: Chess, pos: int = None):
         self.piece = piece
         self.color = color
         self.img_id = None
         self.moves: list = []
         self.game: Chess = game
+        self.hasMoved: bool = False
+        self.pos = pos
 
     @staticmethod
     def img(color: str, piece: str):
@@ -537,9 +575,45 @@ class Piece:
             board: dict[int, Piece] = context[1]
             piece = board[k].piece
             color = board[k].color
+            Chess.f.write(f"{piece} at {k}\n")
 
         if piece == "KING":
             self.moves = [k + 10, k + 11, k + 9, k - 10, k - 9, k - 11, k + 1, k - 1]
+            if not self.hasMoved and context[0] == None:
+                n = self.pos - 40
+                if board[n] != None and not (board[n].hasMoved):
+                    temp = [n + 10, n + 20, n + 30]
+                    for i in temp:
+                        if not board[i]:
+                            b = dict(zip(board.keys(), board.values()))
+                            b[i], b[self.pos] = b[self.pos], None
+                            c = "BLACK" if self.color == "WHITE" else "BLACK"
+                            m = self.game.get_all_moves_of_color(b, c)
+                            print(m)
+                            if i in m:
+                                break
+                        else:
+                            break
+                    else:
+                        self.game.special_moves["castle"] = [
+                            (n + 20, n + 30, n),
+                        ]
+                n = self.pos + 30
+                if board[n] != None and not (board[n].hasMoved):
+                    temp = [n - 10, n - 20]
+                    for i in temp:
+                        if not board[i]:
+                            b = dict(zip(board.keys(), board.values()))
+                            b[i], b[self.pos] = b[self.pos], None
+                            c = "BLACK" if self.color == "WHITE" else "BLACK"
+                            m = self.game.get_all_moves_of_color(b, c)
+                            print(m)
+                            if i in m:
+                                break
+                        else:
+                            break
+                    else:
+                        self.game.special_moves["castle"].append((n - 10, n - 20, n))
 
         elif piece == "KNIGHT":
             self.moves = [k + 8, k - 8, k + 12, k - 12, k + 19, k - 19, k + 21, k - 21]
@@ -733,5 +807,5 @@ class Piece:
 
 
 if __name__ == "__main__":
-    app = Chess("BLACK")
+    app = Chess("WHITE")
     app.mainloop()
