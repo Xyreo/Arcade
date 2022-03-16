@@ -31,11 +31,12 @@ class Chess(tk.Tk):
         self.initialize_images()
         self.selected: int = None
         self.hover: int = None
-        self.state: str = ""
+        self.state: str = "Nothing"
         self.old_selected = None
         self.old_hover = None
         self.COLOREDSQUARES: dict = {"check": None, "move": []}
-        self.special_moves: dict = {"enpassant": (None,), "castle": (None,)}
+        self.special_moves: dict = {"enpassant": None, "castle": (None,)}
+        self.last_move: list = [-1, -1]
 
     def initialize_canvas(self):
         Chess.size = self.winfo_screenheight() * 4 // 5
@@ -216,19 +217,40 @@ class Chess(tk.Tk):
                     )
 
                 self.canvas.itemconfigure(self.board_ids[i]["hint"], state=tk.NORMAL)
+
+            enpassant = self.special_moves["enpassant"]
+            if enpassant != None:
+                self.canvas.itemconfigure(
+                    self.board_ids[enpassant[0]]["hint"],
+                    image=self.imgs[enpassant[0]][0],
+                    state=tk.NORMAL,
+                )
+
         else:
             for i in self.possible_moves:
-
                 self.canvas.itemconfigure(
-                    self.board_ids[i]["hint"], image=self.imgs[i][0]
+                    self.board_ids[i]["hint"], image=self.imgs[i][0], state=tk.HIDDEN
                 )
-                self.canvas.itemconfigure(self.board_ids[i]["hint"], state=tk.HIDDEN)
+
+            enpassant = self.special_moves["enpassant"]
+            if enpassant != None:
+                self.canvas.itemconfigure(
+                    self.board_ids[enpassant[0]]["hint"],
+                    image=self.imgs[enpassant[0]][0],
+                    state=tk.HIDDEN,
+                )
+
             self.possible_moves = []
+            self.special_moves["enpassant"] = None
 
     def move(self, k, snap=False):
+        self.last_move = [self.selected, k]
         update_dict = {k: self.board[self.selected], self.selected: None}
         self.board.update(update_dict)
+        enpassant = self.special_moves["enpassant"]
         self.display_moves(False)
+        if enpassant and k == enpassant[0]:
+            self.board[enpassant[1]] = None
 
         # region How the piece moves
         if snap:
@@ -237,23 +259,6 @@ class Chess(tk.Tk):
         else:
             thr = threading.Thread(target=self.moveanimation, args=(self.selected, k))
             thr.start()
-        # endregion
-
-        # region Checking for special moves
-        enpassant = self.special_moves["enpassant"]
-
-        if enpassant[0] == "Maybe":
-            if k == enpassant[1]:
-                self.special_moves["enpassant"] = ("Yes", k)
-            else:
-                self.special_moves["enpassant"] = ("No", None)
-
-        elif enpassant[0] == "Yes":
-            if k == enpassant[1]:
-                sign = -1 if self.board[k].color == "BLACK" else 1
-                self.board[k + sign] = None
-            else:
-                self.special_moves["enpassant"] = ("No", "None")
         # endregion
 
         # Checking for check
@@ -339,7 +344,7 @@ class Chess(tk.Tk):
         x, y = self.coords_to_grid(e.x, e.y)
         k = 10 * x + y
 
-        if k in self.possible_moves:
+        if k in self.possible_moves or self.inSpecialMove(k):
             self.move(k)
             self.state = "Move"
 
@@ -393,7 +398,9 @@ class Chess(tk.Tk):
                     self.display_moves(False)
                     self.selected = None
 
-                elif self.hover in self.possible_moves:
+                elif self.hover in self.possible_moves or self.inSpecialMove(
+                    self.hover
+                ):
                     self.move(self.hover, True)
                     didMove = True
 
@@ -404,7 +411,9 @@ class Chess(tk.Tk):
                 if self.hover == None:
                     self.set(self.selected, "normal", preserve_select=True)
 
-                elif self.hover in self.possible_moves:
+                elif self.hover in self.possible_moves or self.inSpecialMove(
+                    self.hover
+                ):
                     self.move(self.hover, True)
                     didMove = True
 
@@ -445,6 +454,13 @@ class Chess(tk.Tk):
             self.set(self.hover, "button")
 
         self.move_obj(self.board[self.selected], e.x, e.y)
+
+    def inSpecialMove(self, k):
+        if self.special_moves["enpassant"] != None:
+            if k == self.special_moves["enpassant"][0]:
+                return True
+
+        return False
 
     def move_obj(self, obj, x, y):
         self.canvas.moveto(obj.img_id, x - obj.i.width() // 2, y - obj.i.height() // 2)
@@ -532,29 +548,33 @@ class Piece:
             sign = 1 if color == "BLACK" else -1
 
             with suppress(KeyError):
-
                 if board[k + sign] == None:
                     self.moves = [k + sign]
+                l = self.game.last_move
+                if (
+                    k + 10 == l[1]
+                    and board[k + 10] != None
+                    and board[k + 10].piece == "PAWN"
+                    and board[k + 10].color != color
+                    and abs(l[0] - l[1]) == 2
+                ):
+                    self.game.special_moves["enpassant"] = (k + 10 + sign, k + 10)
 
-                enpassant = self.game.special_moves["enpassant"]
-                if context[0] == None and enpassant[0] == "Yes":
-                    if k + 10 == enpassant[1]:
-                        self.moves.append(k + 10 + sign)
-                        self.game.special_moves["enpassant"] = ("Yes", k + 10 + sign)
-                    elif k - 10 == enpassant[1]:
-                        self.game.special_moves["enpassant"] = ("Yes", k - 10 + sign)
-                        self.moves.append(k - 10 + sign)
+                if (
+                    k - 10 == l[1]
+                    and board[k - 10] != None
+                    and board[k - 10].piece == "PAWN"
+                    and board[k - 10].color != color
+                    and abs(l[0] - l[1])
+                ):
+                    self.game.special_moves["enpassant"] = (k - 10 + sign, k - 10)
 
             if k % 10 == 1 and board[k + 1] == None and board[k + 2] == None:
                 if board[k].color == "BLACK":
-                    if context[0] == None:
-                        self.game.special_moves["enpassant"] = ("Maybe", k + 2)
                     self.moves.append(k + 2)
 
             elif k % 10 == 6 and board[k - 1] == None and board[k - 2] == None:
                 if board[k].color == "WHITE":
-                    if context[0] == None:
-                        self.game.special_moves["enpassant"] = ("Maybe", k - 2)
                     self.moves.append(k - 2)
 
             if (
