@@ -563,8 +563,9 @@ class Piece:
         )
 
     def generate_moves(self, context: tuple = (None, None)) -> list:
-        self.moves = []
+        moves = []
         if context[0] == None:
+            self.moves = moves
             board: dict[int, Piece] = self.game.board
             k = self.game.selected
             piece = board[k].piece
@@ -575,10 +576,9 @@ class Piece:
             board: dict[int, Piece] = context[1]
             piece = board[k].piece
             color = board[k].color
-            Chess.f.write(f"{piece} at {k}\n")
 
         if piece == "KING":
-            self.moves = [k + 10, k + 11, k + 9, k - 10, k - 9, k - 11, k + 1, k - 1]
+            moves.extend([k + 10, k + 11, k + 9, k - 10, k - 9, k - 11, k + 1, k - 1])
             if not self.hasMoved and context[0] == None:
                 n = self.pos - 40
                 if board[n] != None and not (board[n].hasMoved):
@@ -616,14 +616,14 @@ class Piece:
                         self.game.special_moves["castle"].append((n - 10, n - 20, n))
 
         elif piece == "KNIGHT":
-            self.moves = [k + 8, k - 8, k + 12, k - 12, k + 19, k - 19, k + 21, k - 21]
+            moves.extend([k + 8, k - 8, k + 12, k - 12, k + 19, k - 19, k + 21, k - 21])
 
         elif piece == "PAWN":
             sign = 1 if color == "BLACK" else -1
 
             with suppress(KeyError):
                 if board[k + sign] == None:
-                    self.moves = [k + sign]
+                    moves.append(k + sign)
                 l = self.game.last_move
                 if (
                     k + 10 == l[1]
@@ -645,43 +645,46 @@ class Piece:
 
             if k % 10 == 1 and board[k + 1] == None and board[k + 2] == None:
                 if board[k].color == "BLACK":
-                    self.moves.append(k + 2)
+                    moves.append(k + 2)
 
             elif k % 10 == 6 and board[k - 1] == None and board[k - 2] == None:
                 if board[k].color == "WHITE":
-                    self.moves.append(k - 2)
+                    moves.append(k - 2)
 
             if (
                 (k + sign + 10) in board.keys()
                 and board[k + sign + 10] != None
                 and board[k + sign + 10].color != color
             ):
-                self.moves.append(k + sign + 10)
+                moves.append(k + sign + 10)
 
             if (
                 (k + sign - 10) in board.keys()
                 and board[k + sign - 10] != None
                 and board[k + sign - 10].color != color
             ):
-                self.moves.append(k + sign - 10)
+                moves.append(k + sign - 10)
 
         elif piece == "QUEEN":
-            self.side(context)
-            self.diagonal(context)
+            moves.extend(self.side(context))
+            moves.extend(self.diagonal(context))
 
         elif piece == "ROOK":
-            self.side(context)
+            moves.extend(self.side(context))
 
         elif piece == "BISHOP":
-            self.diagonal(context)
+            moves.extend(self.diagonal(context))
 
         else:
             return Exception
 
-        self.fix(context)
-        return self.moves
+        tmove = self.fix(context, moves)
+        moves.clear()
+        moves.extend(tmove)
+        return moves
 
     def side(self, context: tuple):
+        moves = []
         if context[0] == None:
             board: dict = self.game.board
             k = self.game.selected
@@ -697,33 +700,34 @@ class Piece:
         for i in range(x - 1, -1, -1):
             if board[i * 10 + y] != None:
                 if board[i * 10 + y].color != color:
-                    self.moves.append(i * 10 + y)
+                    moves.append(i * 10 + y)
                 break
-            self.moves.append(i * 10 + y)
+            moves.append(i * 10 + y)
 
         for i in range(x + 1, 8):
             if board[i * 10 + y] != None:
                 if board[i * 10 + y].color != color:
-                    self.moves.append(i * 10 + y)
+                    moves.append(i * 10 + y)
                 break
-            self.moves.append(i * 10 + y)
+            moves.append(i * 10 + y)
 
         for i in range(y - 1, -1, -1):
             if board[10 * x + i] != None:
                 if board[10 * x + i].color != color:
-                    self.moves.append(10 * x + i)
+                    moves.append(10 * x + i)
                 break
-            self.moves.append(10 * x + i)
+            moves.append(10 * x + i)
 
         for i in range(y + 1, 8):
             if board[10 * x + i] != None:
                 if board[10 * x + i].color != color:
-                    self.moves.append(10 * x + i)
+                    moves.append(10 * x + i)
                 break
-            self.moves.append(10 * x + i)
+            moves.append(10 * x + i)
+        return moves
 
     def diagonal(self, context: tuple):
-
+        moves = []
         if context[0] == None:
             board: dict = self.game.board
             k = self.game.selected
@@ -740,38 +744,41 @@ class Piece:
             key = 10 * (x - i) + (y - i)
             if board[key] != None:
                 if board[key].color != color:
-                    self.moves.append(key)
+                    moves.append(key)
                 break
-            self.moves.append(key)
+            moves.append(key)
 
         l = (7 - x) if (7 - x) < y else y
         for i in range(1, l + 1):
             key = 10 * (x + i) + (y - i)
             if board[key] != None:
                 if board[key].color != color:
-                    self.moves.append(key)
+                    moves.append(key)
                 break
-            self.moves.append(key)
+            moves.append(key)
 
         l = x if x < (7 - y) else (7 - y)
         for i in range(1, l + 1):
             key = 10 * (x - i) + (y + i)
             if board[key] != None:
                 if board[key].color != color:
-                    self.moves.append(key)
+                    moves.append(key)
                 break
-            self.moves.append(key)
+            moves.append(key)
 
         l = (7 - x) if (7 - x) < (7 - y) else (7 - y)
         for i in range(1, l + 1):
             key = 10 * (x + i) + (y + i)
             if board[key] != None:
                 if board[key].color != color:
-                    self.moves.append(key)
+                    moves.append(key)
                 break
-            self.moves.append(key)
+            moves.append(key)
 
-    def fix(self, context: tuple):
+        return moves
+
+    def fix(self, context: tuple, moves):
+        moves = moves
         if context[0] == None:
             board: dict = self.game.board
             color = self.color
@@ -781,11 +788,11 @@ class Piece:
             board: dict = context[1]
             color = board[k].color
 
-        moves = []
-        for i in self.moves:
+        tempmove = []
+        for i in moves:
             if i in board.keys() and (board[i] == None or board[i].color != color):
                 if context[0] != None:
-                    moves.append(i)
+                    tempmove.append(i)
                     continue
 
                 b = dict(zip(board.keys(), board.values()))
@@ -795,15 +802,16 @@ class Piece:
                 # At this point, b has assumed the move has been played.
                 for j in b.keys():
                     if b[j] != None and b[j].color != self.color:
-                        m.extend(self.generate_moves((j, b)))
+                        genmove = self.generate_moves((j, b))
+                        m.extend(genmove)
 
                 m = list(dict.fromkeys(m))
                 for j in m:
                     if b[j] != None and b[j].piece == "KING" and b[j].color == color:
                         break
                 else:
-                    moves.append(i)
-        self.moves = moves
+                    tempmove.append(i)
+        return tempmove
 
 
 if __name__ == "__main__":
