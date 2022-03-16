@@ -19,7 +19,7 @@ class Chess(tk.Tk):
     }
     size = None
 
-    def __init__(self, side):
+    def __init__(self, side, update):
         super().__init__()
         self.side = side
         self.board: dict[int, Piece] = {}
@@ -37,6 +37,8 @@ class Chess(tk.Tk):
         self.COLOREDSQUARES: dict = {"check": None, "move": []}
         self.special_moves: dict = {"enpassant": None, "castle": []}
         self.last_move: list = [-1, -1]
+        self.multiplayer_move = update
+        self.turn = "WHITE"
 
     def initialize_canvas(self):
         Chess.size = self.winfo_screenheight() * 4 // 5
@@ -261,9 +263,14 @@ class Chess(tk.Tk):
             self.special_moves["castle"] = []
 
     def move(self, k, snap=False):
+
+        sent = ("CHESS", "MOVE", (self.selected, k, self.special_moves))
+        self.multiplayer_move(sent)
+
         self.last_move = [self.selected, k]
         self.board[self.selected].hasMoved = True
         self.board[self.selected].pos = k
+        self.oldimg = self.board[self.selected]
         update_dict = {k: self.board[self.selected], self.selected: None}
         self.board.update(update_dict)
 
@@ -289,6 +296,7 @@ class Chess(tk.Tk):
         if snap:
             x1, y1, x2, y2 = self.grid_to_coords(k)
             self.move_obj(self.board[k], (x1 + x2) // 2, (y1 + y2) // 2)
+            self.oldimg = None
         else:
             thr = threading.Thread(target=self.moveanimation, args=(self.selected, k))
             thr.start()
@@ -325,7 +333,7 @@ class Chess(tk.Tk):
             if self.board[i] != None and self.board[i].color != self.board[k].color:
                 if self.idek(self.board[i], self.board, i):
                     flag = True
-
+        self.turn = "BLACK" if self.turn == "WHITE" else "WHITE"
         if not flag:
             if check:
                 print("Checkmate")
@@ -374,6 +382,7 @@ class Chess(tk.Tk):
             end = int(y + (i / n) * y1)
             time.sleep(t / n)
             self.move_obj(self.board[e], start, end)
+        self.oldimg = None
 
     def clicked(self, e):
         x, y = self.coords_to_grid(e.x, e.y)
@@ -383,7 +392,11 @@ class Chess(tk.Tk):
             self.move(k)
             self.state = "Move"
 
-        elif self.board[k] == None:  # or self.board[k].color == 'WHITE':
+        elif (
+            self.board[k] == None
+            or self.board[k].color != self.side
+            or self.side != self.turn
+        ):
             pass
 
         else:
@@ -528,6 +541,81 @@ class Chess(tk.Tk):
             (x + 1) * Chess.size // 8,
             (y + 1) * Chess.size // 8,
         )
+
+    def multiplayer(self, sent):
+        start, end, special_moves = sent
+        # self.selected -> start
+        # k -> end
+        # self.special moves -> special_moves
+
+        self.last_move = [start, end]
+        self.board[start].hasMoved = True
+        self.board[start].pos = end
+        self.oldimg = self.board[start]
+        update_dict = {end: self.board[start], start: None}
+        self.board.update(update_dict)
+
+        enpassant = special_moves["enpassant"]
+        cast = special_moves["castle"]
+        if enpassant and end == enpassant[0]:
+            self.board[enpassant[1]] = None
+        for castle in cast:
+            if end == castle[0]:
+                self.board[castle[2]], self.board[castle[1]] = (
+                    None,
+                    self.board[castle[2]],
+                )
+                thr = threading.Thread(
+                    target=self.moveanimation, args=(castle[2], castle[1])
+                )
+                thr.start()
+
+        self.possible_moves = []
+        self.special_moves["enpassant"] = None
+        self.special_moves["castle"] = []
+
+        thr = threading.Thread(target=self.moveanimation, args=(start, end))
+        thr.start()
+
+        # region Checking for check
+        for i in self.COLOREDSQUARES["move"]:
+            self.set(i, state="normal", overide=True)
+
+        a = (start, end)
+        for i in a:
+            self.set(i, state="select")
+        self.COLOREDSQUARES["move"] = a
+
+        m = self.get_all_moves_of_color(self.board, self.board[end].color)
+        m = list(dict.fromkeys(m))
+        if self.COLOREDSQUARES["check"] != None:
+            a, self.COLOREDSQUARES["check"] = self.COLOREDSQUARES["check"], None
+            self.set(a, "normal")
+
+        check = False
+        for i in m:
+            if (
+                self.board[i] != None
+                and self.board[i].color != self.board[end].color
+                and self.board[i].piece == "KING"
+            ):
+                self.set(i, "check")
+                self.COLOREDSQUARES["check"] = i
+                check = True
+
+        flag = False
+        for i in self.board.keys():
+            if self.board[i] != None and self.board[i].color != self.board[end].color:
+                if self.idek(self.board[i], self.board, i):
+                    flag = True
+        self.turn = "BLACK" if self.turn == "WHITE" else "WHITE"
+        if not flag:
+            if check:
+                print("Checkmate")
+            else:
+                print("Stalemate")
+
+        # endregion
 
 
 class Piece:

@@ -7,10 +7,10 @@ import random
 import tkinter as tk
 from tkinter import ttk
 import mfunctions as mnply
-import tttfuncs as ttt
+import chessfunctions as chess
 
 PORT = 6789
-SERVER = 'localhost'  # TODO Option for local host/server
+SERVER = "localhost"  # TODO Option for local host/server
 ADDRESS = (SERVER, PORT)
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -28,58 +28,62 @@ width = root.winfo_screenwidth() - 800
 height = root.winfo_screenheight() - 350
 root.geometry("%dx%d%+d%+d" % (width, height, 100, 100))
 
-columns = ('room_no', 'host_name', 'nply')
+columns = ("room_no", "host_name", "nply")
 tree = ttk.Treeview(root, columns=columns, height=height, padding=5)
-tree.column('#0', width=10)
-tree.heading('#0', text='')
-tree.heading('room_no', text='Room No.')
-tree.heading('host_name', text='Host Name')
-tree.heading('nply', text='Number of Players')
+tree.column("#0", width=10)
+tree.heading("#0", text="")
+tree.heading("room_no", text="Room No.")
+tree.heading("host_name", text="Host Name")
+tree.heading("nply", text="Number of Players")
 
-tree.grid(row=0, column=0, sticky='nsew')
+tree.grid(row=0, column=0, sticky="nsew")
 scrollbar = ttk.Scrollbar(root, orient=tk.VERTICAL, command=tree.yview)
 tree.configure(yscroll=scrollbar.set)
-scrollbar.grid(row=0, column=1, sticky='ns')
+scrollbar.grid(row=0, column=1, sticky="ns")
 # endregion
 
 
-class Room():
+class Room:
     # Class that stores Room objects to make functioning in rooms smoothly
     def __init__(self, host):
-        self.members = [host]
-        self.host = host
-        self.status = 'OPEN'
+        self.members: list[Client] = [host]
+        self.host: list = host
+        self.status = "OPEN"
         self.uuid = assign_uuid(list(rooms.keys()))
         rooms[self.uuid] = self
 
     def add(self, puid):
         self.members.append(puid)
-        msg = ('ROOM', 'ADDROOM', players[puid].details())
+        msg = ("ROOM", "ADDROOM", players[puid].details())
         self.broadcast_to_members(puid, msg)
 
     def details(self):
         # Function to return a dictionary containing details of the room
 
         d = {
-            'host': players[self.host].name,
-            'players': [players[i].details() for i in players],
-            'roomnum': self.uuid
+            "host": players[self.host].name,
+            "players": [players[i].details() for i in self.members],
+            "roomnum": self.uuid,
         }
 
         return d
 
     def start(self):
-        self.status = 'INGAME'
+        self.status = "INGAME"
         for i in self.members:
-            players[i].send_instruction(('ROOM', 'START'))
+            players[i].send_instruction(("ROOM", "START"))
 
         for i in p_in_queue:
-            i.send_instruction(('ROOM', 'REMOVE', self.uuid))
+            i.send_instruction(("ROOM", "REMOVE", self.uuid))
 
     def broadcast_to_members(self, initiator, msg):
         for i in self.members:
-            if players[i] != players[initiator]:
+            if i != initiator:
+                print("Out:", i, msg)
                 players[i].send_instruction(msg)
+
+    def broadcast_to_self(self, initiator, msg):
+        players[initiator].send_instruction(msg)
 
 
 class Client(threading.Thread):
@@ -112,18 +116,16 @@ class Client(threading.Thread):
     def join_room(self, mode):
         # Function to redirect users to the joining page
         global p_in_queue, rooms
-
-        if mode == 'LIST':
-
+        if mode == "LIST":
             if self not in p_in_queue:
                 p_in_queue.append(self)
 
             room_list = []
             for i in rooms.values():
-                if i.status == 'OPEN':
+                if i.status == "OPEN":
                     room_list.append(i.details())
 
-            package = ('ROOM', 'ADD', room_list)
+            package = ("ROOM", "ADD", room_list)
             self.send_instruction(package)
 
         else:
@@ -139,42 +141,38 @@ class Client(threading.Thread):
         self.room = Room(self.uuid)
         # Informs all clients in lobby a new room has been created
         for client in p_in_queue:
-            i = ('ROOM', 'ADD', [self.room.details()])
+            i = ("ROOM", "ADD", [self.room.details()])
             client.send_instruction(i)
 
     def instruction_handler(self, instruction):
         # Parses the request and redirects it appropriately
         print(instruction)
-        if instruction[0] == 'ROOM':
-            if instruction[1] == 'JOIN':
+        if instruction[0] == "ROOM":
+            if instruction[1] == "JOIN":
                 self.join_room(instruction[2])
 
-            elif instruction[1] == 'CREATE':
+            elif instruction[1] == "CREATE":
                 self.create_room()
 
-            elif instruction[1] == 'START':
+            elif instruction[1] == "START":
                 self.room.start()
 
-        elif instruction[0] == 'NAME':
+        elif instruction[0] == "NAME":
             self.name = instruction[1]
 
-        elif instruction[0] == 'MONOPOLY':
+        elif instruction[0] == "MONOPOLY":
             msg = mnply.serverside(instruction[1:])
             self.room.broadcast_to_members(self.uuid, msg)
 
-        elif instruction[0] == 'TTT':
-            msg = ttt.serverside(instruction[1:])
-            self.room.broadcast_to_members(self.uuid, msg)
-
-        elif instruction[0] == 'CHESS':
-            msg = ttt.serverside(instruction[1:])
-            self.room.broadcast_to_members(self.uuid, msg)
+        elif instruction[0] == "CHESS":
+            chess.serverside(instruction[1:], self.room, self.uuid)
 
     def send_instruction(self, instruction):
         self.conn.send(pickle.dumps(instruction))
+        print("SENT.")
 
     def details(self):
-        d = {'name': self.name, 'puid': self.uuid}
+        d = {"name": self.name, "puid": self.uuid}
         return d
 
 
