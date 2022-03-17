@@ -1,2 +1,4 @@
 # Gr12-CompProject
-Monopoly
+Monopoly: Dead atm
+
+Chess: Not Dead

@@ -33,8 +33,8 @@ monopoly_window.withdraw()
 board_side = screen_height - 65  # Length of board
 property_width = board_side / 12.2  # Width of one property on board
 
-board_frame = tk.Frame(monopoly_window, width=board_side, height=board_side)
-board_frame.place(relx=0.01, rely=0.04, anchor="nw")
+board_canvas = tk.Canvas(monopoly_window, width=board_side, height=board_side)
+board_canvas.place(relx=0.01, rely=0.04, anchor="nw")
 
 main_frame = tk.Frame(
     monopoly_window, width=board_side - 2, height=board_side - 2, background="white"
@@ -61,7 +61,10 @@ board_image = ImageTk.PhotoImage(
     )
 )
 
-ttk.Label(board_frame, image=board_image).place(relx=0.499, rely=0.499, anchor="center")
+board_canvas.create_image(2, 2, image=board_image, anchor="nw")
+# board_label = tk.Label(board_frame, image=board_image).place(
+#     relx=0.499, rely=0.499, anchor="center"
+# )
 
 small_info_tag = ImageTk.PhotoImage(
     ImageOps.expand(
@@ -180,7 +183,7 @@ yellow_token_image = ImageTk.PhotoImage(
 posvar = board_side - property_width / 5.5
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -188,7 +191,7 @@ tk.Button(
 ).place(x=posvar - 1.6 * property_width, y=posvar, anchor="center")
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -196,7 +199,7 @@ tk.Button(
 ).place(x=posvar - 3.6 * property_width, y=posvar, anchor="center")
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -204,7 +207,7 @@ tk.Button(
 ).place(x=posvar - 5.6 * property_width, y=posvar, anchor="center")
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -212,7 +215,7 @@ tk.Button(
 ).place(x=posvar - 6.6 * property_width, y=posvar, anchor="center")
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -220,7 +223,7 @@ tk.Button(
 ).place(x=posvar - 8.6 * property_width, y=posvar, anchor="center")
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -228,7 +231,7 @@ tk.Button(
 ).place(x=posvar - 9.6 * property_width, y=posvar, anchor="center")
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -236,7 +239,7 @@ tk.Button(
 ).place(x=posvar - 11.8 * property_width, y=posvar, anchor="center")
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -246,7 +249,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -256,7 +259,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -266,7 +269,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -276,7 +279,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -286,7 +289,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -296,7 +299,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -306,7 +309,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -316,7 +319,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -328,7 +331,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -340,7 +343,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -352,7 +355,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -364,7 +367,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -376,7 +379,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -388,7 +391,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -400,7 +403,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -412,7 +415,7 @@ tk.Button(
 )
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -420,7 +423,7 @@ tk.Button(
 ).place(x=posvar, y=posvar - 11.825 * property_width, anchor="center")
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -428,7 +431,7 @@ tk.Button(
 ).place(x=posvar, y=posvar - 10.2 * property_width, anchor="center")
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -436,7 +439,7 @@ tk.Button(
 ).place(x=posvar, y=posvar - 9.2 * property_width, anchor="center")
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -444,7 +447,7 @@ tk.Button(
 ).place(x=posvar, y=posvar - 7.2 * property_width, anchor="center")
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -452,7 +455,7 @@ tk.Button(
 ).place(x=posvar, y=posvar - 6.2 * property_width, anchor="center")
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -460,7 +463,7 @@ tk.Button(
 ).place(x=posvar, y=posvar - 4.2 * property_width, anchor="center")
 
 tk.Button(
-    board_frame,
+    board_canvas,
     image=small_info_tag,
     border=0,
     highlightthickness=0,
@@ -472,7 +475,7 @@ tk.Button(
 die_dict = dict(zip((1, 2, 3, 4, 5, 6), (dice1, dice2, dice3, dice4, dice5, dice6)))
 
 red_token = tk.Button(
-    board_frame,
+    board_canvas,
     image=red_token_image,
     border=0,
     highlightthickness=0,
@@ -485,7 +488,7 @@ red_token.place(
 )
 
 green_token = tk.Button(
-    board_frame,
+    board_canvas,
     image=green_token_image,
     border=0,
     highlightthickness=0,
@@ -498,7 +501,7 @@ green_token.place(
 )
 
 blue_token = tk.Button(
-    board_frame,
+    board_canvas,
     image=blue_token_image,
     border=0,
     highlightthickness=0,
@@ -511,7 +514,7 @@ blue_token.place(
 )
 
 yellow_token = tk.Button(
-    board_frame,
+    board_canvas,
     image=yellow_token_image,
     border=0,
     highlightthickness=0,
@@ -527,14 +530,14 @@ button_style = ttk.Style()
 button_style.configure("my.TButton", font=("times", int(property_width / 3)))
 
 roll_button = ttk.Button(
-    board_frame, text="Roll Dice", style="my.TButton", command=lambda: roll_dice()
+    board_canvas, text="Roll Dice", style="my.TButton", command=lambda: roll_dice()
 )
 roll_button.place(relx=0.5, rely=0.5, anchor="center")
 
-dice_spot1 = tk.Label(board_frame, image=dice5, border=0, highlightthickness=0)
+dice_spot1 = tk.Label(board_canvas, image=dice5, border=0, highlightthickness=0)
 dice_spot1.place(relx=0.485, rely=0.46, anchor="se")
 
-dice_spot2 = tk.Label(board_frame, image=dice5, border=0, highlightthickness=0)
+dice_spot2 = tk.Label(board_canvas, image=dice5, border=0, highlightthickness=0)
 dice_spot2.place(relx=0.515, rely=0.46, anchor="sw")
 # endregion
 
@@ -1106,6 +1109,12 @@ def property_frame_popup(property):
 property_frame = None
 
 
+def property_click(event):
+    if event.x in range(0, 200) and event.y in range(0, 200):
+        print("blah")
+        property_frame_popup("Mayfair")
+
+
 def delete_property_frame():
     global property_frame
     property_frame.place_forget()
@@ -1283,5 +1292,7 @@ def move_token(move):
         player[1].update()
         sleep(0.2)
 
+
+board_canvas.bind("<Button-1>", property_click)
 
 monopoly_window.mainloop()
