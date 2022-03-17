@@ -26,8 +26,9 @@ class Suffering:
             if x[1] == "START":
                 t = threading.Thread(target=self.start_chess, args=(x[2], self.c.send))
                 t.start()
+                self.root.withdraw()
             elif x[1] == "MOVE":
-                self.app.multiplayer(x[2])
+                self.app.move(sent=x[2], multi=True)
 
     def send(self):
         a = self.var.get()
