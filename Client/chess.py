@@ -11,7 +11,7 @@ load_dotenv()
 class Suffering:
     def __init__(self, a) -> None:
         # self.c = Client(("167.71.231.52", 6789))
-        self.c = Client(os.getenv("SERVER"), os.getenv("PORT"))
+        self.c = Client((os.getenv("SERVER"), os.getenv("PORT")))
         self.app: Chess = None
         self.GUI()
 
