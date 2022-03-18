@@ -6,7 +6,7 @@ import random
 import mfunctions as mnply
 import chessfunctions as chess
 
-PORT = 8080
+PORT = 6789
 SERVER = "0.0.0.0"  # TODO Option for local host/server
 ADDRESS = (SERVER, PORT)
 
