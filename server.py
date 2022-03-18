@@ -1,16 +1,13 @@
 # region Setup
 import socket
 import threading
-import time
 import pickle
 import random
-import tkinter as tk
-from tkinter import ttk
 import mfunctions as mnply
 import chessfunctions as chess
 
 PORT = 6789
-SERVER = "localhost"  # TODO Option for local host/server
+SERVER = "0.0.0.0"  # TODO Option for local host/server
 ADDRESS = (SERVER, PORT)
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -23,24 +20,6 @@ rooms = {}  # Dicitonary to store all existing room objects
 # endregion
 
 # region GUI             #Maybe changed later
-root = tk.Tk()
-width = root.winfo_screenwidth() - 800
-height = root.winfo_screenheight() - 350
-root.geometry("%dx%d%+d%+d" % (width, height, 100, 100))
-
-columns = ("room_no", "host_name", "nply")
-tree = ttk.Treeview(root, columns=columns, height=height, padding=5)
-tree.column("#0", width=10)
-tree.heading("#0", text="")
-tree.heading("room_no", text="Room No.")
-tree.heading("host_name", text="Host Name")
-tree.heading("nply", text="Number of Players")
-
-tree.grid(row=0, column=0, sticky="nsew")
-scrollbar = ttk.Scrollbar(root, orient=tk.VERTICAL, command=tree.yview)
-tree.configure(yscroll=scrollbar.set)
-scrollbar.grid(row=0, column=1, sticky="ns")
-# endregion
 
 
 class Room:
@@ -200,5 +179,3 @@ def start_server():
 # Threads the server itself to manage the GUI of the server seperately
 svr = threading.Thread(target=start_server)
 svr.start()
-
-root.mainloop()
