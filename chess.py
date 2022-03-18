@@ -2,12 +2,13 @@ from client_framework import Client
 from chess_multiplayer import Chess
 import threading
 import tkinter as tk
+import os
 
 
 class Suffering:
     def __init__(self, a) -> None:
-        self.c = Client(("gr12-compproject-production.up.railway.app", 8080))
-
+        # self.c = Client(("167.71.231.52", 6789))
+        self.c = Client(os.getenv("SERVER"), os.getenv("PORT"))
         self.app: Chess = None
         self.GUI()
 

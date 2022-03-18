@@ -41,7 +41,6 @@ class Chess(tk.Tk):
         self.last_move: list = [-1, -1]
         self.multiplayer_move = update
         self.turn = "WHITE"
-        self.enable_canvas(False)
 
     def initialize_canvas(self):
         Chess.size = self.winfo_screenheight() * 4 // 5
@@ -174,9 +173,9 @@ class Chess(tk.Tk):
             ),
             master=self.canvas,
         )
-        self.disabled_image = self.canvas.create_image(
+        """self.disabled_image = self.canvas.create_image(
             0, 0, image=self.disable_img, anchor=tk.NW, state=tk.HIDDEN
-        )
+        )"""
 
     def set(self, id: int, state: str, preserve_select=False, overide=False):
 
