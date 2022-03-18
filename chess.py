@@ -6,7 +6,7 @@ import tkinter as tk
 
 class Suffering:
     def __init__(self, a) -> None:
-        self.c = Client(("localhost", 6789))
+        self.c = Client((PORT, 6789))
 
         self.app: Chess = None
         self.GUI()
