@@ -3,7 +3,6 @@ import socket
 import threading
 import pickle
 import random
-import mfunctions as mnply
 import chessfunctions as chess
 
 PORT = 6789
@@ -138,10 +137,6 @@ class Client(threading.Thread):
 
         elif instruction[0] == "NAME":
             self.name = instruction[1]
-
-        elif instruction[0] == "MONOPOLY":
-            msg = mnply.serverside(instruction[1:])
-            self.room.broadcast_to_members(self.uuid, msg)
 
         elif instruction[0] == "CHESS":
             chess.serverside(instruction[1:], self.room, self.uuid)

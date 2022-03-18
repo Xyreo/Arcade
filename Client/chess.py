@@ -3,6 +3,9 @@ from chess_multiplayer import Chess
 import threading
 import tkinter as tk
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class Suffering:
