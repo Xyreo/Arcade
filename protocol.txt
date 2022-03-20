@@ -14,9 +14,9 @@ The commands are:
 
     Client -> Server
     1. CREATE - Informs creation of a new room
+        <room-type> - Requires Type of Room
     2. JOIN
-        2.1 LIST - Requests list of existing rooms
-        2.2 <room uuid> - Joins the room
+        <room uuid> - Joins the room
     3. START - Sent by host to start the game
 
     Server -> Client 

@@ -2,6 +2,7 @@ from contextlib import suppress
 import tkinter as tk
 from PIL import ImageOps, Image, ImageTk
 import threading, time, os
+import chess_interface
 
 from pygame import HIDDEN
 
@@ -47,6 +48,7 @@ class Chess(tk.Tk):
         self.geometry(
             f"{Chess.size}x{Chess.size}+{self.winfo_screenwidth()//2}+{Chess.size//16}"
         )
+        self.title("Chess")
         self.canvas = tk.Canvas(
             self,
             highlightthickness=1,
@@ -57,7 +59,7 @@ class Chess(tk.Tk):
         self.canvas.pack()
         for i in range(8):
             for j in range(8):
-                s = os.path.join("Chess_Assets", "circle.png")
+                s = os.path.join("Client", "Chess_Assets", "circle.png")
                 self.imgs[i * 10 + j] = (
                     ImageTk.PhotoImage(
                         ImageOps.expand(
@@ -71,7 +73,7 @@ class Chess(tk.Tk):
                     ImageTk.PhotoImage(
                         ImageOps.expand(
                             Image.open(
-                                os.path.join("Chess_Assets", "circle.png")
+                                os.path.join("Client", "Chess_Assets", "circle.png")
                             ).resize(
                                 (Chess.size // (8), Chess.size // (8)),
                                 Image.ANTIALIAS,
@@ -167,9 +169,9 @@ class Chess(tk.Tk):
 
         self.disimg = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open(os.path.join("Chess_Assets", "disable.png")).resize(
-                    (Chess.size, Chess.size), Image.ANTIALIAS
-                )
+                Image.open(
+                    os.path.join("Client", "Chess_Assets", "disable.png")
+                ).resize((Chess.size, Chess.size), Image.ANTIALIAS)
             ),
             master=self.canvas,
         )
@@ -672,7 +674,7 @@ class Piece:
         self.pos = pos
 
     def img(self, color: str, piece: str):
-        path = os.path.join("Chess_Assets", "128h")
+        path = os.path.join("Client", "Chess_Assets", "128h")
         size = int((Chess.size / 8) * 0.8)
         i = (color[0] + "_" + piece + "_png_128px.png").lower()
         p = os.path.join(path, i)
