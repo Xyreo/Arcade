@@ -2,45 +2,61 @@ from client_framework import Client
 import threading
 import tkinter as tk
 import chess_interface
+from multiplayer_chess import Chess
 
 
 class App:
     def __init__(self) -> None:
-        self.conn: Client = Client(("167.71.231.52", 6789))
+        self.conn: Client = Client(("localhost", 6789))
         self.conn.startrecv(self.recv)
         self.room_handler = Room(self.send)
 
     def recv(self, x):
         if x[0] == "ROOM":
-            self.room_handler(x[1:])
+            self.room_handler.server_events(x[1:])
+        if x[0] == "CHESS":
+            self.chess(x[1:])
 
     def send(self, msg):
+        print("Beep Boop: ", msg)
         self.conn.send(msg)
+
+    def chess(self, instruction):
+        print("Chess", instruction)
+        if instruction[0] == "START":
+            self.chess_handler = chess_interface.ClientInterface(
+                self.send, Chess, instruction[1]
+            )
+            # self.room_handler.destroy()
+            print(self.room_handler.t.is_alive())
+        elif instruction[0] == "MOVE":
+            self.chess_handler.move(instruction[1])
 
 
 class Room:
     def __init__(self, send) -> None:
-        self.t = threading.Thread(target=self.start_gui, args=(self.client_events))
+        self.t = threading.Thread(target=self.start_gui)
         self.t.start()
         self.send = send
 
     def start_gui(self):
         self.gui = GUI(self.client_events)
-        self.gui.mainloop
+        self.gui.mainloop()
+        print("Test")
 
     def server_events(self, instruction):
-        if instruction[0] == "START":
-            self.gui.lobby.destroy()
-            pass
-        elif instruction[0] == "ADD":
+        print("Server sent:", instruction)
+        if instruction[0] == "ADD":
             self.gui.lobby.addroom(instruction[1])
         elif instruction[0] == "ADDROOM":
-            self.gui.inroom.addplayers(instruction[1:])
+            self.gui.inroom.addplayers(instruction[1])
         elif instruction[0] == "REMOVE":
             self.gui.lobby.removeroom(instruction[1])
+        elif instruction[0] == "NAME":
+            self.gui.id = instruction[1]
 
     def client_events(self, info):
-
+        print("Client sent:", info)
         if info[0] == "CREATE":
             self.send(("ROOM", "CREATE", info[1]))
 
@@ -56,12 +72,17 @@ class Room:
         elif info[0] == "START":
             self.send(("ROOM", "START"))
 
+    def destroy(self):
+        self.gui.destroy()
+        # self.t.join()
+
 
 class GUI(tk.Tk):
     def __init__(self, app_interface):
         super().__init__()
         self.initialize()
         self.updater = app_interface
+        self.id = None
         self.frames = []
 
     def initialize(self):
@@ -122,7 +143,7 @@ class GUI(tk.Tk):
         self.wframe.destroy()
         del self.wframe
         if a == "create":
-            self.inroom = InRoom(self)
+            self.inroom = InRoom(self, self.id)
             self.updater(("CREATE", "CHESS"))
         else:
             self.lobby = Lobby(self)
@@ -163,14 +184,22 @@ class GUI(tk.Tk):
         create.grid(column=2, row=2, sticky=tk.NSEW)
         join.grid(column=4, row=2, sticky=tk.NSEW)
 
+    def join_room(self, a):
+        self.lobby.destroy()
+        for i in self.lobby.rooms:
+            if i["roomnum"] == a:
+                self.inroom = InRoom(self, i["host"])
+        self.updater(("JOIN", a))
+
 
 class Lobby:
     def __init__(self, parent) -> None:
-        self.parent = parent
+        self.parent: GUI = parent
         self.frame = tk.Frame(parent)
         self.frame.grid(sticky=tk.NSEW)
-        self.initialise()
+        self.frames = []
         self.rooms = []
+        self.initialise()
 
     def initialise(self):
         for i in range(1, 16):
@@ -187,23 +216,26 @@ class Lobby:
             room_id = self.rooms[i]["roomnum"]
             host = self.rooms[i]["host"]
             noply = len(self.rooms[i]["players"])
-            f = tk.Frame(self.wrame, bg="BLUE")
-            f.grid(row=i, column=1, sticky=tk.NSEW, pady=2)
+            f = tk.Frame(self.frame, highlightbackground="BLACK", highlightthickness=2)
+            f.grid(row=i + 2, column=1, sticky=tk.NSEW, pady=2)
             f.grid_columnconfigure(1, weight=1)
             f.grid_columnconfigure(2, weight=1)
             f.grid_columnconfigure(3, weight=1)
             f.grid_columnconfigure(4, weight=1)
             f.grid_columnconfigure(5, weight=1)
+            f.grid_rowconfigure(1, weight=1)
             room = tk.Label(f, text=str(room_id))
-            room.grid(column=1, sticky=tk.NSEW)
+            room.grid(column=1, row=1, sticky=tk.NSEW)
             host = tk.Label(f, text=host)
-            host.grid(column=2, sticky=tk.NSEW)
+            host.grid(column=2, row=1, sticky=tk.NSEW)
             noply = tk.Label(f, text=noply)
-            noply.grid(column=3, sticky=tk.NSEW)
+            noply.grid(column=3, row=1, sticky=tk.NSEW)
             join = tk.Button(
-                text="Join", command=lambda a=room_id: self.parent.updater(("JOIN", a))
+                f,
+                text="Join",
+                command=lambda a=room_id: self.parent.join_room(a),
             )
-            join.grid(column=5, sticky=tk.NSEW)
+            join.grid(column=5, row=1, sticky=tk.NSEW)
             self.frames[i] = f
 
         for i in range(len(self.rooms), len(self.frames)):
@@ -227,42 +259,57 @@ class Lobby:
 
 
 class InRoom:
-    def __init__(self, parent) -> None:
+    def __init__(self, parent, host) -> None:
         self.parent = parent
+        self.host = host
         self.frame = tk.Frame(parent)
         self.frame.grid(sticky=tk.NSEW)
         self.players = []
         self.pframes = []
+        self.initialise()
 
     def initialise(self):
         for i in range(1, 16):
             self.frame.grid_rowconfigure(i, weight=1)
+
         self.frame.grid_columnconfigure(1, weight=1)
         self.label = tk.Label(self.frame, text="Players", font=("Sans", 10))
         self.label.grid(row=1, column=1, sticky=tk.NSEW, pady=2)
-        for i in range(2, 16):
+        for i in range(2, 15):
             self.pframes.append(None)
+        if self.host == self.parent.id:
+            self.start = tk.Button(
+                self.frame,
+                text="Start",
+                font=("Sans", 10),
+                command=lambda: self.parent.updater(("START",)),
+            )
+            self.start.grid(row=15, column=1, sticky=tk.E)
 
     def update(self):
         for i in range(len(self.players)):
             name = self.players[i]["name"]
-            f = tk.Frame(self.wrame, bg="BLUE")
-            f.grid(row=i, column=1, sticky=tk.NSEW, pady=2)
+            f = tk.Frame(self.frame, highlightbackground="black", highlightthickness=2)
+            f.grid(row=i + 2, column=1, sticky=tk.NSEW, pady=2)
             f.grid_columnconfigure(1, weight=1)
             f.grid_columnconfigure(2, weight=1)
             f.grid_columnconfigure(3, weight=1)
-            playernum = tk.Label(f, text=str(i))
-            playernum.grid(column=1, sticky=tk.NSEW)
-            playername = tk.Label(f, text=name)
-            playername.grid(column=2, sticky=tk.NSEW)
+            f.grid_rowconfigure(1, weight=1)
+            font = ("Helvetica", 7)
+            playernum = tk.Label(f, text=str(i), font=font, anchor=tk.CENTER)
+            playernum.grid(column=1, row=1, sticky=tk.NSEW)
+            playername = tk.Label(f, text=name, font=font, anchor=tk.CENTER)
+            playername.grid(column=2, row=1, sticky=tk.NSEW)
+            playername.grid_propagate(0)
             self.pframes[i] = f
 
-        for i in range(len(self.rooms), len(self.pframes) - 1):
+        for i in range(len(self.players), len(self.pframes) - 1):
             if self.pframes[i] != None:
                 self.pframes[i].destroy()
                 self.pframes[i] = None
 
     def addplayers(self, player):
+        print(player)
         self.players.extend(player)
         self.update()
 

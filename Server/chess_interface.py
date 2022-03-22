@@ -7,10 +7,8 @@ class ServerInterface:
     def __init__(self, room) -> None:
         msg = ("CHESS", "START", "WHITE")
         room.broadcast_to_self(room.host, msg)
-        for i in room.members:
-            if i != room.host:
-                msg = ("CHESS", "START", "BLACK")
-                room.broadcast_to_self(i, msg)
+        msg = ("CHESS", "START", "BLACK")
+        room.broadcast_to_members(room.host, msg)
         self.room = room
 
     def move(self, instruction, uuid):
@@ -36,4 +34,4 @@ class ClientInterface:
         self.app.move(sent=instruction, multi=True)
 
     def played(self, move):
-        self.send(("CHESS", "MOVE", move))
+        self.send("CHESS", "MOVE", move)

@@ -3,10 +3,10 @@ import socket
 import threading
 import pickle
 import random
-import chessfunctions as chess
+import chess_interface
 
 PORT = 6789
-SERVER = "0.0.0.0"
+SERVER = "localhost"
 ADDRESS = (SERVER, PORT)
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -26,7 +26,7 @@ class Room:
         self.uuid = assign_uuid(list(rooms.keys()))
         self.type = type
         rooms[self.uuid] = self
-        msg = ("ROOM", "ADDROOM", players[host].details())
+        msg = ("ROOM", "ADDROOM", [players[host].details()])
         self.broadcast_to_self(host, msg)
         print(
             f"Room Created: {self.uuid}\nHost: {players[host].name}\nGame: {self.type}\n"
@@ -34,7 +34,7 @@ class Room:
 
         # Informs all clients in lobby a new room has been created
         for client in p_in_queue:
-            i = ("ROOM", "ADD", [self.room.details()])
+            i = ("ROOM", "ADD", [self.details()])
             client.send_instruction(i)
 
     def add_player(self, puid):
@@ -43,7 +43,7 @@ class Room:
         msg = ("ROOM", "ADDROOM", [players[puid].details()])
         self.broadcast_to_members(puid, msg)
 
-        msg = ("ROOM", "ADDROOM", [players[i].details for i in self.members])
+        msg = ("ROOM", "ADDROOM", [players[i].details() for i in self.members])
         self.broadcast_to_self(puid, msg)
 
         print(f"Player {players[puid].name} joined room {self.uuid}\n")
@@ -63,19 +63,22 @@ class Room:
     def start(self):
         self.status = "INGAME"
         for i in self.members:
-            players[i].send_instruction(("ROOM", "START"))
             p_in_queue.remove
 
         for i in p_in_queue:
             i.send_instruction(("ROOM", "REMOVE", self.uuid))
 
+        if self.type == "CHESS":
+            self.game_handler = chess_interface.ServerInterface(self)
+
     def broadcast_to_members(self, initiator, msg):
         for i in self.members:
             if i != initiator:
-                print("Out:", i, msg)
+                print("Out:", players[i].name, msg)
                 players[i].send_instruction(msg)
 
     def broadcast_to_self(self, initiator, msg):
+        print("To self", players[initiator].name, msg)
         players[initiator].send_instruction(msg)
 
 
@@ -133,7 +136,7 @@ class Client(threading.Thread):
 
     def instruction_handler(self, instruction):
         # Parses the request and redirects it appropriately
-        print(instruction)
+        print("Received:", self.name, instruction)
         if instruction[0] == "ROOM":
             if instruction[1] == "JOIN":
                 self.join_room(instruction[2])
@@ -149,11 +152,12 @@ class Client(threading.Thread):
 
         elif instruction[0] == "NAME":
             self.name = instruction[1]
+            self.send_instruction(("NAME", self.uuid))
             print(f"Active connections : {threading.activeCount()-2}")
             print(f"Player {self.name} joined.\n")
 
         elif instruction[0] == "CHESS":
-            chess.serverside(instruction[1:], self.room, self.uuid)
+            self.room.game_handler.update(self.uuid, instruction[1:])
 
     def send_instruction(self, instruction):
         self.conn.send(pickle.dumps(instruction))

@@ -25,7 +25,6 @@ class Client:
         while self.connected:
             instruction = self.conn.recv(1024)
             instruction = pickle.loads(instruction)
-            print("listner: ", instruction)
             updater(instruction)
 
 
