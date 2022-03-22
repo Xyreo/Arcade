@@ -7,7 +7,7 @@ from multiplayer_chess import Chess
 
 class App:
     def __init__(self) -> None:
-        self.conn: Client = Client(("localhost", 6789))
+        self.conn: Client = Client(("167.71.231.52", 6789))
         self.conn.startrecv(self.recv)
         self.room_handler = Room(self.send)
 
