@@ -3,10 +3,10 @@ import tkinter as tk
 from PIL import ImageOps, Image, ImageTk
 import threading, time, os
 
-from pygame import HIDDEN
+ASSET_PATH = "."
 
 
-class Chess(tk.Tk):
+class Chess(tk.Toplevel):
     color = {
         "black": "#eeeed2",
         "white": "#769656",
@@ -58,7 +58,7 @@ class Chess(tk.Tk):
         self.canvas.pack()
         for i in range(8):
             for j in range(8):
-                s = os.path.join("Chess_Assets", "circle.png")
+                s = os.path.join(ASSET_PATH, "Chess_Assets", "circle.png")
                 self.imgs[i * 10 + j] = (
                     ImageTk.PhotoImage(
                         ImageOps.expand(
@@ -72,7 +72,7 @@ class Chess(tk.Tk):
                     ImageTk.PhotoImage(
                         ImageOps.expand(
                             Image.open(
-                                os.path.join("Chess_Assets", "circle.png")
+                                os.path.join(ASSET_PATH, "Chess_Assets", "circle.png")
                             ).resize(
                                 (Chess.size // (8), Chess.size // (8)),
                                 Image.ANTIALIAS,
@@ -168,9 +168,9 @@ class Chess(tk.Tk):
 
         self.disimg = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open(os.path.join("Chess_Assets", "disable.png")).resize(
-                    (Chess.size, Chess.size), Image.ANTIALIAS
-                )
+                Image.open(
+                    os.path.join(ASSET_PATH, "Chess_Assets", "disable.png")
+                ).resize((Chess.size, Chess.size), Image.ANTIALIAS)
             ),
             master=self.canvas,
         )
@@ -673,7 +673,7 @@ class Piece:
         self.pos = pos
 
     def img(self, color: str, piece: str):
-        path = os.path.join("Chess_Assets", "128h")
+        path = os.path.join(ASSET_PATH, "Chess_Assets", "128h")
         size = int((Chess.size / 8) * 0.8)
         i = (color[0] + "_" + piece + "_png_128px.png").lower()
         p = os.path.join(path, i)
@@ -945,5 +945,7 @@ class Piece:
 
 
 if __name__ == "__main__":
-    app = Chess("WHITE", print)
+    app = tk.Tk()
+    app.withdraw()
+    chess = Chess("WHITE", print)
     app.mainloop()
