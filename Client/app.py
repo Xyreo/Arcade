@@ -8,8 +8,9 @@ from multiplayer_chess import Chess
 class App:
     def __init__(self) -> None:
         self.conn: Client = Client(("167.71.231.52", 6789))
-        self.conn.startrecv(self.recv)
         self.room_handler = Room(self.send)
+        self.conn.startrecv(self.recv)
+        self.room_handler.start_gui()
 
     def recv(self, x):
         if x[0] == "ROOM":
@@ -24,19 +25,16 @@ class App:
     def chess(self, instruction):
         print("Chess", instruction)
         if instruction[0] == "START":
-            self.chess_handler = chess_interface.ClientInterface(
-                self.send, Chess, instruction[1]
-            )
-            # self.room_handler.destroy()
-            print(self.room_handler.t.is_alive())
+            self.chess_handler = chess_interface.ClientInterface(self.send)
+            self.chesss = Chess(instruction[1], self.chess_handler.played)
         elif instruction[0] == "MOVE":
-            self.chess_handler.move(instruction[1])
+            self.chesss.move(multi=[True, instruction[1]])
 
 
 class Room:
     def __init__(self, send) -> None:
-        self.t = threading.Thread(target=self.start_gui)
-        self.t.start()
+        """self.t = threading.Thread(target=self.start_gui)
+        self.t.start()"""
         self.send = send
 
     def start_gui(self):
@@ -74,7 +72,6 @@ class Room:
 
     def destroy(self):
         self.gui.destroy()
-        # self.t.join()
 
 
 class GUI(tk.Tk):

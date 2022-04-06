@@ -78,7 +78,7 @@ class Room:
                 players[i].send_instruction(msg)
 
     def broadcast_to_self(self, initiator, msg):
-        print("To self", players[initiator].name, msg)
+        print("To self,", players[initiator].name, ":", msg)
         players[initiator].send_instruction(msg)
 
 

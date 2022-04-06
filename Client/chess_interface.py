@@ -22,18 +22,8 @@ class ServerInterface:
 
 
 class ClientInterface:
-    def __init__(self, updater, game, color) -> None:
+    def __init__(self, updater) -> None:
         self.send = updater
-        t = threading.Thread(target=self.start_chess, args=(color, game))
-        t.start()
-
-    def start_chess(self, color, game):
-        print("Eg")
-        self.app = game(color, self.played)
-        self.app.mainloop()
-
-    def move(self, instruction):
-        self.app.move(sent=instruction, multi=True)
 
     def played(self, move):
         self.send(("CHESS", "MOVE", move))
