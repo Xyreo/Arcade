@@ -20,6 +20,7 @@ class Chess(tk.Toplevel):
         "check": "#f33e42",
     }
     size = None
+    swap = {"WHITE": "BLACK", "BLACK": "WHITE"}
 
     def __init__(self, side, update, debug=False):
         super().__init__()
@@ -165,7 +166,9 @@ class Chess(tk.Toplevel):
                 if board[i][j] != "-":
                     color = "BLACK" if board[i][j].islower() else "WHITE"
                     piece = FEN.pieces[board[i][j].lower()]
-                    self.board[j * 10 + i] = Piece(piece, color, j * 10 + i, self)
+                    self.board[j * 10 + i] = ChessPiece(
+                        piece, color, self.board, j * 10 + i, self
+                    )
                 else:
                     self.board[j * 10 + i] = None
 
@@ -239,7 +242,6 @@ class Chess(tk.Toplevel):
             self.canvas.tag_raise(self.board_ids[id]["base"])
 
     def display_moves(self, show: bool = True):
-
         if show:
             self.possible_moves = self.board.get_moves(self.selected)
 
@@ -300,7 +302,7 @@ class Chess(tk.Toplevel):
         for i in m:
             b = dict(zip(board.keys(), board.values()))
             b[i], b[k] = b[k], None
-            color = "BLACK" if b[i].color != "BLACK" else "WHITE"
+            color = Chess.swap[b[i].color]
             move = self.get_all_moves_of_color(b, color)
             for j in move:
                 if b[j] != None and b[j].piece == "KING" and b[j].color == piece.color:
@@ -596,7 +598,7 @@ class Chess(tk.Toplevel):
                 if self.check_for_check(self.board[i], self.board, i):
                     flag = True
 
-        self.turn = "BLACK" if self.turn == "WHITE" else "WHITE"
+        self.turn = Chess.swap[self.turn]
 
         if not flag:
             if check:
@@ -729,7 +731,7 @@ class Chess(tk.Toplevel):
                 if self.check_for_check(self.board[i], self.board, i):
                     flag = True
 
-        self.turn = "BLACK" if self.turn == "WHITE" else "WHITE"
+        self.turn = Chess.swap[self.turn]
 
         if not flag:
             if check:
@@ -804,30 +806,13 @@ class Chess(tk.Toplevel):
 
 
 class Piece:
-    def __init__(self, piece, color, pos, game: Chess = None):
+    def __init__(self, piece, color, board, pos):
         self.piece = piece
         self.color = color
-        self.img_id = None
-        self.moves: list = []
-        self.game: Chess = game
+        # self.moves: list = []
         self.hasMoved: bool = False
         self.pos = pos
-        if game:
-            self.createImage(self.game.canvas, pos)
-            self.game.canvas.tag_raise(self.img_id)
-
-    def img(self, color: str, piece: str):
-        path = os.path.join(ASSET_PATH, "Chess_Assets", "128h")
-        size = int((Chess.size / 8) * 0.75)
-        i = (color[0] + "_" + piece + "_png_128px.png").lower()
-        p = os.path.join(path, i)
-
-        return ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(p).resize((size, size), Image.Resampling.LANCZOS)
-            ),
-            master=self.game.canvas,
-        )
+        self.board = board
 
     def moved(self, pos):
         if not self.hasMoved:
@@ -839,32 +824,20 @@ class Piece:
                 p = ("K", "Q")
 
             if self.piece == "KING":
-                self.game.fen["C"] = self.game.fen["C"].replace(p[0], "")
-                self.game.fen["C"] = self.game.fen["C"].replace(p[1], "")
+                self.board.fen["C"] = self.board.fen["C"].replace(p[0], "")
+                self.board.fen["C"] = self.game.fen["C"].replace(p[1], "")
 
             elif self.piece == "ROOK":
                 if self.pos // 10 == 0:
-                    self.game.fen["C"] = self.game.fen["C"].replace(p[1], "")
+                    self.board.fen["C"] = self.board.fen["C"].replace(p[1], "")
                 else:
-                    self.game.fen["C"] = self.game.fen["C"].replace(p[0], "")
+                    self.board.fen["C"] = self.board.fen["C"].replace(p[0], "")
 
             elif self.piece == "PAWN":
                 if abs(self.pos - pos) == "2":
-                    self.game.fen["EP"] = (self.pos + pos) // 2
+                    self.board.fen["EP"] = (self.pos + pos) // 2
 
         self.pos = pos
-
-    def createImage(self, canvas: tk.Canvas, key):
-        x1, y1, x2, y2 = self.game.grid_to_coords(key)
-        self.i = self.img(self.color, self.piece)  # Tkinter Garbage Collection is weird
-        self.img_id = canvas.create_image(
-            (x1 + x2) // 2,
-            (y1 + y2) // 2,
-            anchor=tk.CENTER,
-            image=self.i,
-            # state=tk.HIDDEN,  # TODO
-        )
-        canvas.tag_raise(self.img_id)
 
     def generate_moves(self, context: tuple = (None, None)) -> list:
         moves = []
@@ -891,7 +864,7 @@ class Piece:
                         if not board[i]:
                             b = dict(zip(board.keys(), board.values()))
                             b[i], b[self.pos] = b[self.pos], None
-                            c = "BLACK" if self.color == "WHITE" else "BLACK"
+                            c = Chess.swap[self.color]
                             m = self.game.get_all_moves_of_color(b, c)
                             if i in m:
                                 break
@@ -908,7 +881,7 @@ class Piece:
                         if not board[i]:
                             b = dict(zip(board.keys(), board.values()))
                             b[i], b[self.pos] = b[self.pos], None
-                            c = "BLACK" if self.color == "WHITE" else "BLACK"
+                            c = Chess.swap[self.color]
                             m = self.game.get_all_moves_of_color(b, c)
                             if i in m:
                                 break
@@ -985,9 +958,10 @@ class Piece:
         moves.extend(tmove)
         return moves
 
-    def gen_moves(self, board):
+    def gen_moves(self):
         moves = []
         k = self.pos
+        board = self.board
         piece = board[k].piece
         color = board[k].color
         if piece == "KING":
@@ -1002,11 +976,11 @@ class Piece:
 
         elif piece == "PAWN":
             sign = 1 if color == "BLACK" else -1
-            moves.append(Move(k, k + sign))
+            moves.append(k + sign)
 
             if k % 10 == 1 and board[k + 1] == None and board[k + 2] == None:
                 if board[k].color == "BLACK":
-                    moves.append(Move(k, k + 2))
+                    moves.append(k + 2)
 
             elif k % 10 == 6 and board[k - 1] == None and board[k - 2] == None:
                 if board[k].color == "WHITE":
@@ -1112,7 +1086,6 @@ class Piece:
 
     def fix(self, board, moves):
         k = self.pos
-        print(k)
         color = board[k].color
 
         move = []
@@ -1125,6 +1098,40 @@ class Piece:
 
     def get(self):
         return (self.piece, self.color, self.pos)
+
+
+class ChessPiece(Piece):
+    def __init__(self, piece, color, board, pos, game: Chess):
+        super().__init__(piece, color, board, pos)
+        self.img_id = None
+        self.game: Chess = game
+        self.createImage(self.game.canvas, pos)
+        self.game.canvas.tag_raise(self.img_id)
+
+    def img(self, color: str, piece: str):
+        path = os.path.join(ASSET_PATH, "Chess_Assets", "128h")
+        size = int((Chess.size / 8) * 0.75)
+        i = (color[0] + "_" + piece + "_png_128px.png").lower()
+        p = os.path.join(path, i)
+
+        return ImageTk.PhotoImage(
+            ImageOps.expand(
+                Image.open(p).resize((size, size), Image.Resampling.LANCZOS)
+            ),
+            master=self.game.canvas,
+        )
+
+    def createImage(self, canvas: tk.Canvas, key):
+        x1, y1, x2, y2 = self.game.grid_to_coords(key)
+        self.i = self.img(self.color, self.piece)  # Tkinter Garbage Collection is weird
+        self.img_id = canvas.create_image(
+            (x1 + x2) // 2,
+            (y1 + y2) // 2,
+            anchor=tk.CENTER,
+            image=self.i,
+            # state=tk.HIDDEN,  # TODO
+        )
+        canvas.tag_raise(self.img_id)
 
 
 class FEN:
@@ -1213,7 +1220,7 @@ class FEN:
     def __setitem__(self, key, value):
         fen = self.split_fen()
         if key[0] == "B":
-            if len(key) == "1":
+            if len(key) == 1:
                 fen[0:8] = FEN.digest(value)
             else:
                 fen[int(key[1] - 1)] = value
@@ -1346,46 +1353,56 @@ class Board:
 
     def fen_to_board(self):
         b = self.fen["B"]
-        board = {}
+        self.board = {}
         for i in range(len(b)):
-            for j in range(len(i)):
+            for j in range(len(b[i])):
                 if b[i][j] == "-":
-                    board[j * 10 + i] = None
+                    self.board[j * 10 + i] = None
                 else:
                     if b[i][j].islower():
-                        board[j * 10 + i] = Piece(
-                            FEN.pieces[b[i][j]], "BLACK", j * 10 + i
+                        self.board[j * 10 + i] = Piece(
+                            FEN.pieces[b[i][j]], "BLACK", self.board, j * 10 + i
                         )
                     else:
-                        board[j * 10 + i] = Piece(
-                            FEN.pieces[b[i][j]], "WHITE", j * 10 + i
+                        self.board[j * 10 + i] = Piece(
+                            FEN.pieces[b[i][j].lower()], "WHITE", self.board, j * 10 + i
                         )
 
     def get_moves(self, k):
         pmoves = self[k].gen_moves()
-        moves = [Move(k, i, self) for i in pmoves]
+        moves = []
+        for i in pmoves:
+            fen = self.fen.value
+            b = Board(fen)
+            b.moved(k, i)
+            if not b.is_in_check(b[i].color):
+                moves.append(i)
+        return moves
 
     def get_all_moves_of_color(self, color) -> list:
         m = []
         board = self.board
         for i in board.keys():
             if board[i] != None and board[i].color == color:
-                m.extend(board[i].gen_moves(board))
+                m.extend(board[i].gen_moves())
         return m
 
-    def get_copy(self, move):
-        fen = FEN(self.fen)
-        fen.change_board(move[0], move[1])
-        fen.change_turn()
-        b = Board(fen)
+    def moved(self, start, end):
+        fen = self.fen
+        print(self.board)
+        if self.board[start].piece == "PAWN" and end == fen["EP"]:
+            pass
+        elif self.board[start].piece == "KING" and abs(start - end) == 2:
+            pass
 
-    def is_in_check(self):
-        color = "BLACK" if self.fen["T"] == "b" else "WHITE"
-        m = self.get_all_moves_of_color(color)
+        self.board[end], self.board[start] = self.board[start], None
+
+    def is_in_check(self, color):
+        m = self.get_all_moves_of_color(Chess.swap[color])
         for i in self.board.keys():
             if (
                 self.board[i] != None
-                and self.board[i].color != color
+                and self.board[i].color == color
                 and self.board[i].piece == "KING"
             ):
                 if i in m:
@@ -1412,6 +1429,10 @@ class Board:
 
     def __setitem__(self, key, value):
         self.board[key] = value
+        self.fen["B"] = self.board
+
+    def __str__(self):
+        return str(self.fen)
 
     # endregion
 
