@@ -20,8 +20,8 @@ monopoly_window.resizable(False, False)
 monopoly_window.config(bg="white")
 monopoly_window.protocol("WM_DELETE_WINDOW", root.destroy)
 
-screen_width = monopoly_window.winfo_screenwidth() - 100
-screen_height = monopoly_window.winfo_screenheight() - 100
+screen_width = int(0.9 * monopoly_window.winfo_screenwidth())
+screen_height = int(screen_width / 1.9)
 x_coord = monopoly_window.winfo_screenwidth() // 2 - screen_width // 2
 y_coord = (monopoly_window.winfo_screenheight() - 70) // 2 - screen_height // 2
 
@@ -68,7 +68,7 @@ board_canvas.create_image(2, 2, image=board_image, anchor="nw")
 
 small_info_tag = ImageTk.PhotoImage(
     ImageOps.expand(
-        Image.open("Assets/Info.png").resize(
+        Image.open("Assets/small_info.png").resize(
             (int(property_width / 5.5), int(property_width / 5.5)), Image.ANTIALIAS
         )
     )
@@ -76,7 +76,7 @@ small_info_tag = ImageTk.PhotoImage(
 
 big_info_tag = ImageTk.PhotoImage(
     ImageOps.expand(
-        Image.open("Assets/hotelrulesinfo.png").resize(
+        Image.open("Assets/big_info.png").resize(
             (int(property_width / 2), int(property_width / 2)), Image.ANTIALIAS
         )
     )
