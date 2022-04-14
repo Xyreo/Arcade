@@ -2,6 +2,7 @@ from contextlib import suppress
 import tkinter as tk
 from PIL import ImageOps, Image, ImageTk
 import threading, time, os
+import json
 
 ASSET_PATH = "./Client"
 
@@ -29,7 +30,6 @@ class Chess(tk.Toplevel):
         self.board_ids: dict = {}
         self.imgs: dict = {}  # TKINTER SUCKS
         self.possible_moves: list = []
-        self.fen = FEN(None)
         self.initialize_canvas()
         self.initialize_board()
         self.selected: int = None
@@ -38,9 +38,9 @@ class Chess(tk.Toplevel):
         self.old_selected = None
         self.old_hover = None
         self.COLOREDSQUARES: dict = {"check": None, "move": []}
-        self.special_moves: dict = {"enpassant": None, "castle": []}
         self.last_move: list = [-1, -1]
-        self.multiplayer_move = update
+        self.pawn_promotion = None
+        self.update_move = update
         self.turn = "WHITE"
         self.debug = debug
 
@@ -100,10 +100,6 @@ class Chess(tk.Toplevel):
                 key = i * 10 + j
                 x1, y1, x2, y2 = self.grid_to_coords(i, j)
                 color = "white" if (i + j) % 2 else "black"
-                self.special_moves = {
-                    "castle": {"white": ("Y", "Y"), "black": ("Y", "Y")}
-                }
-
                 base = self.canvas.create_rectangle(
                     x1, y1, x2, y2, fill=Chess.color[color], outline="", state="normal"
                 )
@@ -159,7 +155,7 @@ class Chess(tk.Toplevel):
 
         # region Initializing pieces on Board
 
-        board = self.fen["B"]
+        board = self.board.fen["B"]
 
         for i in range(len(board)):
             for j in range(len(board[i])):
@@ -253,65 +249,24 @@ class Chess(tk.Toplevel):
                     )
 
                 self.canvas.itemconfigure(self.board_ids[i]["hint"], state=tk.NORMAL)
-
-            enpassant = self.special_moves["enpassant"]
-            if enpassant != None:
-                self.canvas.itemconfigure(
-                    self.board_ids[enpassant[0]]["hint"],
-                    image=self.imgs[enpassant[0]][0],
-                    state=tk.NORMAL,
-                )
-            castle = self.special_moves["castle"]
-            for i in castle:
-                self.canvas.itemconfigure(
-                    self.board_ids[i[0]]["hint"],
-                    image=self.imgs[i[0]][0],
-                    state=tk.NORMAL,
-                )
-
         else:
             for i in self.possible_moves:
                 self.canvas.itemconfigure(
                     self.board_ids[i]["hint"], image=self.imgs[i][0], state=tk.HIDDEN
                 )
 
-            enpassant = self.special_moves["enpassant"]
-            if enpassant != None:
-                self.canvas.itemconfigure(
-                    self.board_ids[enpassant[0]]["hint"],
-                    image=self.imgs[enpassant[0]][0],
-                    state=tk.HIDDEN,
-                )
-            castle = self.special_moves["castle"]
-            for i in castle:
-                self.canvas.itemconfigure(
-                    self.board_ids[i[0]]["hint"],
-                    image=self.imgs[i[0]][0],
-                    state=tk.HIDDEN,
-                )
-
             self.possible_moves = []
-            self.special_moves["enpassant"] = None
-            self.special_moves["castle"] = []
 
-    def check_for_check(self, piece, board, k) -> bool:
-        # Returns whether moving the passed piece can prevent check
-
-        m = piece.gen_moves(board)
-        flag = False
-        for i in m:
-            b = dict(zip(board.keys(), board.values()))
-            b[i], b[k] = b[k], None
-            color = Chess.swap[b[i].color]
-            move = self.get_all_moves_of_color(b, color)
-            for j in move:
-                if b[j] != None and b[j].piece == "KING" and b[j].color == piece.color:
-                    break
-            else:
-                flag = True
-                break
-
-        return flag
+    def check_for_mate(self, color) -> bool:
+        for i in self.board.keys():
+            if self.board[i] != None and self.board[i].color == color:
+                m = self.board[i].gen_moves(inCheck=True)
+                for j in m:
+                    b = Board(self.board.fen.value)
+                    b.moved(i, j)
+                    if not b.is_in_check(color):
+                        return False
+        return True
 
     def moveanimation(self, s, e, simul=False):
         x1, y1, x2, y2 = self.grid_to_coords(s)
@@ -335,8 +290,8 @@ class Chess(tk.Toplevel):
         x, y = self.coords_to_grid(e.x, e.y)
         k = 10 * x + y
 
-        if k in self.possible_moves or self.inSpecialMove(k):
-            self.move(k=k)
+        if k in self.possible_moves:
+            self.start_move(self.selected, k)
             self.state = "Move"
 
         elif self.board[k] == None or (
@@ -389,10 +344,8 @@ class Chess(tk.Toplevel):
                 elif self.hover == self.selected:
                     self.unselect()
 
-                elif self.hover in self.possible_moves or self.inSpecialMove(
-                    self.hover
-                ):
-                    self.move(k=self.hover, snap=True)
+                elif self.hover in self.possible_moves:
+                    self.start_move(self.selected, self.hover, snap=True)
                     didMove = True
 
                 else:
@@ -402,10 +355,8 @@ class Chess(tk.Toplevel):
                 if self.hover == None:
                     self.set(self.selected, "normal", preserve_select=True)
 
-                elif self.hover in self.possible_moves or self.inSpecialMove(
-                    self.hover
-                ):
-                    self.move(k=self.hover, snap=True)
+                elif self.hover in self.possible_moves:
+                    self.start_move(self.selected, self.hover, snap=True)
                     didMove = True
 
                 else:
@@ -446,16 +397,6 @@ class Chess(tk.Toplevel):
 
         self.move_obj(self.board[self.selected], e.x, e.y)
 
-    def inSpecialMove(self, k):
-        if self.special_moves["enpassant"] != None:
-            if k == self.special_moves["enpassant"][0]:
-                return True
-        for i in self.special_moves["castle"]:
-            if k == i[0]:
-                return True
-
-        return False
-
     def move_obj(self, obj, x, y):
         self.canvas.moveto(obj.img_id, x - obj.i.width() // 2, y - obj.i.height() // 2)
 
@@ -488,177 +429,25 @@ class Chess(tk.Toplevel):
             (y + 1) * Chess.size // 8,
         )
 
-    def move(self, k=None, snap=False, multi=False):
-        t = threading.Thread(target=self.fen_move, args=(k, snap, multi))
+    def start_move(self, start, end, multi=False, snap=False):
+        t = threading.Thread(target=self.move, args=(start, end, multi, snap))
         t.start()
 
-    def threaded_move(self, k, snap, multi):
-
-        # region updating position
-
-        if multi:
-            start, end, special_moves = multi[1]
-        else:
-            start = self.selected
-            end = k
-            special_moves = self.special_moves
-
-        self.last_move = [start, end]
-        self.board[start].hasMoved = True
-        self.board[start].pos = end
-        self.oldimg = self.board[start]
-        update_dict = {end: self.board[start], start: None}
-        self.board.update(update_dict)
-
-        enpassant = special_moves["enpassant"]
-        cast = special_moves["castle"]
-
-        if enpassant and end == enpassant[0]:
-            self.board[enpassant[1]] = None
-
-        for castle in cast:
-            if end == castle[0]:
-                self.board[castle[2]], self.board[castle[1]] = (
-                    None,
-                    self.board[castle[2]],
-                )
-                thr = threading.Thread(
-                    target=self.moveanimation, args=(castle[2], castle[1], True)
-                )
-                thr.start()
-                # self.lock.acquire()
-
-        # endregion
-
-        # region How the piece moves
-        if snap:
-            x1, y1, x2, y2 = self.grid_to_coords(end)
-            self.move_obj(self.board[end], (x1 + x2) // 2, (y1 + y2) // 2)
-            self.oldimg = None
-        else:
-            thr = threading.Thread(target=self.moveanimation, args=(start, end))
-            thr.start()
-            self.lock.acquire()
-
-        # endregion
-
-        # region Pawn Promotion
-        if self.board[end].piece == "PAWN" and end % 10 in [0, 7]:
-            if not multi:
-                self.promotion(end)
-                self.lock.acquire()
-                special_moves = self.special_moves
-
-            self.board[end] = Piece(
-                special_moves["pawnpromotion"], self.board[end].color, end, self
-            )
-        elif "pawnpromotion" in self.special_moves.keys():
-            del self.special_moves["pawnpromotion"]
-
-        # endregion
-        sent = (start, end, self.special_moves)
-        if not multi:
-            self.multiplayer_move(sent)
-            self.display_moves(False)
-        else:
-            self.possible_moves = []
-            self.special_moves["enpassant"] = None
-            self.special_moves["castle"] = []
-            self.special_moves["pawnpromotion"] = None
-
-        # region Checking for check
-        for i in self.COLOREDSQUARES["move"]:
-            self.set(i, state="normal", overide=True)
-
-        a = (start, end)
-        for i in a:
-            self.set(i, state="select")
-        self.COLOREDSQUARES["move"] = a
-
-        m = self.get_all_moves_of_color(self.board, self.board[end].color)
-        m = list(dict.fromkeys(m))
-        if self.COLOREDSQUARES["check"] != None:
-            a, self.COLOREDSQUARES["check"] = self.COLOREDSQUARES["check"], None
-            self.set(a, "normal")
-
-        check = False
-        for i in m:
-            if (
-                self.board[i] != None
-                and self.board[i].color != self.board[end].color
-                and self.board[i].piece == "KING"
-            ):
-                self.set(i, "check")
-                self.COLOREDSQUARES["check"] = i
-                check = True
-
-        flag = False
-        for i in self.board.keys():
-            if self.board[i] != None and self.board[i].color != self.board[end].color:
-                if self.check_for_check(self.board[i], self.board, i):
-                    flag = True
-
-        self.turn = Chess.swap[self.turn]
-
-        if not flag:
-            if check:
-                print("Checkmate")
-            else:
-                print("Stalemate")
-
-        # endregion
-
-    def fen_move(self, k, snap, multi):
-        # FEN
-        self.fen.change_turn()
-        if multi:
-            start, end, special_moves = multi[1]
-        else:
-            start = self.selected
-            end = k
-            special_moves = self.special_moves
-
+    def move(self, start, end, multi, snap):
         self.last_move = [start, end]
         self.board[start].moved(end)
         self.oldimg = self.board[start]
-        update_dict = {end: self.board[start], start: None}
-        self.board.update(update_dict)
-        # FEN
-        self.fen.change_board(start, end)
-
-        enpassant = special_moves["enpassant"]
-        cast = special_moves["castle"]
+        color = self.board[end].color
 
         # Enpassant possibility
         if self.board[end].piece == "PAWN":
             if self.last_move[0] - self.last_move[1] == -2:
-                self.fen["EP"] = Chess.grid_to_square(end - 1)
+                self.board.fen["EP"] = Chess.grid_to_square(end - 1)
             elif self.last_move[0] - self.last_move[1] == 2:
-                self.fen["EP"] = Chess.grid_to_square(end + 1)
-
-        # endregion
-
-        if enpassant and end == enpassant[0]:
-            self.board[enpassant[1]] = None
-
-        for castle in cast:
-            if end == castle[0]:
-                self.board[castle[2]], self.board[castle[1]] = (
-                    None,
-                    self.board[castle[2]],
-                )
-                # FEN
-                self.fen.change_board(castle[2], castle[1])
-
-                thr = threading.Thread(
-                    target=self.moveanimation, args=(castle[2], castle[1], True)
-                )
-                thr.start()
-
-        # endregion
+                self.board.fen["EP"] = Chess.grid_to_square(end + 1)
 
         # region How the piece moves
-        if snap:
+        if snap and not multi:
             x1, y1, x2, y2 = self.grid_to_coords(end)
             self.move_obj(self.board[end], (x1 + x2) // 2, (y1 + y2) // 2)
             self.oldimg = None
@@ -674,30 +463,19 @@ class Chess(tk.Toplevel):
             if not multi:
                 self.promotion(end)
                 self.lock.acquire()
-                special_moves = self.special_moves
 
-            self.board[end] = Piece(
-                special_moves["pawnpromotion"], self.board[end].color, end, self
+            self.board[end] = ChessPiece(
+                self.pawn_promotion, self.board[end].color, self.board, end, self
             )
-            # PGN
-            p = FEN.pieces2[special_moves["pawnpromotion"]]
-            p = p if self.board[end].color == "BLACK" else p.upper()
-            print(p)
-            self.fen.change_board(end, p)
-
-        elif "pawnpromotion" in self.special_moves.keys():
-            del self.special_moves["pawnpromotion"]
 
         # endregion
-        sent = (start, end, self.special_moves)
-        if not multi:
-            self.multiplayer_move(sent)
+        sent = (start, end, self.pawn_promotion)
+        if not multi or self.debug:
+            self.update_move(sent)
             self.display_moves(False)
         else:
             self.possible_moves = []
-            self.special_moves["enpassant"] = None
-            self.special_moves["castle"] = []
-            self.special_moves["pawnpromotion"] = None
+        self.pawn_promotion = None
 
         # region Checking for check
         for i in self.COLOREDSQUARES["move"]:
@@ -708,43 +486,23 @@ class Chess(tk.Toplevel):
             self.set(i, state="select")
         self.COLOREDSQUARES["move"] = a
 
-        m = self.get_all_moves_of_color(self.board, self.board[end].color)
-        m = list(dict.fromkeys(m))
         if self.COLOREDSQUARES["check"] != None:
             a, self.COLOREDSQUARES["check"] = self.COLOREDSQUARES["check"], None
             self.set(a, "normal")
 
-        check = False
-        for i in m:
-            if (
-                self.board[i] != None
-                and self.board[i].color != self.board[end].color
-                and self.board[i].piece == "KING"
-            ):
-                self.set(i, "check")
-                self.COLOREDSQUARES["check"] = i
-                check = True
-
-        flag = False
-        for i in self.board.keys():
-            if self.board[i] != None and self.board[i].color != self.board[end].color:
-                if self.check_for_check(self.board[i], self.board, i):
-                    flag = True
-
         self.turn = Chess.swap[self.turn]
 
-        if not flag:
+        check = self.board.is_in_check(Chess.swap[color])
+        if check:
+            i = self.board.locate_king(Chess.swap[color])
+            self.set(i, "check")
+            self.COLOREDSQUARES["check"] = i
+
+        if self.check_for_mate(Chess.swap[color]):
             if check:
                 print("Checkmate")
             else:
                 print("Stalemate")
-
-        # endregion
-        print(self.fen.value)
-
-    def pgn_move(self, pgn):
-        self.fen.change_turn()  # DUPLICATE
-        color = "BLACK" if self.fen["T"] == "b" else "WHITE"
 
     def enable_canvas(self):
         self.canvas.bind("<Button-1>", self.clicked)
@@ -766,13 +524,17 @@ class Chess(tk.Toplevel):
         self.pawn_options = {
             end: "QUEEN",
             end + sign * 1: "KNIGHT",
-            end + sign * 2: "ROOk",
+            end + sign * 2: "ROOK",
             end + sign * 3: "BISHOP",
         }
         for i in self.pawn_options.keys():
             self.set(i, "promo")
-            self.pawn_options[i] = Piece(
-                self.pawn_options[i], "BLACK" if sign == -1 else "WHITE", i, self
+            self.pawn_options[i] = ChessPiece(
+                self.pawn_options[i],
+                "BLACK" if sign == -1 else "WHITE",
+                self.board,
+                i,
+                self,
             )
 
     def promotion_click(self, e):
@@ -782,7 +544,7 @@ class Chess(tk.Toplevel):
         if k not in self.pawn_options.keys():
             return
 
-        self.special_moves["pawnpromotion"] = self.pawn_options[k].piece
+        self.pawn_promotion = self.pawn_options[k].piece
         for i in self.pawn_options.keys():
             self.set(i, "normal")
             self.canvas.tag_lower(self.board_ids[i]["base"])
@@ -790,6 +552,13 @@ class Chess(tk.Toplevel):
 
         self.enable_canvas()
         self.lock.release()
+
+    def opp_move(self, msg):
+        start, end, pawn = msg
+        if pawn:
+            self.pawn_promotion = pawn
+
+        self.start_move(start, end, multi=True)
 
     @staticmethod
     def grid_to_square(k):
@@ -800,6 +569,8 @@ class Chess(tk.Toplevel):
 
     @staticmethod
     def square_to_grid(s):
+        if s == "-":
+            return -1
         i = 8 - int(s[1])
         j = ord(s[0]) - ord("a")
         return j * 10 + i
@@ -817,6 +588,8 @@ class Piece:
     def moved(self, pos):
         if not self.hasMoved:
             self.hasMoved = True
+
+            # Castling Posibility Updation
             p = ""
             if self.color == "BLACK":
                 p = ("k", "q")
@@ -825,7 +598,7 @@ class Piece:
 
             if self.piece == "KING":
                 self.board.fen["C"] = self.board.fen["C"].replace(p[0], "")
-                self.board.fen["C"] = self.game.fen["C"].replace(p[1], "")
+                self.board.fen["C"] = self.board.fen["C"].replace(p[1], "")
 
             elif self.piece == "ROOK":
                 if self.pos // 10 == 0:
@@ -833,164 +606,110 @@ class Piece:
                 else:
                     self.board.fen["C"] = self.board.fen["C"].replace(p[0], "")
 
+            # Enpassant Availability Checking
             elif self.piece == "PAWN":
-                if abs(self.pos - pos) == "2":
-                    self.board.fen["EP"] = (self.pos + pos) // 2
+                if abs(self.pos - pos) == 2:
+                    self.board.fen["EP"] = Chess.grid_to_square((self.pos + pos) // 2)
 
+        # Enpassant movement
+        isEnpassant = False
+        if self.piece == "PAWN":
+            if pos == Chess.square_to_grid(self.board.fen["EP"]):
+                print("Enpassant")
+                isEnpassant = True
+                if pos % 10 == 2:
+                    self.board[pos + 1] = None
+                elif pos % 10 == 5:
+                    self.board[pos - 1] = None
+        if not isEnpassant:
+            self.board.fen["EP"] = "-"
+
+        # Castling
+        if self.piece == "KING":
+            if abs(self.pos - pos) == 20:
+                print("CASTLE")
+                if self.pos > pos:
+                    print("Queen Side")
+                    self.board[pos - 20].moved(pos + 10)
+                else:
+                    print("King Side")
+                    self.board[pos + 10].moved(pos - 10)
+
+        self.board[pos], self.board[self.pos] = self.board[self.pos], None
         self.pos = pos
 
-    def generate_moves(self, context: tuple = (None, None)) -> list:
+    def gen_moves(self, inCheck=False):
         moves = []
-        if context[0] == None:
-            self.moves = moves
-            board: dict[int, Piece] = self.game.board
-            k = self.game.selected
-            piece = board[k].piece
-            color = self.color
-
-        else:
-            k = context[0]
-            board: dict[int, Piece] = context[1]
-            piece = board[k].piece
-            color = board[k].color
-
-        if piece == "KING":
-            moves.extend([k + 10, k + 11, k + 9, k - 10, k - 9, k - 11, k + 1, k - 1])
-            if not self.hasMoved and context[0] == None:
-                n = self.pos - 40
-                if board[n] != None and not (board[n].hasMoved):
-                    temp = [n + 10, n + 20, n + 30]
-                    for i in temp:
-                        if not board[i]:
-                            b = dict(zip(board.keys(), board.values()))
-                            b[i], b[self.pos] = b[self.pos], None
-                            c = Chess.swap[self.color]
-                            m = self.game.get_all_moves_of_color(b, c)
-                            if i in m:
-                                break
-                        else:
-                            break
-                    else:
-                        self.game.special_moves["castle"] = [
-                            (n + 20, n + 30, n),
-                        ]
-                n = self.pos + 30
-                if board[n] != None and not (board[n].hasMoved):
-                    temp = [n - 10, n - 20]
-                    for i in temp:
-                        if not board[i]:
-                            b = dict(zip(board.keys(), board.values()))
-                            b[i], b[self.pos] = b[self.pos], None
-                            c = Chess.swap[self.color]
-                            m = self.game.get_all_moves_of_color(b, c)
-                            if i in m:
-                                break
-                        else:
-                            break
-                    else:
-                        self.game.special_moves["castle"].append((n - 10, n - 20, n))
-
-        elif piece == "KNIGHT":
-            moves.extend([k + 8, k - 8, k + 12, k - 12, k + 19, k - 19, k + 21, k - 21])
-
-        elif piece == "PAWN":
-            sign = 1 if color == "BLACK" else -1
-
-            with suppress(KeyError):
-                if board[k + sign] == None:
-                    moves.append(k + sign)
-                l = self.game.last_move
-                if (
-                    k + 10 == l[1]
-                    and board[k + 10] != None
-                    and board[k + 10].piece == "PAWN"
-                    and board[k + 10].color != color
-                    and abs(l[0] - l[1]) == 2
-                ):
-                    self.game.special_moves["enpassant"] = (k + 10 + sign, k + 10)
-
-                if (
-                    k - 10 == l[1]
-                    and board[k - 10] != None
-                    and board[k - 10].piece == "PAWN"
-                    and board[k - 10].color != color
-                    and abs(l[0] - l[1]) == 2
-                ):
-                    self.game.special_moves["enpassant"] = (k - 10 + sign, k - 10)
-
-            if k % 10 == 1 and board[k + 1] == None and board[k + 2] == None:
-                if board[k].color == "BLACK":
-                    moves.append(k + 2)
-
-            elif k % 10 == 6 and board[k - 1] == None and board[k - 2] == None:
-                if board[k].color == "WHITE":
-                    moves.append(k - 2)
-
-            if (
-                (k + sign + 10) in board.keys()
-                and board[k + sign + 10] != None
-                and board[k + sign + 10].color != color
-            ):
-                moves.append(k + sign + 10)
-
-            if (
-                (k + sign - 10) in board.keys()
-                and board[k + sign - 10] != None
-                and board[k + sign - 10].color != color
-            ):
-                moves.append(k + sign - 10)
-
-        elif piece == "QUEEN":
-            moves.extend(self.side(context))
-            moves.extend(self.diagonal(context))
-
-        elif piece == "ROOK":
-            moves.extend(self.side(context))
-
-        elif piece == "BISHOP":
-            moves.extend(self.diagonal(context))
-
-        else:
-            return Exception
-
-        tmove = self.fix(context, moves)
-        moves.clear()
-        moves.extend(tmove)
-        return moves
-
-    def gen_moves(self):
-        moves = []
+        # print("Board\n", self.board)
         k = self.pos
         board = self.board
         piece = board[k].piece
         color = board[k].color
+
         if piece == "KING":
             moves.extend([k + 10, k + 11, k + 9, k - 10, k - 9, k - 11, k + 1, k - 1])
+
+            # Check Castling
             temp = "kq" if self.color == "BLACK" else "KQ"
-            if temp[0] in board.fen["T"]:
-                pass
-            if temp[1] in board.fen["T"]:
-                pass
+            if temp[0] in board.fen["C"]:
+                b = Board(self.board.fen.value)
+                for i in range(1, 3):
+                    if self.board[k + (i * 10)] != None:
+                        break
+                    else:
+                        b.moved(k + (i - 1) * 10, k + (i * 10))
+                        if not inCheck and b.is_in_check(color):
+                            break
+                else:
+                    if not inCheck and not self.board.is_in_check(color):
+                        moves.append(k + 20)
+
+            if temp[1] in board.fen["C"]:
+                b = Board(self.board.fen.value)
+                for i in range(1, 3):
+                    if self.board[k - (i * 10)] != None:
+                        break
+                    else:
+                        b.moved(k - (i - 1) * 10, k - (i * 10))
+                        if not inCheck and b.is_in_check(color):
+                            break
+                else:
+                    if not inCheck and not self.board.is_in_check(color):
+                        moves.append(k - 20)
+
         elif piece == "KNIGHT":
             moves.extend([k + 8, k - 8, k + 12, k - 12, k + 19, k - 19, k + 21, k - 21])
 
         elif piece == "PAWN":
             sign = 1 if color == "BLACK" else -1
-            moves.append(k + sign)
 
+            # Normal move
+            if k + sign in board.keys() and board[k + sign] == None:
+                moves.append(k + sign)
+
+            # 2 Step move from start
             if k % 10 == 1 and board[k + 1] == None and board[k + 2] == None:
-                if board[k].color == "BLACK":
+                if self.color == "BLACK":
                     moves.append(k + 2)
 
             elif k % 10 == 6 and board[k - 1] == None and board[k - 2] == None:
-                if board[k].color == "WHITE":
+                if self.color == "WHITE":
                     moves.append(k - 2)
 
+            # Capturing pieces
             if board[k + sign + 10] != None and board[k + sign + 10].color != color:
                 moves.append(k + sign + 10)
 
             if board[k + sign - 10] != None and board[k + sign - 10].color != color:
                 moves.append(k + sign - 10)
+
+            # Enpassant
+            ep = Chess.square_to_grid(board.fen["EP"])
+            if board[k + sign - 10] == None and k + sign - 10 == ep and self.hasMoved:
+                moves.append(k + sign - 10)
+
+            if board[k + sign + 10] == None and k + sign + 10 == ep and self.hasMoved:
+                moves.append(k + sign + 10)
 
         elif piece == "QUEEN":
             moves.extend(self.side(board))
@@ -1096,8 +815,8 @@ class Piece:
 
         return move
 
-    def get(self):
-        return (self.piece, self.color, self.pos)
+    def __str__(self):
+        return self.piece
 
 
 class ChessPiece(Piece):
@@ -1132,6 +851,25 @@ class ChessPiece(Piece):
             # state=tk.HIDDEN,  # TODO
         )
         canvas.tag_raise(self.img_id)
+
+    def moved(self, pos):
+        old_pos = self.pos
+        super().moved(pos)
+        if self.piece == "KING":
+            if abs(old_pos - pos) == 20:
+                print("NANI")
+                move = (0, 0)
+                if old_pos < pos:
+                    move = (pos + 10, pos - 10)
+                else:
+                    move = (pos - 20, pos + 10)
+                t = threading.Thread(
+                    target=self.game.moveanimation, args=(move[0], move[1], True)
+                )
+                t.start()
+
+    def __str__(self):
+        return self.piece
 
 
 class FEN:
@@ -1220,8 +958,11 @@ class FEN:
     def __setitem__(self, key, value):
         fen = self.split_fen()
         if key[0] == "B":
+
             if len(key) == 1:
-                fen[0:8] = FEN.digest(value)
+                a = FEN.digest(value)
+                fen[0:8] = a
+
             else:
                 fen[int(key[1] - 1)] = value
         elif key == "T":
@@ -1273,6 +1014,7 @@ class FEN:
     @staticmethod
     def digest(board):
         l = []
+
         for i in board.values():
             if i == None:
                 l.append("-")
@@ -1297,54 +1039,6 @@ class PGN:
         pass
 
 
-class Move:
-    def __init__(self, start, end, board):
-        self.piece = board[start].get()
-        self.start = start
-        self.end = end
-        if board[end] != None:
-            self.capture = board[end].get()
-        else:
-            self.capture = None
-        self.state = board
-        self.enpassant = None
-
-    def validate(self):
-        pass
-
-
-class Castle(Move):
-    def __init__(self, side, board):
-        pos = ()
-        self.rook = ()
-        if side == "q":
-            pos = (40, 20)
-            self.rook(0, 30)
-        elif side == "Q":
-            pos = (47, 27)
-            self.rook(7, 37)
-        elif side == "k":
-            pos = (40, 60)
-            self.rook(70, 50)
-        elif side == "K":
-            pos = (47, 67)
-            self.rook(77, 57)
-        super.__init__(pos[0], pos[1], board)
-
-    def validate(self):
-        pass
-
-
-class Enpassant(Move):
-    def __init__(self, start, target, board):
-        end = target + 1 if start % 10 == 6 else target - 1
-        super.__init__(start, end, board)
-        self.capture = target
-
-    def valiate(self):
-        pass
-
-
 class Board:
     def __init__(self, fen=None):
         self.fen = FEN(fen)
@@ -1361,11 +1055,11 @@ class Board:
                 else:
                     if b[i][j].islower():
                         self.board[j * 10 + i] = Piece(
-                            FEN.pieces[b[i][j]], "BLACK", self.board, j * 10 + i
+                            FEN.pieces[b[i][j]], "BLACK", self, j * 10 + i
                         )
                     else:
                         self.board[j * 10 + i] = Piece(
-                            FEN.pieces[b[i][j].lower()], "WHITE", self.board, j * 10 + i
+                            FEN.pieces[b[i][j].lower()], "WHITE", self, j * 10 + i
                         )
 
     def get_moves(self, k):
@@ -1373,42 +1067,35 @@ class Board:
         moves = []
         for i in pmoves:
             fen = self.fen.value
+            # print(fen)
             b = Board(fen)
             b.moved(k, i)
             if not b.is_in_check(b[i].color):
                 moves.append(i)
         return moves
 
-    def get_all_moves_of_color(self, color) -> list:
+    def get_all_moves_of_color(self, color, inCheck=False) -> list:
         m = []
         board = self.board
         for i in board.keys():
             if board[i] != None and board[i].color == color:
-                m.extend(board[i].gen_moves())
+                m.extend(board[i].gen_moves(inCheck=inCheck))
         return m
 
     def moved(self, start, end):
-        fen = self.fen
-        print(self.board)
-        if self.board[start].piece == "PAWN" and end == fen["EP"]:
-            pass
-        elif self.board[start].piece == "KING" and abs(start - end) == 2:
-            pass
-
-        self.board[end], self.board[start] = self.board[start], None
+        self[end], self[start] = self[start], None
 
     def is_in_check(self, color):
-        m = self.get_all_moves_of_color(Chess.swap[color])
-        for i in self.board.keys():
-            if (
-                self.board[i] != None
-                and self.board[i].color == color
-                and self.board[i].piece == "KING"
-            ):
-                if i in m:
-                    return True
-                else:
-                    return False
+        m = self.get_all_moves_of_color(Chess.swap[color], inCheck=True)
+        if self.locate_king(color) in m:
+            return True
+        else:
+            return False
+
+    def locate_king(self, color):
+        for i in self.keys():
+            if self[i] != None and self[i].piece == "KING" and self[i].color == color:
+                return i
 
     # region data stuff
     def keys(self):
@@ -1432,7 +1119,12 @@ class Board:
         self.fen["B"] = self.board
 
     def __str__(self):
-        return str(self.fen)
+        s = ""
+        for i in self.board.keys():
+            s += f"{self.board[i]},"
+            if i // 10 == 7:
+                s += "\n"
+        return s
 
     # endregion
 

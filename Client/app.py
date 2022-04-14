@@ -28,7 +28,7 @@ class App:
             self.chess_handler = chess_interface.ClientInterface(self.send)
             self.chesss = Chess(instruction[1], self.chess_handler.played)
         elif instruction[0] == "MOVE":
-            self.chesss.move(multi=[True, instruction[1]])
+            self.chesss.opp_move(instruction[1])
 
 
 class Room:
