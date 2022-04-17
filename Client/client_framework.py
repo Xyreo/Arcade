@@ -1,4 +1,5 @@
 import threading, socket, pickle
+import ssl
 
 
 class Client:
@@ -9,6 +10,10 @@ class Client:
         # Takes the address and connects to the server. Also strats a thread to handle listening
 
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        self.conn = context.wrap_socket(self.conn, server_hostname="Arcade")
         self.conn.connect(ADDRESS)
         self.connected = True
         self.uuid = None
