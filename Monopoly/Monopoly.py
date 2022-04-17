@@ -376,6 +376,7 @@ class Monopoly(tk.Toplevel):
                         i.houses = 0
         else:
             print("Owned")
+        self.update_property_frame()
 
     def update_property_frame(self):
         if self.property_frame:
@@ -1047,7 +1048,6 @@ class Monopoly(tk.Toplevel):
     def delete_property_frame(self):
         self.property_frame.place_forget()
         self.property_frame = None
-        self.property_pos_displayed = None
 
     def player_frame_popup(self, player):
         player_frame = tk.Frame(
@@ -1264,9 +1264,6 @@ def CLI():
 
 t = threading.Thread(target=CLI)
 t.start()
-
-update_property = threading.Thread(target=mono.update_property_frame)
-update_property.start()  # TODO: Fix thread
 
 mono.start_monopoly()
 root.mainloop()
