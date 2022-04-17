@@ -1,0 +1,41 @@
+Property,Position,Colour,Hex,Price,Rent,RentColour,RentHouse1,RentHouse2,RentHouse3,RentHouse4,RentHotel,Mortgage,BuildPrice
+Go,0,,,,,,,,,,,,
+Old Kent Road,1,Brown,#8d4c3a,60,2,4,10,30,90,160,250,30,50
+Community Chest,2,,,,,,,,,,,,
+Whitechapel Road,3,Brown,#8d4c3a,60,4,8,20,60,180,320,450,30,50
+Income Tax,4,,,,,,,,,,,,
+King's Cross Station,5,Station,,200,,,,,,,,100,
+The Angel Islington,6,Light Blue,#b3eeff,100,6,12,30,90,270,400,550,50,50
+Chance,7,,,,,,,,,,,,
+Euston Road,8,Light Blue,#b3eeff,100,6,12,30,90,270,400,550,50,50
+Pentonville Road,9,Light Blue,#b3eeff,120,8,16,40,100,300,450,600,60,50
+Jail,10,,,,,,,,,,,,
+Pall Mall,11,Pink,#d23397,140,10,20,50,150,450,625,750,70,100
+Electric Company,12,Utility,,150,,,,,,,,75,
+Whitehall,13,Pink,#d23397,140,10,20,50,150,450,625,750,70,100
+Northumberland Avenue,14,Pink,#d23397,160,12,24,60,180,500,700,900,80,100
+Marylebone Station,15,Station,,200,,,,,,,,100,
+Bow Street,16,Orange,#f9941e,180,14,28,70,200,550,750,950,90,100
+Community Chest,17,,,,,,,,,,,,
+Marlborough Street,18,Orange,#f9941e,180,14,28,70,200,550,750,950,90,100
+Vine Street,19,Orange,#f9941e,200,16,32,80,220,600,800,1000,100,100
+Free Parking,20,,,,,,,,,,,,
+The Strand,21,Red,#e91b21,220,18,36,90,250,700,875,1050,110,150
+Chance,22,,,,,,,,,,,,
+Fleet Street,23,Red,#e91b21,220,18,36,90,250,700,875,1050,110,150
+Trafalgar Square,24,Red,#e91b21,240,20,40,100,300,750,925,1100,120,150
+Fenchurch St. Station,25,Station,,200,,,,,,,,100,
+Leicester Square,26,Yellow,#ffff01,260,22,44,110,330,800,975,1150,130,150
+Coventry Street,27,Yellow,#ffff01,260,22,44,110,330,800,975,1150,130,150
+Water Works,28,Utility,,150,,,,,,,,75,
+Piccadilly,29,Yellow,#ffff01,280,24,48,120,360,850,1025,1200,140,150
+Go to Jail,30,,,,,,,,,,,,
+Regent Street,31,Green,#00b65a,300,26,52,130,390,900,1100,1275,150,200
+Oxford Street,32,Green,#00b65a,300,26,52,130,390,900,1100,1275,150,200
+Community Chest,33,,,,,,,,,,,,
+Bond Street,34,Green,#00b65a,320,28,56,150,450,1000,1200,1400,160,200
+Liverpool St. Station,35,Station,,200,,,,,,,,100,
+Chance,36,,,,,,,,,,,,
+Park Lane,37,Dark Blue,#016bbf,350,35,70,175,500,1100,1300,1500,175,200
+Super Tax,38,,,,,,,,,,,,
+Mayfair,39,Dark Blue,#016bbf,400,50,100,200,600,1400,1700,2000,200,200
