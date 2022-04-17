@@ -4,12 +4,16 @@ import threading
 import pickle
 import random
 import chess_interface
+import ssl
 
 PORT = 6789
-SERVER = "localhost"
+SERVER = "0.0.0.0"
 ADDRESS = (SERVER, PORT)
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server = ssl.wrap_socket(
+    server, server_side=True, keyfile="./key.pem", certfile="./certificate.pem"
+)
 server.bind(ADDRESS)
 
 players = {}  # Stores the socks of all the players connected to the server
