@@ -16,6 +16,8 @@ mixer.init()  # pygame music player initialise
 
 import mysql.connector as msc
 
+ASSET = "Monopoly/Assets"
+
 db = msc.connect(
     host="167.71.231.52",
     username="project-work",
@@ -128,7 +130,7 @@ class Monopoly(tk.Toplevel):
     def create_image_obj(self):
         self.board_image = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/BoardIMG.jpg").resize(
+                Image.open(ASSET + "/BoardIMG.jpg").resize(
                     (self.board_side, self.board_side), Image.Resampling.LANCZOS
                 )
             )
@@ -137,7 +139,7 @@ class Monopoly(tk.Toplevel):
 
         self.info_tag = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/big_info.png").resize(
+                Image.open(ASSET + "/big_info.png").resize(
                     (int(self.property_width / 2), int(self.property_width / 2)),
                     Image.Resampling.LANCZOS,
                 )
@@ -146,7 +148,7 @@ class Monopoly(tk.Toplevel):
 
         self.station_image = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/station.png").resize(
+                Image.open(ASSET + "/station.png").resize(
                     (int(2.5 * self.property_width), int(2.5 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -155,7 +157,7 @@ class Monopoly(tk.Toplevel):
 
         self.water_image = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/water.png").resize(
+                Image.open(ASSET + "/water.png").resize(
                     (int(2.5 * self.property_width), int(2 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -164,7 +166,7 @@ class Monopoly(tk.Toplevel):
 
         self.electric_image = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/electric.png").resize(
+                Image.open(ASSET + "/electric.png").resize(
                     (int(2 * self.property_width), int(2.25 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -173,7 +175,7 @@ class Monopoly(tk.Toplevel):
 
         self.dice1 = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/dice1.png").resize(
+                Image.open(ASSET + "/dice1.png").resize(
                     (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -181,7 +183,7 @@ class Monopoly(tk.Toplevel):
         )
         self.dice2 = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/dice2.png").resize(
+                Image.open(ASSET + "/dice2.png").resize(
                     (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -189,7 +191,7 @@ class Monopoly(tk.Toplevel):
         )
         self.dice3 = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/dice3.png").resize(
+                Image.open(ASSET + "/dice3.png").resize(
                     (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -197,7 +199,7 @@ class Monopoly(tk.Toplevel):
         )
         self.dice4 = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/dice4.png").resize(
+                Image.open(ASSET + "/dice4.png").resize(
                     (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -205,7 +207,7 @@ class Monopoly(tk.Toplevel):
         )
         self.dice5 = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/dice5.png").resize(
+                Image.open(ASSET + "/dice5.png").resize(
                     (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -213,7 +215,7 @@ class Monopoly(tk.Toplevel):
         )
         self.dice6 = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/dice6.png").resize(
+                Image.open(ASSET + "/dice6.png").resize(
                     (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -222,7 +224,7 @@ class Monopoly(tk.Toplevel):
 
         self.red_token_image = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/red.png").resize(
+                Image.open(ASSET + "/red.png").resize(
                     (self.token_width, self.token_width),
                     Image.Resampling.LANCZOS,
                 )
@@ -230,7 +232,7 @@ class Monopoly(tk.Toplevel):
         )
         self.green_token_image = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/green.png").resize(
+                Image.open(ASSET + "/green.png").resize(
                     (self.token_width, self.token_width),
                     Image.Resampling.LANCZOS,
                 )
@@ -238,7 +240,7 @@ class Monopoly(tk.Toplevel):
         )
         self.blue_token_image = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/blue.png").resize(
+                Image.open(ASSET + "/blue.png").resize(
                     (self.token_width, self.token_width),
                     Image.Resampling.LANCZOS,
                 )
@@ -246,7 +248,7 @@ class Monopoly(tk.Toplevel):
         )
         self.yellow_token_image = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open("Assets/yellow.png").resize(
+                Image.open(ASSET + "/yellow.png").resize(
                     (self.token_width, self.token_width),
                     Image.Resampling.LANCZOS,
                 )
@@ -1079,7 +1081,7 @@ class Monopoly(tk.Toplevel):
             player = self.me % len(self.player_details)
         else:
             player = len(self.player_details)
-        mixer.music.load("Assets/diceroll.mp3")
+        mixer.music.load(ASSET + "/diceroll.mp3")
         mixer.music.play(loops=0)
         dice_roll = random.randint(1, 6), random.randint(1, 6)
         for i in range(18):
