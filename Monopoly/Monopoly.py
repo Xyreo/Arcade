@@ -1,20 +1,14 @@
-import tkinter as tk
-import tkinter.ttk as ttk
 import random
 import threading
-import os
-from tkinter import messagebox
-from PIL import ImageTk, Image, ImageOps
+import tkinter as tk
+import tkinter.ttk as ttk
 from time import sleep
-
-os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
-from pygame import mixer
-
-mixer.init()  # pygame music player initialise
-
-# TODO: Change to pyaudio
+from tkinter import messagebox as msgb
 
 import mysql.connector as msc
+from PIL import Image, ImageOps, ImageTk
+
+from musicplayer import play as music
 
 ASSET = "Monopoly/Assets"
 
@@ -75,6 +69,7 @@ class Monopoly(tk.Toplevel):
         self.initialise()
         self.create_image_obj()
         self.dice_tokens()
+        self.bank_frame_popup()
 
     def initialise(self):
         self.property_frame = None
@@ -90,6 +85,7 @@ class Monopoly(tk.Toplevel):
                 {"Money": 1500, "Injail": False, "Position": 0, "Properties": []}
             )  # Properties will store obj from properties dict
 
+    # region #Lazy to scroll even through these functions
     def create_window(self):
         screen_width = int(0.9 * self.winfo_screenwidth())
         screen_height = int(screen_width / 1.9)
@@ -328,18 +324,6 @@ class Monopoly(tk.Toplevel):
         for i in self.player_details:
             self.move(i, 0)
 
-    def hotel_rules(self):
-        messagebox.showinfo("HOTEL RULES", "HOTEL RULES")
-
-    def station_rules(self):
-        messagebox.showinfo("STATION RULES", "STATION RULES")
-
-    def utility_rules(self):
-        messagebox.showinfo("UTILITY RULES", "UTILITY RULES")
-
-    def jail_rules(self):
-        messagebox.showinfo("JAIL RULES", "JAIL RULES")
-
     def count_colour(self, propertypos):
         owner = self.properties[propertypos].owner
         if owner:
@@ -352,37 +336,10 @@ class Monopoly(tk.Toplevel):
         else:
             return None
 
-    def owner_colour(self, propertypos):
-        return self.player_details[self.properties[propertypos].owner]["Colour"]
+    def owner_detail(self, propertypos, s="Name"):
+        return self.player_details[self.properties[propertypos].owner][s]
 
-    def owner_name(self, propertypos):
-        return self.player_details[self.properties[propertypos].owner]["Name"]
-
-    def buy_property(self, buyer, property):
-        if not self.properties[property].owner:
-            self.properties[property].owner = buyer
-            l = self.player_details[buyer]["Properties"]
-            l.append(self.properties[property])
-            self.player_details[buyer].update({"Properties": l})
-
-            if self.properties[property].colour in ["Brown", "Dark Blue"]:
-                colour_set = 2
-            else:
-                colour_set = 3
-
-            if self.count_colour(property) == colour_set:
-                for i in self.properties.values():
-                    if i.colour == self.properties[property].colour:
-                        i.houses = 0
-        else:
-            print("Owned")
-        self.update_property_frame()
-
-    def update_property_frame(self):
-        if self.property_frame:
-            self.delete_property_frame()
-            self.property_frame_popup(self.property_pos_displayed)
-
+    # region # Property Frame
     def station_property_frame(self, position):
         station_label = tk.Label(
             self.property_frame,
@@ -433,7 +390,7 @@ class Monopoly(tk.Toplevel):
             image=self.info_tag,
             border=0,
             highlightthickness=0,
-            command=self.station_rules,
+            command=lambda: self.show_message("Station Rules", "Station Rules"),
         ).place(x=35, rely=0.925, anchor="center")
 
         row_counter = 0
@@ -457,7 +414,7 @@ class Monopoly(tk.Toplevel):
                         anchor="w",
                         text="▶",
                         font=("times", (self.board_side - 2) // 32),
-                        fill=self.owner_colour(position),
+                        fill=self.owner_detail(position, "Colour"),
                     )
             except:
                 pass
@@ -467,9 +424,9 @@ class Monopoly(tk.Toplevel):
                         canvas.winfo_width() / 2,
                         y_coord,
                         anchor="center",
-                        text=f"Owner: {self.owner_name(position)}",
+                        text=f"Owner: {self.owner_detail(position,'Name')}",
                         font=("times", (self.board_side - 2) // 45),
-                        fill=self.owner_colour(position),
+                        fill=self.owner_detail(position, "Colour"),
                     )
                 else:
                     canvas.create_text(
@@ -598,7 +555,7 @@ class Monopoly(tk.Toplevel):
             image=self.info_tag,
             border=0,
             highlightthickness=0,
-            command=self.utility_rules,
+            command=lambda: self.show_message("Utility Rules", "Utility Rules"),
         ).place(x=35, rely=0.925, anchor="center")
 
         row_counter = 0
@@ -633,7 +590,7 @@ class Monopoly(tk.Toplevel):
                         anchor="w",
                         text="▶",
                         font=("times", (self.board_side - 2) // 32),
-                        fill=self.owner_colour(position),
+                        fill=self.owner_detail(position, "Colour"),
                     )
             except:
                 pass
@@ -643,9 +600,9 @@ class Monopoly(tk.Toplevel):
                         canvas.winfo_width() / 2,
                         y_coord,
                         anchor="center",
-                        text=f"Owner: {self.owner_name(position)}",
+                        text=f"Owner: {self.owner_detail(position,'Name')}",
                         font=("times", (self.board_side - 2) // 45),
-                        fill=self.owner_colour(position),
+                        fill=self.owner_detail(position, "Colour"),
                     )
                 else:
                     canvas.create_text(
@@ -730,7 +687,7 @@ class Monopoly(tk.Toplevel):
             font=("times", (self.board_side - 2) // 51),
         )
 
-    def title_deed_popup(self, position):
+    def colour_property_frame(self, position):
         title_frame = tk.Frame(
             self.property_frame,
             width=(self.board_side - 2) // 2.25,
@@ -790,7 +747,7 @@ class Monopoly(tk.Toplevel):
             image=self.info_tag,
             border=0,
             highlightthickness=0,
-            command=self.hotel_rules,
+            command=lambda: self.show_message("Hotel Rules", "Hotel Rules"),
         ).place(x=35, rely=0.9, anchor="center")
 
         vals = [self.properties[position].price]
@@ -832,7 +789,7 @@ class Monopoly(tk.Toplevel):
                         anchor="w",
                         text="▶",
                         font=("times", (self.board_side - 2) // 32),
-                        fill=self.owner_colour(position),
+                        fill=self.owner_detail(position, "Colour"),
                     )
             except:
                 pass
@@ -843,9 +800,9 @@ class Monopoly(tk.Toplevel):
                         canvas.winfo_width() / 2,
                         y_coord,
                         anchor="center",
-                        text=f"Owner: {self.owner_name(position)}",
+                        text=f"Owner: {self.owner_detail(position,'Colour')}",
                         font=("times", (self.board_side - 2) // 45),
-                        fill=self.owner_colour(position),
+                        fill=self.owner_detail(position, "Colour"),
                     )
                 else:
                     canvas.create_text(
@@ -1043,11 +1000,54 @@ class Monopoly(tk.Toplevel):
         elif position in [12, 28]:
             self.utility_property_frame(position)
         else:
-            self.title_deed_popup(position)
+            self.colour_property_frame(position)
 
     def delete_property_frame(self):
         self.property_frame.place_forget()
         self.property_frame = None
+
+    def update_property_frame(self):
+        if self.property_frame:
+            self.delete_property_frame()
+            self.property_frame_popup(self.property_pos_displayed)
+
+    # endregion
+
+    # endregion
+
+    def show_message(self, title, message, type="info", timeout=2000):
+        mbwin = tk.Tk()
+        mbwin.withdraw()
+        try:
+            mbwin.after(timeout, mbwin.destroy)
+            if type == "info":
+                msgb.showinfo(title, message, master=mbwin)
+            elif type == "warning":
+                msgb.showwarning(title, message, master=mbwin)
+            elif type == "error":
+                msgb.showerror(title, message, master=mbwin)
+        except:
+            pass
+
+    def buy_property(self, buyer, property):
+        if not self.properties[property].owner:
+            self.properties[property].owner = buyer
+            l = self.player_details[buyer]["Properties"]
+            l.append(self.properties[property])
+            self.player_details[buyer].update({"Properties": l})
+
+            if self.properties[property].colour in ["Brown", "Dark Blue"]:
+                colour_set = 2
+            else:
+                colour_set = 3
+
+            if self.count_colour(property) == colour_set:
+                for i in self.properties.values():
+                    if i.colour == self.properties[property].colour:
+                        i.houses = 0
+        else:
+            print("Owned")
+        self.update_property_frame()
 
     def player_frame_popup(self, player):
         player_frame = tk.Frame(
@@ -1081,8 +1081,7 @@ class Monopoly(tk.Toplevel):
             player = self.me % len(self.player_details)
         else:
             player = len(self.player_details)
-        mixer.music.load(ASSET + "/diceroll.mp3")
-        mixer.music.play(loops=0)
+        music(ASSET + "/diceroll.mp3")
         dice_roll = random.randint(1, 6), random.randint(1, 6)
         for i in range(18):
             self.dice_spot1.configure(image=self.die_dict[random.randint(1, 6)])
@@ -1102,7 +1101,7 @@ class Monopoly(tk.Toplevel):
         x, y = event.x, event.y
         l = [1.6, 1.6]
         l[1:1] = [1] * 9
-        pos = 0
+        pos = None
         if x <= self.property_height:
             for i in range(len(l)):
                 if y > sum(l[i + 1 :]) / sum(l) * self.board_side:
@@ -1123,10 +1122,22 @@ class Monopoly(tk.Toplevel):
                 if x > sum(l[i + 1 :]) / sum(l) * self.board_side:
                     pos = i
                     break
-        if self.properties[pos].colour:
+        if pos in [10, 30]:
+            self.show_message("Jail Rules", "Jail Rules")
+        elif pos == 20:
+            self.show_message("Free Parking", "Do Nothing!")
+        elif pos == 0:
+            self.show_message("GO!", "Collect 200 Salary as you pass GO!")
+        elif pos in [2, 17, 33]:
+            self.show_message("Community Chest", "Do as directed on card")
+        elif pos in [7, 22, 36]:
+            self.show_message("Chance", "Do as directed on card")
+        elif pos == 4:
+            self.show_message("Income Tax", "Pay 200 as Tax on landing here")
+        elif pos == 38:
+            self.show_message("Super Tax", "Pay 100 as Tax on landing here")
+        elif pos:
             self.property_frame_popup(pos)
-        else:
-            pass
 
     def position_to_xy(
         self, position
@@ -1227,8 +1238,6 @@ class Monopoly(tk.Toplevel):
             self.colour_token_dict[colour].place(x=x1, y=y1, anchor="center")
 
 
-# TODO: Make popups for other locations (INFO, Rules)
-
 # scroll = ttk.Scrollbar(dataframe,orient=tk.VERTICAL)
 # scroll.place(relx=1,rely=0,anchor='ne',relheight=1)
 # scroll.config(command=listbox.yview)
@@ -1248,16 +1257,19 @@ mono = Monopoly(
 def CLI():
     while True:
         t = tuple(int(i) for i in input().split())
-        if t[0] == 13:
-            try:
-                mono.move(t[1], t[2])
-            except:
-                pass
-        elif t[0] == 2:
-            try:
-                mono.buy_property(t[1], t[2])
-            except:
-                pass
+        if t:
+            if t[0] == 13:
+                try:
+                    mono.move(t[1], t[2])
+                except:
+                    pass
+            elif t[0] == 2:
+                try:
+                    mono.buy_property(t[1], t[2])
+                except:
+                    pass
+            else:
+                print("Die")
         else:
             break
 

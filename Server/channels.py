@@ -1,6 +1,8 @@
 # region Setup
+import pickle
+import random
 import socket
-import threading, pickle, random
+import threading
 
 # endregion
 

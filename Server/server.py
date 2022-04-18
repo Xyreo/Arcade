@@ -1,10 +1,11 @@
 # region Setup
-import socket
-import threading
 import pickle
 import random
-import chess_interface
+import socket
 import ssl
+import threading
+
+import chess_interface
 
 PORT = 6789
 SERVER = "0.0.0.0"

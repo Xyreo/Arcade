@@ -1,5 +1,7 @@
-import threading, socket, pickle
+import pickle
+import socket
 import ssl
+import threading
 
 
 class Client:

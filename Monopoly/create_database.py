@@ -1,4 +1,5 @@
 import csv
+
 import mysql.connector as msc
 
 db = msc.connect(
