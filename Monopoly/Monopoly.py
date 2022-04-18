@@ -1262,8 +1262,8 @@ def CLI():
             break
 
 
-t = threading.Thread(target=CLI)
-t.start()
+"""t = threading.Thread(target=CLI)
+t.start()"""
 
 mono.start_monopoly()
 root.mainloop()

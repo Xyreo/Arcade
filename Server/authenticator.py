@@ -1,20 +1,32 @@
-def generate_id():
-    id = ""
-    for i in range(16):
-        id += chr(random.randint(33, 125))
-    return id
+import random, redis
+from datetime import timedelta
 
 
-def create_session(uuid):
-    while True:
-        session_id = generate_id()
-        query = f"SELECT COUNT(*) FROM session_id WHERE session_id='{session_id}'"
-        cursor.execute(query)
+class Auth:
+    def __init__(self):
+        self.r = redis.Redis(host="localhost", port=6379, db=1)
 
+    @staticmethod
+    def generate_id():
+        id = ""
+        for i in range(16):
+            id += chr(random.randint(33, 125))
+        return id
 
-def check_session(uuid):
-    pass
+    def add(self, name):
+        for i in self.r.keys():
+            if name == self.r.get(i).decode("utf-8"):
+                self.r.delete(i)
 
+        session_id = Auth.generate_id()
+        while self.r.exists(session_id):
+            session_id = Auth.generate_id()
+        self.r.setex(session_id, timedelta(minutes=30), value=name)
+        return session_id
 
-def end_session(uuid):
-    pass
+    def __call__(self, session_id):
+        if self.r.exists(session_id):
+            self.r.expire(session_id, timedelta(minutes=30), gt=True)
+            return True
+
+        return False

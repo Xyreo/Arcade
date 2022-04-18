@@ -1,35 +1,72 @@
-from concurrent.futures import wait
 from flask import Flask, request, jsonify, Blueprint
-from flask_mysqldb import MySQL
+import mysql.connector as msc
 from datetime import date
-import bcrypt, random
+import bcrypt, random, time, threading, json
+import redis
+from authenticator import Auth
 
 app = Flask(__name__)
-app.config["MYSQL_HOST"] = "167.71.231.52"
-app.config["MYSQL_USER"] = "project-work"
-app.config["MYSQL_PASSWORD"] = "mySQLpass"
-app.config["MYSQL_DB"] = "arcade"
-mysql = MySQL(app)
+db = msc.connect(
+    host="167.71.231.52",
+    username="project-work",
+    password="mySQLpass",
+    database="arcade",
+)
+
+
+class Database:
+    def __init__(self):
+        self.cursor = None
+        self.cursor = db.cursor()
+        t = threading.Thread(target=self.initialise)
+        t.start()
+
+    def execute(self, query):
+        try:
+            self.cursor.execute(query)
+            response = self.cursor.fetchall()
+            return response
+        except Exception as e:
+            print(e)
+            print(query)
+            return None
+
+    def initialise(self):
+        # Users
+        cache.flushdb()
+        # Monopoly Board Values
+        query = f"SELECT * FROM monopoly_board_values"
+        self.cursor.execute(query)
+        details = {}
+        for i in self.cursor.fetchall():
+            details[int(i[1])] = i
+        cache.set("monopoly_board_values", json.dumps(details))
+        print("Loaded DB into cache")
+
+    def insert(self, query):
+        t = threading.Thread(target=self.threaded, args=(query,))
+        t.start()
+
+    def threaded(self, query):
+        try:
+            self.cursor.execute(query)
+            self.cursor.fetchall()
+            db.commit()
+
+        except:
+            db.rollback()
+
+
+cache = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+cursor = Database()
 
 monopoly = Blueprint("monopoly", __name__)
 chess = Blueprint("chess", __name__)
-
-sessions = {}
-
-
-def generate_id():
-    id = ""
-    for i in range(16):
-        id += chr(random.randint(33, 125))
-    return id
+authorisation = Blueprint("authorisation", __name__)
+auth = Auth()
 
 
-def assign_session(uuid):
-    session_id = generate_id()
-    while session_id in sessions.keys():
-        session_id = generate_id()
-    sessions[session_id] = uuid
-    return session_id
+# region main-stuff
 
 
 @app.route("/ping")
@@ -37,70 +74,95 @@ def ping():
     return jsonify("Pong")
 
 
-@app.route("/register/", methods=["POST"])
+@app.route("/register", methods=["POST"])
 def register():
-    cursor = mysql.connection.cursor()
-
     name = request.args.get("name").lower()
-
-    query = f'SELECT COUNT(*) FROM user WHERE name="{name}"'
-    cursor.execute(query)
-    if cursor.fetchall()[0][0]:
+    count = cursor.execute("SELECT * FROM user WHERE name = {name}")
+    if not len(count):
         return jsonify("User Already Exists"), 400
 
     password = request.args.get("password").encode("utf-8")
     password = bcrypt.hashpw(password, bcrypt.gensalt(12))
     password = str(password)[2:-1]
-
     doj = str(date.today())
+    cursor.insert(
+        f'INSERT INTO user(name,doj,password) VALUES("{name}","{doj}","{password}")'
+    )
 
-    query = f'INSERT INTO user(name,doj,password) VALUES("{name}","{doj}","{password}")'
-    cursor.execute(query)
-    mysql.connection.commit()
     return jsonify("SUCCESS"), 200
 
 
-@app.route("/login/", methods=["GET"])
+@app.route("/login", methods=["GET"])
 def login():
-    cursor = mysql.connection.cursor()
-
     name = request.args.get("name").lower()
     password = request.args.get("password").encode("utf-8")
-    query = f'SELECT PASSWORD FROM user WHERE name="{name}"'
-    cursor.execute(query)
-    storedpw = cursor.fetchall()
-    if storedpw:
-        result = bcrypt.checkpw(password, storedpw[0][0].encode("utf-8"))
-        if result:
-            return jsonify("SUCCESS"), 200
-        """else:
-            return jsonify("WRONG_PASSWORD"), 400"""
+    storedpw = cursor.execute(f"SELECT password FROM user where name='{name}'")
+    if len(storedpw):
+        if bcrypt.checkpw(password, storedpw[0][0].encode("utf-8")):
+            session = auth.add(name)
+            return jsonify({"TOKEN": session}), 200
+
     return jsonify("ERROR"), 400
+
+
+@app.route("/delete_user", methods=["GET"])
+def delete_user():
+    name = request.args.get("name").lower()
+    password = request.args.get("password").encode("utf-8")
+    storedpw = cursor.execute(f"SELECT password FROM user where name='{name}'")
+    if len(storedpw):
+        if bcrypt.checkpw(password, storedpw[0][0].encode("utf-8")):
+            session = auth.add(name)
+            return jsonify({"TOKEN": session}), 200
+    return jsonify("WRONG PASSWORD")
+
+
+@app.route("/exit")
+def exit_flask():
+    password = request.args.get("password").encode("utf-8")
+    storedpw = cursor.execute(f'SELECT password,name FROM user where name = "root"')
+    if bcrypt.checkpw(password, storedpw[0][0].encode("utf-8")):
+        db.close()
+
+    return jsonify("Wrong Password"), 400
+
+
+@authorisation.before_request
+def check_session():
+    session_id = request.headers.get("Authorization").split()[1]
+    if not auth(session_id):
+        return jsonify("You Can't access this"), 403
+
+
+# endregion
+
+
+# region Monopoly
 
 
 @monopoly.route("/details")
 def list_details():
-    cursor = mysql.connection.cursor()
-    query = f"SELECT * FROM monopoly_board_values"
-    cursor.execute(query)
-    details = cursor.fetchall()
-    # details = ""
-    return jsonify(details), 200
+    details = json.loads(cache.get("monopoly_board_values"))
+    l = [i for i in details.values()]
+    return jsonify(l), 200
 
 
-@monopoly.route("/details/<int:pos>")
+@monopoly.route("/details/<string:pos>")
 def details(pos):
-    cursor = mysql.connection.cursor()
-    query = f"SELECT * FROM monopoly_board_values WHERE position={pos}"
-    cursor.execute(query)
-    details = cursor.fetchall()
-    if len(details) == 0:
-        return jsonify("NOT FOUND"), 404
-    return jsonify(details[0]), 200
+    detail = json.loads(cache.get("monopoly_board_values"))
+    print(detail)
+    if pos not in detail.keys():
+        return jsonify("Not Found"), 404
+    return jsonify(detail[pos]), 200
 
 
-app.register_blueprint(monopoly, url_prefix="/monopoly")
-app.register_blueprint(chess, url_prefix="/chess")
+# endregion
+
+
+authorisation.register_blueprint(monopoly, url_prefix="/monopoly")
+authorisation.register_blueprint(chess, url_prefix="/chess")
+app.register_blueprint(authorisation)
+
 app.run(
     ssl_context=(
         "./certificate.pem",
