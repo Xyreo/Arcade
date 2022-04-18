@@ -1,20 +1,14 @@
-import tkinter as tk
-import tkinter.ttk as ttk
 import random
 import threading
-import os
-from tkinter import messagebox as msgb
-from PIL import ImageTk, Image, ImageOps
+import tkinter as tk
+import tkinter.ttk as ttk
 from time import sleep
-
-os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
-from pygame import mixer
-
-mixer.init()  # pygame music player initialise
-
-# TODO: Change to pyaudio
+from tkinter import messagebox as msgb
 
 import mysql.connector as msc
+from PIL import Image, ImageOps, ImageTk
+
+from musicplayer import play as music
 
 ASSET = "Monopoly/Assets"
 
@@ -75,6 +69,7 @@ class Monopoly(tk.Toplevel):
         self.initialise()
         self.create_image_obj()
         self.dice_tokens()
+        self.bank_frame_popup()
 
     def initialise(self):
         self.property_frame = None
@@ -90,7 +85,7 @@ class Monopoly(tk.Toplevel):
                 {"Money": 1500, "Injail": False, "Position": 0, "Properties": []}
             )  # Properties will store obj from properties dict
 
-    # region #Done
+    # region #Lazy to scroll even through these functions
     def create_window(self):
         screen_width = int(0.9 * self.winfo_screenwidth())
         screen_height = int(screen_width / 1.9)
@@ -341,11 +336,8 @@ class Monopoly(tk.Toplevel):
         else:
             return None
 
-    def owner_colour(self, propertypos):
-        return self.player_details[self.properties[propertypos].owner]["Colour"]
-
-    def owner_name(self, propertypos):
-        return self.player_details[self.properties[propertypos].owner]["Name"]
+    def owner_detail(self, propertypos, s="Name"):
+        return self.player_details[self.properties[propertypos].owner][s]
 
     # region # Property Frame
     def station_property_frame(self, position):
@@ -422,7 +414,7 @@ class Monopoly(tk.Toplevel):
                         anchor="w",
                         text="▶",
                         font=("times", (self.board_side - 2) // 32),
-                        fill=self.owner_colour(position),
+                        fill=self.owner_detail(position, "Colour"),
                     )
             except:
                 pass
@@ -432,9 +424,9 @@ class Monopoly(tk.Toplevel):
                         canvas.winfo_width() / 2,
                         y_coord,
                         anchor="center",
-                        text=f"Owner: {self.owner_name(position)}",
+                        text=f"Owner: {self.owner_detail(position,'Name')}",
                         font=("times", (self.board_side - 2) // 45),
-                        fill=self.owner_colour(position),
+                        fill=self.owner_detail(position, "Colour"),
                     )
                 else:
                     canvas.create_text(
@@ -598,7 +590,7 @@ class Monopoly(tk.Toplevel):
                         anchor="w",
                         text="▶",
                         font=("times", (self.board_side - 2) // 32),
-                        fill=self.owner_colour(position),
+                        fill=self.owner_detail(position, "Colour"),
                     )
             except:
                 pass
@@ -608,9 +600,9 @@ class Monopoly(tk.Toplevel):
                         canvas.winfo_width() / 2,
                         y_coord,
                         anchor="center",
-                        text=f"Owner: {self.owner_name(position)}",
+                        text=f"Owner: {self.owner_detail(position,'Name')}",
                         font=("times", (self.board_side - 2) // 45),
-                        fill=self.owner_colour(position),
+                        fill=self.owner_detail(position, "Colour"),
                     )
                 else:
                     canvas.create_text(
@@ -797,7 +789,7 @@ class Monopoly(tk.Toplevel):
                         anchor="w",
                         text="▶",
                         font=("times", (self.board_side - 2) // 32),
-                        fill=self.owner_colour(position),
+                        fill=self.owner_detail(position, "Colour"),
                     )
             except:
                 pass
@@ -808,9 +800,9 @@ class Monopoly(tk.Toplevel):
                         canvas.winfo_width() / 2,
                         y_coord,
                         anchor="center",
-                        text=f"Owner: {self.owner_name(position)}",
+                        text=f"Owner: {self.owner_detail(position,'Colour')}",
                         font=("times", (self.board_side - 2) // 45),
-                        fill=self.owner_colour(position),
+                        fill=self.owner_detail(position, "Colour"),
                     )
                 else:
                     canvas.create_text(
@@ -1023,7 +1015,7 @@ class Monopoly(tk.Toplevel):
 
     # endregion
 
-    def show_message(self, title, message, type="info", timeout=2500):
+    def show_message(self, title, message, type="info", timeout=2000):
         mbwin = tk.Tk()
         mbwin.withdraw()
         try:
@@ -1089,8 +1081,7 @@ class Monopoly(tk.Toplevel):
             player = self.me % len(self.player_details)
         else:
             player = len(self.player_details)
-        mixer.music.load(ASSET + "/diceroll.mp3")
-        mixer.music.play(loops=0)
+        music(ASSET + "/diceroll.mp3")
         dice_roll = random.randint(1, 6), random.randint(1, 6)
         for i in range(18):
             self.dice_spot1.configure(image=self.die_dict[random.randint(1, 6)])
@@ -1266,16 +1257,19 @@ mono = Monopoly(
 def CLI():
     while True:
         t = tuple(int(i) for i in input().split())
-        if t[0] == 13:
-            try:
-                mono.move(t[1], t[2])
-            except:
-                pass
-        elif t[0] == 2:
-            try:
-                mono.buy_property(t[1], t[2])
-            except:
-                pass
+        if t:
+            if t[0] == 13:
+                try:
+                    mono.move(t[1], t[2])
+                except:
+                    pass
+            elif t[0] == 2:
+                try:
+                    mono.buy_property(t[1], t[2])
+                except:
+                    pass
+            else:
+                print("Die")
         else:
             break
 

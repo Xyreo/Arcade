@@ -1,8 +1,10 @@
+import random
 from concurrent.futures import wait
-from flask import Flask, request, jsonify, Blueprint
-from flask_mysqldb import MySQL
 from datetime import date
-import bcrypt, random
+
+import bcrypt
+from flask import Blueprint, Flask, jsonify, request
+from flask_mysqldb import MySQL
 
 app = Flask(__name__)
 app.config["MYSQL_HOST"] = "167.71.231.52"

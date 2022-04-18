@@ -1,4 +1,6 @@
-import bcrypt, time
+import time
+
+import bcrypt
 import mysql.connector as sql
 
 db = sql.connect(

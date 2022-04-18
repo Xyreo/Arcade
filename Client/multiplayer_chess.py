@@ -1,8 +1,11 @@
-from contextlib import suppress
-import tkinter as tk
-from PIL import ImageOps, Image, ImageTk
-import threading, time, os
 import json
+import os
+import threading
+import time
+import tkinter as tk
+from contextlib import suppress
+
+from PIL import Image, ImageOps, ImageTk
 
 ASSET_PATH = "./Client"
 
