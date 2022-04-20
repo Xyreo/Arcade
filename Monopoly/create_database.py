@@ -14,7 +14,7 @@ cursor = db.cursor()
 with open("board_details.csv", mode="r") as file:
     # reading the CSV file
     csvFile = list(csv.reader(file))
-    table = "Monopoly_Board_Values"
+    table = "monopoly_board_values"
     cursor.execute(
         f"create table if not exists {table} (property char(21), position int primary key, colour char(10), hex char(7), price int, rent int, rent_colour int,rent_house_1 int,rent_house_2 int,rent_house_3 int,rent_house_4 int,rent_hotel int,mortgage int,build_cost int)"
     )
@@ -35,4 +35,5 @@ with open("board_details.csv", mode="r") as file:
         print("Table Created Successfully.")
     except:
         print("Table Already Exists.")
+cursor.close()
 db.commit()

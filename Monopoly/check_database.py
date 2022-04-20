@@ -9,4 +9,9 @@ db = msc.connect(
 )
 cursor = db.cursor()
 cursor.execute('select * from monopoly_board_values')
+print('bruh')
+#cursor.execute('drop table monopoly_board_values')
+
 print(tab.tabulate(cursor))
+cursor.close()
+db.commit()

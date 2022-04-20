@@ -26,6 +26,7 @@ class Property:
         cursor.execute(f"select * from monopoly_board_values where position={position}")
         details = list(cursor)[0]
         self.name = details[0]
+        self.position = details[1]
         self.colour = details[2]
         self.hex = details[3]
         self.price = details[4]
@@ -43,6 +44,7 @@ class Property:
 
         self.owner = None
         self.houses = -1
+
         """
         No. of houses meaning:
         -1 : Rent
@@ -57,6 +59,13 @@ class Property:
     def rent(self):
         return self.rent_values[self.houses + 1]
 
+    def value(self):
+        val = self.price
+        if 1 <= self.houses <= 5:
+            val += self.houses * self.build
+
+        return val
+
 
 class Monopoly(tk.Toplevel):
     def __init__(self, playerdetails, me):
@@ -69,23 +78,27 @@ class Monopoly(tk.Toplevel):
         self.initialise()
         self.create_image_obj()
         self.dice_tokens()
-        self.bank_frame_popup()
+        self.delete_property_frame()
+        self.action_frame_popup()
+        self.player_frame_popup()
 
     def initialise(self):
         self.property_frame = None
         self.property_pos_displayed = None
+        self.player_frame = None
         self.board_canvas.bind("<Button-1>", self.click_to_position)
 
         self.properties = {}
         for i in range(40):
             self.properties[i] = Property(i)
 
+        cursor.close()
+
         for i in self.player_details:
             self.player_details[i].update(
                 {"Money": 1500, "Injail": False, "Position": 0, "Properties": []}
             )  # Properties will store obj from properties dict
 
-    # region #Lazy to scroll even through these functions
     def create_window(self):
         screen_width = int(0.9 * self.winfo_screenwidth())
         screen_height = int(screen_width / 1.9)
@@ -250,6 +263,17 @@ class Monopoly(tk.Toplevel):
                 )
             )
         )
+        self.mr_monopoly = ImageTk.PhotoImage(
+            ImageOps.expand(
+                Image.open(ASSET + "/mr_monopoly.png").resize(
+                    (
+                        int((self.board_side - 2) // 2.05),
+                        int((self.board_side - 2) // 1.75),
+                    ),
+                    Image.Resampling.LANCZOS,
+                )
+            )
+        )
 
     def dice_tokens(self):
         self.die_dict = dict(
@@ -294,7 +318,7 @@ class Monopoly(tk.Toplevel):
             image=self.red_token_image,
             border=0,
             highlightthickness=0,
-            command=lambda: self.player_frame_popup("Player 1"),
+            command=lambda: self.open_children("red"),
         )
 
         self.green_token = tk.Button(
@@ -302,7 +326,7 @@ class Monopoly(tk.Toplevel):
             image=self.green_token_image,
             border=0,
             highlightthickness=0,
-            command=lambda: self.player_frame_popup("Player 2"),
+            command=lambda: self.open_children("green"),
         )
 
         self.blue_token = tk.Button(
@@ -310,7 +334,7 @@ class Monopoly(tk.Toplevel):
             image=self.blue_token_image,
             border=0,
             highlightthickness=0,
-            command=lambda: self.player_frame_popup("Player 3"),
+            command=lambda: self.open_children("blue"),
         )
 
         self.yellow_token = tk.Button(
@@ -318,7 +342,7 @@ class Monopoly(tk.Toplevel):
             image=self.yellow_token_image,
             border=0,
             highlightthickness=0,
-            command=lambda: self.player_frame_popup("Player 4"),
+            command=lambda: self.open_children("gold"),
         )
 
         for i in self.player_details:
@@ -338,6 +362,18 @@ class Monopoly(tk.Toplevel):
 
     def owner_detail(self, propertypos, s="Name"):
         return self.player_details[self.properties[propertypos].owner][s]
+
+    def update_frames(self):
+        if self.property_frame:
+            self.delete_property_frame()
+            self.property_frame_popup(self.property_pos_displayed)
+        if self.player_frame:
+            l = []
+            for i in self.player_details:
+                if self.player_tree.item(i, "open"):
+                    l.append(i)
+            self.delete_player_frame()
+            self.player_frame_popup(l)
 
     # region # Property Frame
     def station_property_frame(self, position):
@@ -800,7 +836,7 @@ class Monopoly(tk.Toplevel):
                         canvas.winfo_width() / 2,
                         y_coord,
                         anchor="center",
-                        text=f"Owner: {self.owner_detail(position,'Colour')}",
+                        text=f"Owner: {self.owner_detail(position,'Name')}",
                         font=("times", (self.board_side - 2) // 45),
                         fill=self.owner_detail(position, "Colour"),
                     )
@@ -1003,78 +1039,138 @@ class Monopoly(tk.Toplevel):
             self.colour_property_frame(position)
 
     def delete_property_frame(self):
-        self.property_frame.place_forget()
-        self.property_frame = None
-
-    def update_property_frame(self):
         if self.property_frame:
-            self.delete_property_frame()
-            self.property_frame_popup(self.property_pos_displayed)
-
-    # endregion
-
-    # endregion
-
-    def show_message(self, title, message, type="info", timeout=2000):
-        mbwin = tk.Tk()
-        mbwin.withdraw()
-        try:
-            mbwin.after(timeout, mbwin.destroy)
-            if type == "info":
-                msgb.showinfo(title, message, master=mbwin)
-            elif type == "warning":
-                msgb.showwarning(title, message, master=mbwin)
-            elif type == "error":
-                msgb.showerror(title, message, master=mbwin)
-        except:
-            pass
-
-    def buy_property(self, buyer, property):
-        if not self.properties[property].owner:
-            self.properties[property].owner = buyer
-            l = self.player_details[buyer]["Properties"]
-            l.append(self.properties[property])
-            self.player_details[buyer].update({"Properties": l})
-
-            if self.properties[property].colour in ["Brown", "Dark Blue"]:
-                colour_set = 2
-            else:
-                colour_set = 3
-
-            if self.count_colour(property) == colour_set:
-                for i in self.properties.values():
-                    if i.colour == self.properties[property].colour:
-                        i.houses = 0
+            self.property_frame.place_forget()
+            self.property_frame = None
         else:
-            print("Owned")
-        self.update_property_frame()
+            self.mr_monopoly_frame = tk.Frame(
+                self.main_frame,
+                width=(self.board_side - 2) // 2.05,
+                height=(self.board_side - 2) // 1.75,
+                bg="#F9FBFF",
+                highlightthickness=0,
+                highlightbackground="#F9FBFF",
+            )
 
-    def player_frame_popup(self, player):
-        player_frame = tk.Frame(
-            self.main_frame,
-            width=(self.board_side - 2) // 2.05,
-            height=(self.board_side - 2) // 2.45,
-        )
+            self.mr_monopoly_frame.place(relx=1, rely=1, anchor="se")
+            tk.Label(
+                self.mr_monopoly_frame,
+                image=self.mr_monopoly,
+                border=0,
+                highlightthickness=0,
+                bg="#FFFFFF",
+            ).pack()
 
-        player_frame.place(relx=1, rely=0, anchor="ne")
+    # endregion
 
-    def bank_frame_popup(self):
-        bank_frame = tk.Frame(
-            self.main_frame,
-            width=(self.board_side - 2) // 2.05,
-            height=(self.board_side - 2) // 2.45,
-        )
+    # region # Player Frame
 
-        bank_frame.place(relx=0, rely=0, anchor="nw")
-
-    def action_frame_popup(self, action):
-        action_frame = tk.Frame(
+    def player_frame_popup(
+        self, list_of_open=[]
+    ):  # TODO: Highlight me, Adjust row height
+        self.player_frame = tk.Frame(
             self.main_frame,
             width=(self.board_side - 2) // 2.05,
             height=(self.board_side - 2) // 1.75,
         )
 
-        action_frame.place(relx=0, rely=1, anchor="sw")
+        self.player_frame.place(relx=0, rely=1, anchor="sw")
+
+        scroll = ttk.Scrollbar(self.player_frame, orient="vertical")
+        scroll.place(relx=1, rely=0, anchor="ne", relheight=1)
+
+        self.player_tree = ttk.Treeview(
+            self.player_frame, columns=("Player", "Value"), yscrollcommand=scroll.set
+        )
+
+        scroll.configure(command=self.player_tree.yview)
+
+        self.player_tree.column(
+            "#0",
+            width=10,
+        )
+        self.player_tree.column(
+            "Player", width=int((self.board_side - 2) // 4.25) - 10, anchor="center"
+        )
+        self.player_tree.column(
+            "Value", width=int((self.board_side - 2) // 4.25) - 10, anchor="center"
+        )
+        self.player_tree.heading("#0", text="")
+        self.player_tree.heading("Player", text="Properties Owned", anchor="center")
+        self.player_tree.heading("Value", text="Cash Remaining/ Value", anchor="center")
+
+        for i, j in self.player_details.items():
+            self.player_tree.insert(
+                parent="", index="end", iid=i, text="", values=(j["Name"], j["Money"])
+            )
+            if i in list_of_open:
+                self.player_tree.item(i, open=True)
+            count = 0
+            for k in j["Properties"]:
+                self.player_tree.insert(
+                    parent=i, index="end", text="", values=(k.name, k.value())
+                )
+                count += 1
+
+        self.player_tree.place(relx=0, rely=0.5, anchor="w", relheight=1)
+
+    def delete_player_frame(self):
+        if self.player_frame:
+            self.player_frame.place_forget()
+            self.player_frame = None
+
+    def open_children(self, colour):
+        for i in self.player_tree.selection():
+            self.player_tree.selection_remove(i)
+        for i in self.player_details:
+            if self.player_tree.item(i, "open"):
+                self.player_tree.item(i, open=False)
+
+        for i, j in self.player_details.items():
+            if j["Colour"] == colour:
+                self.player_tree.item(i, open=True)
+
+    # endregion
+
+    def action_frame_popup(self):
+        action_frame = tk.Frame(
+            self.main_frame,
+            width=(self.board_side - 2) // 1,
+            height=(self.board_side - 2) // 2.45,
+        )
+
+        action_frame.place(relx=0, rely=0, anchor="nw")
+
+    def buy_property(self, buyer, property):
+        if self.properties[property].colour:
+            if not self.properties[property].owner:
+                self.properties[property].owner = buyer
+                l = self.player_details[buyer]["Properties"]
+                l.append(self.properties[property])
+                # Inserting Properties in Sorted order
+                l.sort(key=lambda i: i.position)
+                for i in range(len(l)):
+                    if l[i].colour == "Station":
+                        l.append(l.pop(i))
+                for i in range(len(l)):
+                    if l[i].colour == "Utility":
+                        l.append(l.pop(i))
+
+                self.player_details[buyer].update({"Properties": l})
+                if self.properties[property].colour in ["Brown", "Dark Blue"]:
+                    colour_set = 2
+                else:
+                    colour_set = 3
+
+                if self.count_colour(property) == colour_set:
+                    for i in self.properties.values():
+                        if i.colour == self.properties[property].colour:
+                            i.houses = 0
+            else:
+                print("Owned")
+        else:
+            print("Can't Buy")
+        self.update_frames()
 
     def roll_dice(self):  # TODO: Doubles Roll Again --- Disabling buttons
         if self.me % len(self.player_details):
@@ -1096,6 +1192,20 @@ class Monopoly(tk.Toplevel):
         self.current_move = sum(dice_roll)
         self.move(player, self.current_move)
         self.me += 1  # updating me to iterate through all for now
+
+    def show_message(self, title, message, type="info", timeout=2000):
+        mbwin = tk.Tk()
+        mbwin.withdraw()
+        try:
+            mbwin.after(timeout, mbwin.destroy)
+            if type == "info":
+                msgb.showinfo(title, message, master=mbwin)
+            elif type == "warning":
+                msgb.showwarning(title, message, master=mbwin)
+            elif type == "error":
+                msgb.showerror(title, message, master=mbwin)
+        except:
+            pass
 
     def click_to_position(self, event):
         x, y = event.x, event.y
@@ -1237,10 +1347,6 @@ class Monopoly(tk.Toplevel):
             )
             self.colour_token_dict[colour].place(x=x1, y=y1, anchor="center")
 
-
-# scroll = ttk.Scrollbar(dataframe,orient=tk.VERTICAL)
-# scroll.place(relx=1,rely=0,anchor='ne',relheight=1)
-# scroll.config(command=listbox.yview)
 
 root = tk.Tk()
 mono = Monopoly(
