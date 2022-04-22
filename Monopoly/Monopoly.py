@@ -44,7 +44,7 @@ class Property:
 
         self.owner = None
         self.houses = -1
-
+        self.isMortgaged = False
         """
         No. of houses meaning:
         -1 : Rent
@@ -430,7 +430,9 @@ class Monopoly(tk.Toplevel):
             image=self.info_tag,
             border=0,
             highlightthickness=0,
-            command=lambda: self.show_message("Station Rules", "Station Rules"),
+            command=lambda: self.show_message(
+                "Station Rules", "Station Rules", timeout=2000
+            ),
         ).place(x=35, rely=0.925, anchor="center")
 
         row_counter = 0
@@ -595,7 +597,9 @@ class Monopoly(tk.Toplevel):
             image=self.info_tag,
             border=0,
             highlightthickness=0,
-            command=lambda: self.show_message("Utility Rules", "Utility Rules"),
+            command=lambda: self.show_message(
+                "Utility Rules", "Utility Rules", timeout=2000
+            ),
         ).place(x=35, rely=0.925, anchor="center")
 
         row_counter = 0
@@ -787,7 +791,9 @@ class Monopoly(tk.Toplevel):
             image=self.info_tag,
             border=0,
             highlightthickness=0,
-            command=lambda: self.show_message("Hotel Rules", "Hotel Rules"),
+            command=lambda: self.show_message(
+                "Hotel Rules", "Hotel Rules", timeout=2000
+            ),
         ).place(x=35, rely=0.9, anchor="center")
 
         vals = [self.properties[position].price]
@@ -1142,7 +1148,7 @@ class Monopoly(tk.Toplevel):
 
     # endregion
 
-    def action_frame_popup(self):
+    def action_frame_popup(self, position):
         action_frame = tk.Frame(
             self.main_frame,
             width=(self.board_side - 2) // 1,
@@ -1155,6 +1161,7 @@ class Monopoly(tk.Toplevel):
         # Build
         # Mortgage + Sell Houses
         # Trade
+        # End Turn
 
     def buy_property(self, property, buyer):
         if self.properties[property].colour:
@@ -1222,11 +1229,14 @@ class Monopoly(tk.Toplevel):
         self.dice_spot2.update()
         self.current_move = sum(dice_roll)
         self.move(player, self.current_move)
-        if dice_roll[0]!=dice_roll[1]:
+        if dice_roll[0] != dice_roll[1]:
             self.me += 1  # updating me to iterate through all for now
         self.update_game()
+        self.action_frame_popup(
+            self.properties[self.player_details[player]["Position"]]
+        )
 
-    def show_message(self, title, message, type="info", timeout=2000):
+    def show_message(self, title, message, type="info", timeout=0):
         mbwin = tk.Tk()
         mbwin.withdraw()
         try:
@@ -1266,19 +1276,23 @@ class Monopoly(tk.Toplevel):
                     pos = i
                     break
         if pos in [10, 30]:
-            self.show_message("Jail Rules", "Jail Rules")
+            self.show_message("Jail Rules", "Jail Rules", timeout=2000)
         elif pos == 20:
-            self.show_message("Free Parking", "Do Nothing!")
+            self.show_message("Free Parking", "Do Nothing!", timeout=2000)
         elif pos == 0:
-            self.show_message("GO!", "Collect 200 Salary as you pass GO!")
+            self.show_message("GO!", "Collect 200 Salary as you pass GO!", timeout=2000)
         elif pos in [2, 17, 33]:
-            self.show_message("Community Chest", "Do as directed on card")
+            self.show_message("Community Chest", "Do as directed on card", timeout=2000)
         elif pos in [7, 22, 36]:
-            self.show_message("Chance", "Do as directed on card")
+            self.show_message("Chance", "Do as directed on card", timeout=2000)
         elif pos == 4:
-            self.show_message("Income Tax", "Pay 200 as Tax on landing here")
+            self.show_message(
+                "Income Tax", "Pay 200 as Tax on landing here", timeout=2000
+            )
         elif pos == 38:
-            self.show_message("Super Tax", "Pay 100 as Tax on landing here")
+            self.show_message(
+                "Super Tax", "Pay 100 as Tax on landing here", timeout=2000
+            )
         elif pos:
             self.property_frame_popup(pos)
 
