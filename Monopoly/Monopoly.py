@@ -275,6 +275,8 @@ class Monopoly(tk.Toplevel):
             )
         )
 
+        self.house_images = []
+
     def dice_tokens(self):
         self.die_dict = dict(
             zip(
@@ -363,7 +365,7 @@ class Monopoly(tk.Toplevel):
     def owner_detail(self, propertypos, s="Name"):
         return self.player_details[self.properties[propertypos].owner][s]
 
-    def update_frames(self):
+    def update_game(self):
         if self.property_frame:
             self.delete_property_frame()
             self.property_frame_popup(self.property_pos_displayed)
@@ -374,6 +376,8 @@ class Monopoly(tk.Toplevel):
                     l.append(i)
             self.delete_player_frame()
             self.player_frame_popup(l)
+        self.house_images = []
+        self.place_houses()
 
     # region # Property Frame
     def station_property_frame(self, position):
@@ -1090,14 +1094,20 @@ class Monopoly(tk.Toplevel):
             width=10,
         )
         self.player_tree.column(
-            "Player", width=int((self.board_side - 2) // 4.25) - 10, anchor="center"
+            "Player",
+            width=int((self.board_side - 2) // 4.25) - 10,
+            anchor="center",
+            minwidth=int((self.board_side - 2) // 4.7),
         )
         self.player_tree.column(
-            "Value", width=int((self.board_side - 2) // 4.25) - 10, anchor="center"
+            "Value",
+            width=int((self.board_side - 2) // 4.25) - 10,
+            anchor="center",
+            minwidth=int((self.board_side - 2) // 4.7),
         )
         self.player_tree.heading("#0", text="")
-        self.player_tree.heading("Player", text="Properties Owned", anchor="center")
-        self.player_tree.heading("Value", text="Cash Remaining/ Value", anchor="center")
+        self.player_tree.heading("Player", text="Player → Properties", anchor="center")
+        self.player_tree.heading("Value", text="Cash → Value", anchor="center")
 
         for i, j in self.player_details.items():
             self.player_tree.insert(
@@ -1141,12 +1151,18 @@ class Monopoly(tk.Toplevel):
 
         action_frame.place(relx=0, rely=0, anchor="nw")
 
-    def buy_property(self, buyer, property):
+        # Buy
+        # Build
+        # Mortgage + Sell Houses
+        # Trade
+
+    def buy_property(self, property, buyer):
         if self.properties[property].colour:
             if not self.properties[property].owner:
                 self.properties[property].owner = buyer
                 l = self.player_details[buyer]["Properties"]
                 l.append(self.properties[property])
+                self.player_details[buyer]["Money"] -= self.properties[property].price
                 # Inserting Properties in Sorted order
                 l.sort(key=lambda i: i.position)
                 for i in range(len(l)):
@@ -1170,9 +1186,24 @@ class Monopoly(tk.Toplevel):
                 print("Owned")
         else:
             print("Can't Buy")
-        self.update_frames()
+        self.update_game()
 
-    def roll_dice(self):  # TODO: Doubles Roll Again --- Disabling buttons
+    def build(self, property, number):
+        # Check bankruptcy/no of houses during gui (Don't give option to build more than possible)
+        if self.properties[property].owner:
+            if self.properties[property].houses + number > 5:
+                print("ERROR! Can't build more than 5")
+            else:
+                self.properties[property].houses += number
+                self.player_details[self.properties[property].owner]["Money"] -= (
+                    self.properties[property].build * number
+                )
+            self.place_houses()
+            self.update_game()
+        else:
+            print("Bruh Die")
+
+    def roll_dice(self):
         if self.me % len(self.player_details):
             player = self.me % len(self.player_details)
         else:
@@ -1191,7 +1222,9 @@ class Monopoly(tk.Toplevel):
         self.dice_spot2.update()
         self.current_move = sum(dice_roll)
         self.move(player, self.current_move)
-        self.me += 1  # updating me to iterate through all for now
+        if dice_roll[0]!=dice_roll[1]:
+            self.me += 1  # updating me to iterate through all for now
+        self.update_game()
 
     def show_message(self, title, message, type="info", timeout=2000):
         mbwin = tk.Tk()
@@ -1323,6 +1356,53 @@ class Monopoly(tk.Toplevel):
         elif self.player_details[player]["Colour"] == "gold":
             return int(x + self.token_width / 2 + 1), int(y + self.token_width / 2 + 2)
 
+    def place_houses(self):
+        HOUSES = ASSET + "/Houses"
+        d = {
+            1: ["house_1", 0.2],
+            2: ["house_2", 0.36],
+            3: ["house_3", 0.54],
+            4: ["house_4", 0.6],
+            5: ["hotel", 0.2],
+        }
+        for i, j in self.properties.items():
+            if j.hex:
+                if j.houses > 0:
+                    x1, y1 = self.position_to_xy(i)
+                    size = [d[j.houses][1], 0.2]
+                    if i < 10:
+                        x = x1 - self.property_width / 2
+                        y = y1 + self.property_height * 0.1
+                        rotation = "down"
+                    elif i < 20:
+                        x = x1 - self.property_height * 0.1
+                        y = y1 + self.property_width / 2
+                        rotation = "left"
+                        size = size[::-1]
+                    elif i < 30:
+                        x = x1 - self.property_width / 2
+                        y = y1 + self.property_height * 0.9
+                        rotation = "up"
+                    else:
+                        x = x1 - self.property_height * 0.9
+                        y = y1 + self.property_width / 2
+                        rotation = "right"
+                        size = size[::-1]
+                    house_image = ImageTk.PhotoImage(
+                        ImageOps.expand(
+                            Image.open(HOUSES + f"/{d[j.houses][0]}_{rotation}.png")
+                        ).resize(
+                            (
+                                int((self.property_height) * size[0]),
+                                int((self.property_height) * size[1]),
+                            ),
+                            Image.Resampling.LANCZOS,
+                        )
+                    )
+
+                    self.house_images.append(house_image)
+                    self.board_canvas.create_image(x, y, image=self.house_images[-1])
+
     def move(self, player, move):
         colour = self.player_details[player]["Colour"]
         self.colour_token_dict = {
@@ -1348,6 +1428,8 @@ class Monopoly(tk.Toplevel):
             self.colour_token_dict[colour].place(x=x1, y=y1, anchor="center")
 
 
+# TODO maybe: CLICK ESC TO GO BACK
+
 root = tk.Tk()
 mono = Monopoly(
     {
@@ -1362,16 +1444,21 @@ mono = Monopoly(
 
 def CLI():
     while True:
-        t = tuple(int(i) for i in input().split())
+        t = tuple(i for i in input().split())
         if t:
-            if t[0] == 13:
+            if t[0] == "move":
                 try:
-                    mono.move(t[1], t[2])
+                    mono.move(int(t[1]), int(t[2]))
                 except:
                     pass
-            elif t[0] == 2:
+            elif t[0] == "buy":
                 try:
-                    mono.buy_property(t[1], t[2])
+                    mono.buy_property(int(t[1]), int(t[2]))
+                except:
+                    pass
+            elif t[0] == "build":
+                try:
+                    mono.build(int(t[1]), int(t[2]))
                 except:
                     pass
             else:
@@ -1380,8 +1467,8 @@ def CLI():
             break
 
 
-"""t = threading.Thread(target=CLI)
-t.start()"""
+t = threading.Thread(target=CLI)
+t.start()
 
 mono.start_monopoly()
 root.mainloop()
