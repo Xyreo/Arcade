@@ -1,5 +1,4 @@
 import random
-from this import d
 import threading
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -9,10 +8,10 @@ from tkinter import messagebox as msgb
 import mysql.connector as msc
 from PIL import Image, ImageOps, ImageTk
 
-from musicplayer import play as music
 from client_framework import Client
+from musicplayer import play as music
 
-ASSET = "Monopoly/Assets"
+ASSET = "Assets"
 
 db = msc.connect(
     host="167.71.231.52",
@@ -74,7 +73,7 @@ class Monopoly(tk.Toplevel):
         super().__init__()
         self.player_details = playerdetails
         self.me = me
-
+        print(self.player_details[self.me])
         self.cobj = cobj
         self.create_window()
         self.create_gui_divisions()
@@ -89,6 +88,7 @@ class Monopoly(tk.Toplevel):
         self.property_frame = None
         self.property_pos_displayed = None
         self.player_frame = None
+        self.current_txt = "Default"
         self.board_canvas.bind("<Button-1>", self.click_to_position)
         self.uuids = list(self.player_details.keys())
         self.turn = self.uuids[0]
@@ -105,9 +105,11 @@ class Monopoly(tk.Toplevel):
 
     def updater(self, msg):
         if msg[1] == "ROLL":
-            self.move(msg[0], msg[2], True)
+            self.roll_dice(msg[2], True)
         elif msg[1] == "BUY":
             self.buy_property(msg[2], msg[0], True)
+        elif msg[1] == "END":
+            self.end_turn(True)
 
     def create_window(self):
         screen_width = int(0.9 * self.winfo_screenwidth())
@@ -307,13 +309,16 @@ class Monopoly(tk.Toplevel):
             "my.TButton", font=("times", int(self.property_width / 3))
         )
 
-        roll_button = ttk.Button(
+        self.roll_button = ttk.Button(
             self.board_canvas,
             text="Roll Dice",
             style="my.TButton",
             command=self.roll_dice,
         )
-        roll_button.place(relx=0.5, rely=0.5, anchor="center")
+        self.roll_button.place(relx=0.5, rely=0.5, anchor="center")
+
+        if self.turn != self.me:
+            self.roll_button.configure(state="disabled")
 
         self.dice_spot1 = tk.Label(
             self.board_canvas, image=self.dice5, border=0, highlightthickness=0
@@ -388,7 +393,9 @@ class Monopoly(tk.Toplevel):
             self.player_frame_popup(l)
         self.house_images = []
         self.place_houses()
-        self.action_frame_popup("Default")
+        self.action_frame_popup(self.current_txt)
+        if self.turn != self.me:
+            self.roll_button.configure(state="disabled")
 
     # region # Property Frame
     def station_property_frame(self, position):
@@ -1038,6 +1045,7 @@ class Monopoly(tk.Toplevel):
             y_coord += canvas.winfo_height() / 11
 
     def property_frame_popup(self, position):
+        position %= 40
         if self.property_frame:
             self.delete_property_frame()
         self.property_pos_displayed = position
@@ -1187,95 +1195,116 @@ class Monopoly(tk.Toplevel):
 
         self.action_frame.place(relx=0, rely=0, anchor="nw")
 
-        buy_button = ttk.Button(
-            self.action_frame,
-            text="BUY",
-            style="my.TButton",
-            command=lambda: self.buy_property(
-                self.player_details[self.turn]["Position"] % 40, self.turn
-            ),
-        )
+        if self.turn != self.me:
+            not_your_turn = tk.Label(
+                self.action_frame,
+                text=f'{self.player_details[self.turn]["Name"]} is playing!',
+                font=50,
+            )
+            not_your_turn.place(relx=0.5, rely=0.5, anchor="center")
+        else:
+            buy_button = ttk.Button(
+                self.action_frame,
+                text="BUY",
+                style="my.TButton",
+                command=lambda: self.buy_property(
+                    self.player_details[self.turn]["Position"] % 40, self.turn
+                ),
+            )
 
-        buy_button.place(relx=0.2, rely=0.1, anchor="center")
+            buy_button.place(relx=0.2, rely=0.1, anchor="center")
 
-        build_button = ttk.Button(
-            self.action_frame,
-            text="BUILD",
-            style="my.TButton",
-            command=self.build_action_frame,
-        )
-        build_button.place(relx=0.2, rely=0.4, anchor="center")
+            build_button = ttk.Button(
+                self.action_frame,
+                text="BUILD",
+                style="my.TButton",
+                command=self.build_action_frame,
+            )
+            build_button.place(relx=0.2, rely=0.4, anchor="center")
 
-        mortgage_button = ttk.Button(
-            self.action_frame,
-            text="MORTGAGE",
-            style="my.TButton",
-        )  # command=lambda: self.mortgage(),
-        mortgage_button.place(relx=0.8, rely=0.1, anchor="center")
+            mortgage_button = ttk.Button(
+                self.action_frame,
+                text="MORTGAGE",
+                style="my.TButton",
+            )  # command=lambda: self.mortgage(),
+            mortgage_button.place(relx=0.8, rely=0.1, anchor="center")
 
-        trade_button = ttk.Button(
-            self.action_frame,
-            text="TRADE",
-            style="my.TButton",
-        )  # command=lambda: self.trade(),
-        trade_button.place(relx=0.8, rely=0.4, anchor="center")
+            trade_button = ttk.Button(
+                self.action_frame,
+                text="TRADE",
+                style="my.TButton",
+            )  # command=lambda: self.trade(),
+            trade_button.place(relx=0.8, rely=0.4, anchor="center")
 
-        end_button = ttk.Button(
-            self.action_frame,
-            text="END TURN",
-            style="my.TButton",
-            command=lambda: self.end_turn(),
-        )
-        end_button.place(relx=0.5, rely=0.25, anchor="center")
+            end_button = ttk.Button(
+                self.action_frame,
+                text="END TURN",
+                style="my.TButton",
+                command=lambda: self.end_turn(),
+            )
+            end_button.place(relx=0.5, rely=0.25, anchor="center")
 
-        if type == "Default":
-            txt = "BRUHHHHHHHHHHHHHHHH"
+            if type == "Default":
+                self.current_txt = "Default"
+            elif type == "Jail":
+                self.current_txt = "Jail"
+            elif type == "Community Chest":
+                self.current_txt = "Community Chest"
+            elif type == "Chance":
+                self.current_txt = "Chance"
+            else:
+                self.current_txt = "You died again"
 
-        action_label = tk.Label(
-            self.action_frame, text=txt, font=30
-        )  # command=lambda: self.end_turn(),
-        action_label.place(relx=0.5, rely=0.75, anchor="center")
+            action_label = tk.Label(self.action_frame, text=self.current_txt, font=30)
+            action_label.place(relx=0.5, rely=0.75, anchor="center")
 
     def buy_property(self, propertypos, buyer, received=False):
-        if self.show_message(
-            f"Buy {self.properties[propertypos].name}?",
-            f"You'll be buying {self.properties[propertypos].name} for {self.properties[propertypos].price}, leaving {(self.player_details[buyer]['Money'])-self.properties[propertypos].price} cash with you",
-            type="okcancel",
-        ):
-            if self.properties[propertypos].colour:
-                if not self.properties[propertypos].owner:
-                    self.properties[propertypos].owner = buyer
-                    l = self.player_details[buyer]["Properties"]
-                    l.append(self.properties[propertypos])
-                    self.player_details[buyer]["Money"] -= self.properties[
-                        propertypos
-                    ].price
-                    # Inserting Properties in Sorted order
-                    l.sort(key=lambda i: i.position)
-                    for i in range(len(l)):
-                        if l[i].colour == "Station":
-                            l.append(l.pop(i))
-                    for i in range(len(l)):
-                        if l[i].colour == "Utility":
-                            l.append(l.pop(i))
-
-                    self.player_details[buyer].update({"Properties": l})
-                    if self.properties[propertypos].colour in ["Brown", "Dark Blue"]:
-                        colour_set = 2
-                    else:
-                        colour_set = 3
-
-                    if self.count_colour(propertypos) == colour_set:
-                        for i in self.properties.values():
-                            if i.colour == self.properties[propertypos].colour:
-                                i.houses = 0
-                else:
-                    print("Owned")
+        if not received:
+            if self.show_message(
+                f"Buy {self.properties[propertypos].name}?",
+                f"You'll be buying {self.properties[propertypos].name} for {self.properties[propertypos].price}, leaving {(self.player_details[buyer]['Money'])-self.properties[propertypos].price} cash with you",
+                type="okcancel",
+            ):
+                pass
             else:
-                print("Can't Buy")
-            self.update_game()
-            if not received:
-                self.cobj.send(("BUY", propertypos))
+                return
+        if self.properties[propertypos].colour:
+            if not self.properties[propertypos].owner:
+                self.properties[propertypos].owner = buyer
+                l = self.player_details[buyer]["Properties"]
+                l.append(self.properties[propertypos])
+                self.player_details[buyer]["Money"] -= self.properties[
+                    propertypos
+                ].price
+                # Inserting Properties in Sorted order
+                l.sort(key=lambda i: i.position)
+                for i in range(len(l)):
+                    if l[i].colour == "Station":
+                        l.append(l.pop(i))
+                for i in range(len(l)):
+                    if l[i].colour == "Utility":
+                        l.append(l.pop(i))
+
+                self.player_details[buyer].update({"Properties": l})
+                if self.properties[propertypos].colour in [
+                    "Brown",
+                    "Dark Blue",
+                ]:
+                    colour_set = 2
+                else:
+                    colour_set = 3
+
+                if self.count_colour(propertypos) == colour_set:
+                    for i in self.properties.values():
+                        if i.colour == self.properties[propertypos].colour:
+                            i.houses = 0
+            else:
+                print("Owned")
+        else:
+            print("Can't Buy")
+        self.update_game()
+        if not received:
+            self.cobj.send(("BUY", propertypos))
 
     def build_action_frame(self):
         self.build_frame = tk.Frame(
@@ -1342,15 +1371,18 @@ class Monopoly(tk.Toplevel):
         else:
             print("Bruh Die")
 
-    def roll_dice(self):
+    def roll_dice(self, roll=None, received=False):
         music(ASSET + "/diceroll.mp3")
-        dice_roll = random.randint(1, 6), random.randint(1, 6)
+        dice_roll = roll if received else (random.randint(1, 6), random.randint(1, 6))
+        if not received:
+            self.cobj.send(("ROLL", dice_roll))
         for i in range(18):
             self.dice_spot1.configure(image=self.die_dict[random.randint(1, 6)])
             self.dice_spot2.configure(image=self.die_dict[random.randint(1, 6)])
             self.dice_spot1.update()
             self.dice_spot2.update()
             sleep(0.12)
+            self.roll_button.configure(state="disabled")
         self.dice_spot1.configure(image=self.die_dict[dice_roll[0]])
         self.dice_spot2.configure(image=self.die_dict[dice_roll[1]])
         self.dice_spot1.update()
@@ -1358,6 +1390,8 @@ class Monopoly(tk.Toplevel):
         self.current_move = sum(dice_roll)
         self.move(self.turn, self.current_move)
         self.update_game()
+        if dice_roll[0] == dice_roll[1]:
+            self.roll_button.configure(state="normal")
 
     def show_message(self, title, message, type="info", timeout=0):
         mbwin = tk.Tk()
@@ -1475,6 +1509,8 @@ class Monopoly(tk.Toplevel):
                     return int(
                         x1 - self.property_height * 0.3 + self.token_width / 2 + 3
                     ), int(y1 + self.property_height * 0.95 - self.token_width / 2)
+                else:
+                    print("You died")
         elif not position % 10:
             x = x1 - (self.property_height * 0.5)
             y = y1 + (self.property_height * 0.5)
@@ -1547,7 +1583,7 @@ class Monopoly(tk.Toplevel):
                     self.house_images.append(house_image)
                     self.board_canvas.create_image(x, y, image=self.house_images[-1])
 
-    def move(self, player, move, received=False):
+    def move(self, player, move):
         colour = self.player_details[player]["Colour"]
         self.colour_token_dict = {
             "red": self.red_token,
@@ -1582,28 +1618,27 @@ class Monopoly(tk.Toplevel):
         elif pos:
             self.property_frame_popup(pos)
 
+    def end_turn(self, received=False):
         if not received:
-            self.cobj.send(("ROLL", self.current_move))
-
-    def end_turn(self):
-        if self.show_message(
-            "End Turn?",
-            f"{self.player_details[self.turn]['Name']}, are you sure you want to end your turn?",
-            type="yesno",
-        ):
-            try:
-                self.turn = self.uuids[self.uuids.index(self.turn) + 1]
-            except:
-                self.turn = self.uuids[0]
-            self.me += 1
-            self.me %= 4
-            if not self.me:
-                self.me = 4
+            if self.show_message(
+                "End Turn?",
+                f"{self.player_details[self.turn]['Name']}, are you sure you want to end your turn?",
+                type="yesno",
+            ):
+                pass
+            else:
+                return
+        try:
+            self.turn = self.uuids[self.uuids.index(self.turn) + 1]
+        except:
+            self.turn = self.uuids[0]
+        if not received:
+            self.cobj.send(("END",))
 
         self.update_game()
+        if self.turn == self.me:
+            self.roll_button.configure(state="normal")
 
-
-# TODO Fix Doubles (Roll Again, End Turn)
 
 # TODO BANKRUPTCY
 
@@ -1613,21 +1648,21 @@ class Monopoly(tk.Toplevel):
 if __name__ == "__main__":
     mono = None
     root = tk.Tk()
+    tk.Button(root, text="START", command=lambda: cobj.send(("START",))).pack()
 
     def updater(msg):
         if msg[0] == "START":
-            mono = Monopoly(msg[1], msg[2])
+            mono = Monopoly(msg[1], msg[2], cobj)
+            cobj.updater = mono.updater
+            mono.start_monopoly()
 
-    cobj = Client(("localhost", 6666), updater)
+    cobj = Client(("localhost", 9696), updater)
 
     def CLI():
         while True:
             t = tuple(i for i in input().split())
             if t:
-                if t[0] == "START":
-                    cobj.send("START")
-
-                elif t[0] == "move":
+                if t[0] == "move":
                     try:
                         mono.move(int(t[1]), int(t[2]))
                     except:
@@ -1651,5 +1686,4 @@ if __name__ == "__main__":
     t = threading.Thread(target=CLI)
     t.start()
 
-    mono.start_monopoly()
     root.mainloop()

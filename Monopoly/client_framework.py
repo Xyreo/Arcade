@@ -23,14 +23,15 @@ class Client:
         print("Connected")
         self.connected = True
         self.uuid = None
-        self.listening_thread = threading.Thread(target=self.listener, args=(updater,))
+        self.updater = updater
+        self.listening_thread = threading.Thread(target=self.listener)
         self.listening_thread.start()
 
     def send(self, msg):
         self.conn.send(pickle.dumps(msg))
 
-    def listener(self, updater):
+    def listener(self):
         while self.connected:
             instruction = self.conn.recv(1024)
             instruction = pickle.loads(instruction)
-            updater(instruction)
+            self.updater(instruction)

@@ -18,7 +18,7 @@ recv - (uuid, BUILD, {property_number :no of houses})
 Mortgage - (MORTAGE,Sell/Mortgage,PROPERTY_NUMEBR,num (optional))
 Recv - (uuid, MORTAGE,Sell/Mortgage,PROPERTY_NUMEBR,num (optional))
 
-End Turn - (ENDTURN)
-Recv - (UUID,ENDTURN)
+End Turn - (END)
+Recv - (UUID,END)
 
 

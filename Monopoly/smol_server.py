@@ -1,8 +1,8 @@
 # region Setup
-import pickle, random, threading, secrets
-import socket, ssl
-from ssl import SSLContext
-from multipledispatch import dispatch
+import pickle
+import secrets
+import socket
+import threading
 
 # endregion
 
@@ -29,7 +29,7 @@ class Client(threading.Thread):
     # Class that gets threaded for every new client object
     # Handles all communication from client to servers
 
-    color = ["Red", "Green", "Blue", "Gold"]
+    color = ["red", "green", "blue", "gold"]
 
     def __init__(self, conn, addr, name):
         # Object creation with conn -> socket, addr -> player ip address
@@ -58,18 +58,20 @@ class Client(threading.Thread):
         action = msg[0]
         if action == "START":
             p = {}
-            for i in range(len(players)):
-                p[players.uuid] = {"Name": players[i].name, "Colour": Client.color[i]}
+            i = 0
             for player in players:
-                player.send(("START", p, self.uuid))
+                p[player] = {"Name": players[player].name, "Colour": Client.color[i]}
+                i += 1
+            for player in players:
+                players[player].send_instruction(("START", p, players[player].uuid))
 
-        elif action in ["ROLL", "BUY", "RENT", "TAX", "MORTGAGE", "ENDTURN"]:
+        elif action in ["ROLL", "BUY", "RENT", "TAX", "MORTGAGE", "END"]:
             self.broadcast_to_members((self.uuid,) + msg, self.uuid)
 
     def broadcast_to_members(self, msg, exclude=None):
         for player in players:
-            if player.uuid != exclude:
-                player.send_instruction(msg)
+            if players[player].uuid != exclude:
+                players[player].send_instruction(msg)
 
     def send_instruction(self, instruction):
         self.conn.send(pickle.dumps(instruction))
@@ -78,7 +80,7 @@ class Client(threading.Thread):
 
 class Driver:
     def __init__(self):
-        PORT = 6666
+        PORT = 9696
         SERVER = "localhost"
         ADDRESS = (SERVER, PORT)
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -90,7 +92,7 @@ class Driver:
         while True:
             conn, addr = self.server.accept()
             print("Accepted from", addr)
-            client_thread = Client(conn, addr, False)
+            client_thread = Client(conn, addr, "Blah")
             client_thread.start()
             print(f"active connections {threading.activeCount()-2}")
 
