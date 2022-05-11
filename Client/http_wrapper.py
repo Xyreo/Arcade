@@ -5,7 +5,7 @@ import time
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
 
-class API:
+class Http:
     POST = "post"
     GET = "get"
     PUT = "put"
@@ -17,7 +17,7 @@ class API:
 
     def login_signup(self, method, username, password):
         data = {"username": username, "password": password}
-        r = self.send(API.POST, method, data=data)
+        r = self.send(Http.POST, method, data=data)
         if r.status_code == 200:
             if method == "login":
                 self.TOKEN = r.json()["Token"]
@@ -33,14 +33,14 @@ class API:
 
     def del_user(self):
         path = "delete_user"
-        r = self.auth_send(API.DELETE, path)
+        r = self.auth_send(Http.DELETE, path)
         if r.status_code != 200:
             return False
         return True
 
     def logout(self):
         path = "logout"
-        r = self.auth_send(API.POST, path)
+        r = self.auth_send(Http.POST, path)
         if r.status_code != 200:
             return False
         return True
@@ -49,7 +49,7 @@ class API:
         path = "details"
         if pos:
             path += "/" + str(pos)
-        r = self.monopoly_send(API.GET, path)
+        r = self.monopoly_send(Http.GET, path)
         if r.status_code == 404:
             return -1
         elif r.status_code != 200:
@@ -90,14 +90,11 @@ class API:
 class Response:
     def __init__(self, code, body):
         self.status_code = code
-        self.body, self.json, self.text = body, body, body
 
 
 if __name__ == "__main__":
-    app = API("https://localhost:5000")
+    app = Http("https://localhost:5000")
     print(app.register("test", "test"))
     print(app.login("test", "test"))
     print(app.mply_details(1))
-    print(app.del_user())
     print(app.logout())
-    print(app.mply_details(1))

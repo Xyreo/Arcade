@@ -1,4 +1,4 @@
-import random, redis
+import redis
 from datetime import timedelta
 import secrets
 

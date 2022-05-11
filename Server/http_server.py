@@ -1,9 +1,10 @@
 from flask import Flask, request, jsonify, Blueprint
-import mysql.connector as msc
 from datetime import date
+from authenticator import Auth
+import mysql.connector as msc
 import bcrypt, threading, json
 import redis
-from authenticator import Auth
+
 
 app = Flask(__name__)
 db = msc.connect(

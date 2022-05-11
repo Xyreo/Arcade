@@ -3,7 +3,7 @@ import tkinter as tk
 
 import chess_interface
 from client_framework import Client
-from multiplayer_chess import Chess
+from chess import Chess
 
 
 class App:

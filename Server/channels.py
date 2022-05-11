@@ -1,46 +1,114 @@
 # region Setup
-import pickle
-import random
-import socket
-import threading
+from authenticator import Auth
+import pickle, random, threading, secrets
+import socket, ssl
+from ssl import SSLContext
+from multipledispatch import dispatch
 
 # endregion
 
+lobbies = {}
+rooms = {}
+players = {}  # Stores the socks of all the players connected to the server
 
-class Channel_Dict(dict):
-    def __init__(self):
-        super().__init__()
+
+def assign_uuid(l):
+    # Function that returns a unique id for passed object
+    i = secrets.token_hex(16)
+    while i in l:
+        i = secrets.token_hex(16)
+    return i
 
 
-class Channel:
-    # Class that stores Room objects to make functioning in rooms smoothly
-    def __init__(self):
+class Channels:
+    def __init__(self, uuid):
+        self.uuid = uuid
         self.members: list[Client] = []
-        self.uuid = assign_uuid(list(channels.keys()))
-        channels[self.uuid] = self
 
-    def add(self, puid):
-        self.members.append(puid)
+    def broadcast_to_members(self, msg, exclude=None):
+        for member in self.members:
+            if member.uuid != exclude:
+                member.send_instruction(msg)
 
-    def broadcast_to_members(self, msg):
-        for i in self.members:
-            pass
+    def join(self, player):
+        self.members.append(player)
+        player.send_instruction(("INIT",) + self.details())
+
+    def leave(self, pid):
+        self.members.remove(pid)
 
 
-class Lobby(Channel):
-    def __init__(self, host):
-        super().__init__()
-        self.members = [host]
-        self.host = host
+class Lobby(Channels):
+    def __init__(self, uuid):
+        super().__init__(uuid)
+        lobbies[uuid] = self
+        self.rooms: list[Room] = []
+
+    def create_room(self, host, settings):
+        room = Room(host, settings)
+        self.rooms.append(room)
+        self.broadcast_to_members(
+            ("ROOM", "ADD", room.details()), exclude=host.uuid
+        )  # TODO Broadcast Protocol
+
+    def delete_room(self, id):
+        self.rooms[id].delete()
+        del self.rooms[id]
+        self.broadcast_to_members(("ROOM", "DELETE", id))
+
+    def broadcast_to_members(self, msg, exclude=None):
+        super().broadcast_to_members((self.uuid,) + msg, exclude)
 
     def details(self):
-        d = {
-            "host": self.host,
-            "players": [players[i].details() for i in players],
-            "id": self.uuid,
-        }
+        lobby = (
+            self.uuid,
+            [room.details() for room in self.rooms if room.status == "OPEN"],
+        )
+        return lobby
 
-        return d
+
+class Room(Channels):
+    def __init__(self, host, settings, status="OPEN"):
+        super().__init__(assign_uuid(rooms))
+        rooms[self.uuid] = self
+        self.host: Client = host
+        self.settings = settings
+        self.status = status
+        self.join(host)
+
+    def delete(self):
+        pass
+
+    def start(self, player):
+        if self.host.uuid != self.player.uuid:
+            return
+        self.status = "INGAME"
+        if self.settings["game"] == "CHESS":
+            self.chess_start()
+        elif self.settings["game"] == "MNPLY":
+            self.mnply_start()
+
+    def join(self, player):
+        super().join(player)
+        self.broadcast_to_members(("PLAYER", "ADD", player.details()), player.uuid)
+
+    def chess_start(self):
+        pass
+
+    def mnply_start(self):
+        pass
+
+    def broadcast_to_members(self, msg, exclude=None):
+        super().broadcast_to_members((self.uuid) + msg, exclude)
+
+    def details(self):
+        room = {
+            "id": self.uuid,
+            "host": self.host.uuid,
+            "settings": self.settings,
+            "members": [member.details() for member in self.members],
+        }
+        return room
 
 
 PORT = 6789
@@ -49,121 +117,125 @@ ADDRESS = (SERVER, PORT)
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDRESS)
-channels: dict = Channel_Dict()
-players = {}  # Stores the socks of all the players connected to the server
-# Stores player socks listening for room updations (they are waiting to join rooms)
-p_in_queue = []
-# Dicitonary to store all existing room objects
 
 
 class Client(threading.Thread):
     # Class that gets threaded for every new client object
     # Handles all communication from client to servers
 
-    def __init__(self, conn, addr, name):
+    def __init__(self, conn, addr, auth=True):
         # Object creation with conn -> socket, addr -> player ip address
 
         threading.Thread.__init__(self)
-        global players
-
         self.conn = conn
         self.addr = addr
-        self.name = name
-        self.channel = []
+        self.auth = auth
+        self.name = pickle.loads(self.conn.recv(1048))
+        print("Name", self.name)
         self.uuid = assign_uuid(list(players.keys()))
-        self.connected = True
-
         players[self.uuid] = self
 
+        self.connected = True
+
     def run(self):
-        # Event Listener
+        try:
+            while self.connected:
+                sent = self.conn.recv(1048)
+                m = pickle.loads(sent)
+                print("Received", m)
+                if self.auth:
+                    self.instruction_handler(m[0], m[1:])
+                else:
+                    self.instruction_handler(m)
 
-        while self.connected:
-            sent = self.conn.recv(1048)
-            m = pickle.loads(sent)
-            self.instruction_handler(m)
+        except KeyboardInterrupt as e:
+            server.close()
+            exit()
 
-    def join_room(self, mode):
-        # Function to redirect users to the joining page
-        global p_in_queue, rooms
-        if mode == "LIST":
-            if self not in p_in_queue:
-                p_in_queue.append(self)
-
-            room_list = []
-            for i in rooms.values():
-                if i.status == "OPEN":
-                    room_list.append(i.details())
-
-            package = ("ROOM", "ADD", room_list)
-            self.send_instruction(package)
-
+    @dispatch(str, tuple)
+    def instruction_handler(self, session_id, instruction):
+        if Driver.auth(session_id):
+            self.instruction_handler(instruction)
         else:
-            self.room = rooms[mode]
-            self.room.add(self.uuid)
-            p_in_queue.remove(self)
+            pass  # TODO unverified packet things
 
-    def create_room(self):
-        # Function to create a room
-        # TODO may implement more customizability (eg. Start Money, No. of Players etc.)
-        global p_in_queue
-
-        self.room = Room(self.uuid)
-        # Informs all clients in lobby a new room has been created
-        for client in p_in_queue:
-            i = ("ROOM", "ADD", [self.room.details()])
-            client.send_instruction(i)
-
+    @dispatch(tuple)
     def instruction_handler(self, instruction):
-        # Parses the request and redirects it appropriately
-        print(instruction)
-        if instruction[0] == "ROOM":
-            if instruction[1] == "JOIN":
-                self.join_room(instruction[2])
+        channel = instruction[0]
+        if channel == "0":
+            self.main_handler(instruction[1:])
+        elif channel in lobbies:
+            self.lobby_handler(channel, instruction[1:])
+        elif channel in rooms:
+            self.room_handler(channel, instruction[1:])
+        else:
+            pass  # TODO Wrong Channel Stuff
 
-            elif instruction[1] == "CREATE":
-                self.create_room()
+    def main_handler(self, msg):
+        action = msg[0]
+        if action == "JOIN":
+            lobbies[msg[1]].join(self)
+        elif action == "LEAVE":
+            lobbies[msg[1]].leave(self)
+        else:
+            pass  # TODO Wrong Action
 
-            elif instruction[1] == "START":
-                self.room.start()
+    def lobby_handler(self, lobby, msg):
+        action = msg[0]
+        if action == "JOIN":
+            pass
+        elif action == "LEAVE":
+            pass
+        elif action == "CREATE":
+            lobbies[lobby].create_room(self, msg[1])
+        elif action == "DELETE":
+            lobbies[lobby].delete_room(msg[1])
+        else:
+            pass  # TODO Wrong Action
 
-        elif instruction[0] == "NAME":
-            self.name = instruction[1]
-
-        elif instruction[0] == "CHESS":
-            chess.serverside(instruction[1:], self.room, self.uuid)
+    def room_handler(self, room, msg):
+        action = msg[0]
 
     def send_instruction(self, instruction):
         self.conn.send(pickle.dumps(instruction))
-        print("SENT.")
+        print(instruction, "SENT.")
 
     def details(self):
         d = {"name": self.name, "puid": self.uuid}
         return d
 
 
-def assign_uuid(l):
-    # Function that returns a unique id for passed object
+class Driver:
+    auth: Auth = Auth()
 
-    i = random.randint(1000, 9999)
-    while i in l:
-        i = random.randint(1000, 9999)
-    return i
+    def __init__(self):
+        PORT = 6787
+        SERVER = "localhost"
+        ADDRESS = (SERVER, PORT)
+
+        l, c = Lobby("MNPLY"), Lobby("CHESS")
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        """sslcontext = SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        sslcontext.load_cert_chain("certificate.pem", keyfile="key.pem")
+        self.server = sslcontext.wrap_socket(sock=self.server, server_side=True)"""
+        self.server.bind(ADDRESS)
+
+    def start(self):
+        print("Server Started")
+        self.server.listen()
+        while True:
+            conn, addr = self.server.accept()
+            print("Accepted from", addr)
+            client_thread = Client(conn, addr, False)
+            client_thread.start()
+            print(f"active connections {threading.activeCount()-2}")
 
 
-def start_server():
-    # Function that listens for incoming connections and threads and redirects them to the Client Handler
-
-    server.listen()
-    while True:
-        conn, addr = server.accept()
-        name = conn.recv(1048)
-        client_thread = Client(conn, addr, name)
-        client_thread.start()
-
-        print(f"active connections {threading.activeCount()-2}")
+players: dict[str, Client]
+lobbies: dict[str, Lobby]
+rooms: dict[str, Room]
 
 
-# Threads the server itself to manage the GUI of the server seperately
-svr = threading.Thread(target=start_server)
-svr.start()
+if __name__ == "__main__":
+    d = Driver()
+    d.start()

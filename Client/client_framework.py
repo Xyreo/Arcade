@@ -1,28 +1,29 @@
 import pickle
 import socket
-import ssl
+from ssl import SSLContext, CERT_REQUIRED
 import threading
+import ssl
 
 
 class Client:
     # Class that creates the client object for handling communications from the client's end
     # Implemented seperately to abstract the communications part from the game logic
 
-    def __init__(self, ADDRESS):
+    def __init__(self, ADDRESS, updater):
         # Takes the address and connects to the server. Also strats a thread to handle listening
 
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        context = ssl.create_default_context()
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
-        self.conn = context.wrap_socket(self.conn, server_hostname="Arcade")
+        """sslcontext = SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        sslcontext.check_hostname = False
+        sslcontext = ssl.create_default_context()
+        sslcontext.check_hostname = False
+        self.conn = sslcontext.wrap_socket(self.conn, server_hostname="Arcade")"""
+
         self.conn.connect(ADDRESS)
+        print("Connected")
         self.connected = True
         self.uuid = None
-
-    def startrecv(self, updater):
-        t = (updater,)
-        self.listening_thread = threading.Thread(target=self.listener, args=t)
+        self.listening_thread = threading.Thread(target=self.listener, args=(updater,))
         self.listening_thread.start()
 
     def send(self, msg):
@@ -33,8 +34,3 @@ class Client:
             instruction = self.conn.recv(1024)
             instruction = pickle.loads(instruction)
             updater(instruction)
-
-
-class Chess:
-    def __init__(self) -> None:
-        pass

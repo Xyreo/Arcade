@@ -860,7 +860,6 @@ class ChessPiece(Piece):
         super().moved(pos)
         if self.piece == "KING":
             if abs(old_pos - pos) == 20:
-                print("NANI")
                 move = (0, 0)
                 if old_pos < pos:
                     move = (pos + 10, pos - 10)
