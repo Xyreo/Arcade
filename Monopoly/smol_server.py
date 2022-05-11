@@ -1,5 +1,4 @@
 # region Setup
-from authenticator import Auth
 import pickle, random, threading, secrets
 import socket, ssl
 from ssl import SSLContext
@@ -62,7 +61,7 @@ class Client(threading.Thread):
             for i in range(len(players)):
                 p[players.uuid] = {"Name": players[i].name, "Colour": Client.color[i]}
             for player in players:
-                player.send((p, self.uuid))
+                player.send(("START", p, self.uuid))
 
         elif action in ["ROLL", "BUY", "RENT", "TAX", "MORTGAGE", "ENDTURN"]:
             self.broadcast_to_members((self.uuid,) + msg, self.uuid)
@@ -78,12 +77,11 @@ class Client(threading.Thread):
 
 
 class Driver:
-    auth: Auth = Auth()
-
     def __init__(self):
-        PORT = 6787
+        PORT = 6666
         SERVER = "localhost"
         ADDRESS = (SERVER, PORT)
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind(ADDRESS)
 
     def start(self):

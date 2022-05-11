@@ -1,4 +1,5 @@
 import random
+from this import d
 import threading
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -69,12 +70,12 @@ class Property:
 
 
 class Monopoly(tk.Toplevel):
-    def __init__(self, playerdetails, me):
+    def __init__(self, playerdetails, me, cobj):
         super().__init__()
         self.player_details = playerdetails
         self.me = me
 
-        self.cobj = Client(("localhost", 6789), self.updater)
+        self.cobj = cobj
         self.create_window()
         self.create_gui_divisions()
         self.initialise()
@@ -1608,47 +1609,47 @@ class Monopoly(tk.Toplevel):
 
 # In player properties box, add colour highlight based on property
 
-root = tk.Tk()
 
-mono = Monopoly(
-    {
-        1: {"Name": "Player 1", "Colour": "red"},
-        2: {"Name": "Player 2", "Colour": "green"},
-        3: {"Name": "Player 3", "Colour": "blue"},
-        4: {"Name": "Player 4", "Colour": "gold"},
-    },
-    1,
-)
+if __name__ == "__main__":
+    mono = None
+    root = tk.Tk()
 
+    def updater(msg):
+        if msg[0] == "START":
+            mono = Monopoly(msg[1], msg[2])
 
-def CLI():
-    while True:
-        t = tuple(i for i in input().split())
-        if t:
-            if t[0] == "move":
-                try:
-                    mono.move(int(t[1]), int(t[2]))
-                except:
-                    pass
-            elif t[0] == "buy":
-                try:
-                    mono.buy_property(int(t[1]), int(t[2]))
-                except:
-                    pass
-            elif t[0] == "build":
-                try:
-                    mono.build(int(t[1]), int(t[2]))
-                except:
-                    pass
+    cobj = Client(("localhost", 6666), updater)
+
+    def CLI():
+        while True:
+            t = tuple(i for i in input().split())
+            if t:
+                if t[0] == "START":
+                    cobj.send("START")
+
+                elif t[0] == "move":
+                    try:
+                        mono.move(int(t[1]), int(t[2]))
+                    except:
+                        pass
+                elif t[0] == "buy":
+                    try:
+                        mono.buy_property(int(t[1]), int(t[2]))
+                    except:
+                        pass
+                elif t[0] == "build":
+                    try:
+                        mono.build(int(t[1]), int(t[2]))
+                    except:
+                        pass
+                else:
+                    print("Die")
             else:
-                print("Die")
-        else:
-            print("Closed CLI Thread")
-            break
+                print("Closed CLI Thread")
+                break
 
+    t = threading.Thread(target=CLI)
+    t.start()
 
-t = threading.Thread(target=CLI)
-t.start()
-
-mono.start_monopoly()
-root.mainloop()
+    mono.start_monopoly()
+    root.mainloop()
