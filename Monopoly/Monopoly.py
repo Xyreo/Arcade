@@ -3,7 +3,7 @@ import threading
 import tkinter as tk
 import tkinter.ttk as ttk
 from time import sleep
-from tkinter import messagebox as msgb
+from tkinter import N, messagebox as msgb
 
 import mysql.connector as msc
 from PIL import Image, ImageOps, ImageTk
@@ -79,7 +79,7 @@ class Monopoly(tk.Toplevel):
         self.create_image_obj()
         self.dice_tokens()
         self.delete_property_frame()
-        self.action_frame_popup()
+        self.action_frame_popup("Default")
         self.player_frame_popup()
 
     def initialise(self):
@@ -87,7 +87,8 @@ class Monopoly(tk.Toplevel):
         self.property_pos_displayed = None
         self.player_frame = None
         self.board_canvas.bind("<Button-1>", self.click_to_position)
-
+        self.uuids = list(self.player_details.keys())
+        self.turn = self.uuids[0]
         self.properties = {}
         for i in range(40):
             self.properties[i] = Property(i)
@@ -301,7 +302,7 @@ class Monopoly(tk.Toplevel):
             self.board_canvas,
             text="Roll Dice",
             style="my.TButton",
-            command=lambda: self.roll_dice(),
+            command=self.roll_dice,
         )
         roll_button.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -378,6 +379,7 @@ class Monopoly(tk.Toplevel):
             self.player_frame_popup(l)
         self.house_images = []
         self.place_houses()
+        self.action_frame_popup("Default")
 
     # region # Property Frame
     def station_property_frame(self, position):
@@ -1116,8 +1118,26 @@ class Monopoly(tk.Toplevel):
         self.player_tree.heading("Value", text="Cash → Value", anchor="center")
 
         for i, j in self.player_details.items():
-            self.player_tree.insert(
-                parent="", index="end", iid=i, text="", values=(j["Name"], j["Money"])
+            if i == self.me:
+                self.player_tree.insert(
+                    parent="",
+                    index="end",
+                    iid=i,
+                    text="",
+                    values=(j["Name"], j["Money"]),
+                    tags=("me"),
+                )
+
+            else:
+                self.player_tree.insert(
+                    parent="",
+                    index="end",
+                    iid=i,
+                    text="",
+                    values=(j["Name"], j["Money"]),
+                )
+            self.player_tree.tag_configure(
+                "me", foreground=self.player_details[self.me]["Colour"]
             )
             if i in list_of_open:
                 self.player_tree.item(i, open=True)
@@ -1145,58 +1165,159 @@ class Monopoly(tk.Toplevel):
         for i, j in self.player_details.items():
             if j["Colour"] == colour:
                 self.player_tree.item(i, open=True)
+                self.player_tree.selection_set(i)
 
     # endregion
 
-    def action_frame_popup(self, position):
-        action_frame = tk.Frame(
+    def action_frame_popup(self, type):
+        self.action_frame = tk.Frame(
             self.main_frame,
             width=(self.board_side - 2) // 1,
             height=(self.board_side - 2) // 2.45,
         )
 
-        action_frame.place(relx=0, rely=0, anchor="nw")
+        self.action_frame.place(relx=0, rely=0, anchor="nw")
 
-        # Buy
-        # Build
-        # Mortgage + Sell Houses
-        # Trade
-        # End Turn
+        buy_button = ttk.Button(
+            self.action_frame,
+            text="BUY",
+            style="my.TButton",
+            command=lambda: self.buy_property(
+                self.player_details[self.turn]["Position"] % 40, self.turn
+            ),
+        )
 
-    def buy_property(self, property, buyer):
-        if self.properties[property].colour:
-            if not self.properties[property].owner:
-                self.properties[property].owner = buyer
-                l = self.player_details[buyer]["Properties"]
-                l.append(self.properties[property])
-                self.player_details[buyer]["Money"] -= self.properties[property].price
-                # Inserting Properties in Sorted order
-                l.sort(key=lambda i: i.position)
-                for i in range(len(l)):
-                    if l[i].colour == "Station":
-                        l.append(l.pop(i))
-                for i in range(len(l)):
-                    if l[i].colour == "Utility":
-                        l.append(l.pop(i))
+        buy_button.place(relx=0.2, rely=0.1, anchor="center")
 
-                self.player_details[buyer].update({"Properties": l})
-                if self.properties[property].colour in ["Brown", "Dark Blue"]:
-                    colour_set = 2
+        build_button = ttk.Button(
+            self.action_frame,
+            text="BUILD",
+            style="my.TButton",
+            command=self.build_action_frame,
+        )
+        build_button.place(relx=0.2, rely=0.4, anchor="center")
+
+        mortgage_button = ttk.Button(
+            self.action_frame,
+            text="MORTGAGE",
+            style="my.TButton",
+        )  # command=lambda: self.mortgage(),
+        mortgage_button.place(relx=0.8, rely=0.1, anchor="center")
+
+        trade_button = ttk.Button(
+            self.action_frame,
+            text="TRADE",
+            style="my.TButton",
+        )  # command=lambda: self.trade(),
+        trade_button.place(relx=0.8, rely=0.4, anchor="center")
+
+        end_button = ttk.Button(
+            self.action_frame,
+            text="END TURN",
+            style="my.TButton",
+            command=lambda: self.end_turn(),
+        )
+        end_button.place(relx=0.5, rely=0.25, anchor="center")
+
+        if type == "Default":
+            txt = "BRUHHHHHHHHHHHHHHHH"
+
+        action_label = tk.Label(
+            self.action_frame, text=txt, font=30
+        )  # command=lambda: self.end_turn(),
+        action_label.place(relx=0.5, rely=0.75, anchor="center")
+
+    def buy_property(self, propertypos, buyer):
+        if self.show_message(
+            f"Buy {self.properties[propertypos].name}?",
+            f"You'll be buying {self.properties[propertypos].name} for {self.properties[propertypos].price}, leaving {(self.player_details[buyer]['Money'])-self.properties[propertypos].price} cash with you",
+            type="okcancel",
+        ):
+            if self.properties[propertypos].colour:
+                if not self.properties[propertypos].owner:
+                    self.properties[propertypos].owner = buyer
+                    l = self.player_details[buyer]["Properties"]
+                    l.append(self.properties[propertypos])
+                    self.player_details[buyer]["Money"] -= self.properties[
+                        propertypos
+                    ].price
+                    # Inserting Properties in Sorted order
+                    l.sort(key=lambda i: i.position)
+                    for i in range(len(l)):
+                        if l[i].colour == "Station":
+                            l.append(l.pop(i))
+                    for i in range(len(l)):
+                        if l[i].colour == "Utility":
+                            l.append(l.pop(i))
+
+                    self.player_details[buyer].update({"Properties": l})
+                    if self.properties[propertypos].colour in ["Brown", "Dark Blue"]:
+                        colour_set = 2
+                    else:
+                        colour_set = 3
+
+                    if self.count_colour(propertypos) == colour_set:
+                        for i in self.properties.values():
+                            if i.colour == self.properties[propertypos].colour:
+                                i.houses = 0
                 else:
-                    colour_set = 3
-
-                if self.count_colour(property) == colour_set:
-                    for i in self.properties.values():
-                        if i.colour == self.properties[property].colour:
-                            i.houses = 0
+                    print("Owned")
             else:
-                print("Owned")
-        else:
-            print("Can't Buy")
-        self.update_game()
+                print("Can't Buy")
+            self.update_game()
+
+    def build_action_frame(self):
+        self.build_frame = tk.Frame(
+            self.action_frame,
+            width=(self.board_side - 2) // 1,
+            height=(self.board_side - 2) // 2.45,
+        )
+        self.build_frame.place(relx=0, rely=0, anchor="nw")
+
+        tk.Button(
+            self.build_frame,
+            text="← BACK",
+            font=("times", (self.board_side - 2) // 60),
+            highlightthickness=0,
+            border=0,
+            command=self.build_frame.place_forget,
+        ).place(relx=0.1, rely=0.05, anchor="ne")
+
+        self.bind("<Escape>", lambda a: self.build_frame.place_forget())
+
+        my_sets = []
+        for i in self.player_details[self.turn]["Properties"]:
+            if i.houses >= 0 and i.colour not in my_sets:
+                my_sets.append(i.colour)
+
+        tk.Label(
+            self.build_frame,
+            text="Select the Colour Set: ",
+            font=("times", (self.board_side - 2) // 50),
+        ).place(relx=0.1, rely=0.3, anchor="nw")
+        self.select_set = ttk.Combobox(self.build_frame, value=my_sets, width=15)
+        self.select_set.place(relx=0.5, rely=0.3, anchor="nw")
+
+        def selected(event):
+            selected_set = self.select_set.get()
+            print(selected_set)
+            set_properties = {}
+            for i in self.player_details[self.turn]["Properties"]:
+                if i.colour == selected_set:
+                    set_properties[i] = i.houses
+
+            tk.Label(
+                self.build_frame,
+                text="Select the Number of Houses: ",
+                font=("times", (self.board_side - 2) // 50),
+            ).place(relx=0.1, rely=0.5, anchor="nw")
+            self.select_houses = ttk.Combobox(self.build_frame, value=my_sets, width=15)
+            self.select_houses.place(relx=0.5, rely=0.5, anchor="nw")
+
+        self.select_set.bind("<<ComboboxSelected>>", selected)
 
     def build(self, property, number):
-        # Check bankruptcy/no of houses during gui (Don't give option to build more than possible)
+        # TODO: Check bankruptcy/no of houses during gui (Don't give option to build more than possible)
         if self.properties[property].owner:
             if self.properties[property].houses + number > 5:
                 print("ERROR! Can't build more than 5")
@@ -1211,10 +1332,6 @@ class Monopoly(tk.Toplevel):
             print("Bruh Die")
 
     def roll_dice(self):
-        if self.me % len(self.player_details):
-            player = self.me % len(self.player_details)
-        else:
-            player = len(self.player_details)
         music(ASSET + "/diceroll.mp3")
         dice_roll = random.randint(1, 6), random.randint(1, 6)
         for i in range(18):
@@ -1228,27 +1345,29 @@ class Monopoly(tk.Toplevel):
         self.dice_spot1.update()
         self.dice_spot2.update()
         self.current_move = sum(dice_roll)
-        self.move(player, self.current_move)
-        if dice_roll[0] != dice_roll[1]:
-            self.me += 1  # updating me to iterate through all for now
+        self.move(self.turn, self.current_move)
         self.update_game()
-        self.action_frame_popup(
-            self.properties[self.player_details[player]["Position"]]
-        )
 
     def show_message(self, title, message, type="info", timeout=0):
         mbwin = tk.Tk()
         mbwin.withdraw()
         try:
-            mbwin.after(timeout, mbwin.destroy)
+            if timeout:
+                mbwin.after(timeout, mbwin.destroy)
             if type == "info":
                 msgb.showinfo(title, message, master=mbwin)
             elif type == "warning":
                 msgb.showwarning(title, message, master=mbwin)
             elif type == "error":
                 msgb.showerror(title, message, master=mbwin)
+            elif type == "okcancel":
+                okcancel = msgb.askokcancel(title, message, master=mbwin)
+                return okcancel
+            elif type == "yesno":
+                yesno = msgb.askyesno(title, message, master=mbwin)
+                return yesno
         except:
-            pass
+            print("Error")
 
     def click_to_position(self, event):
         x, y = event.x, event.y
@@ -1440,9 +1559,41 @@ class Monopoly(tk.Toplevel):
                 player, self.player_details[player]["Position"]
             )
             self.colour_token_dict[colour].place(x=x1, y=y1, anchor="center")
+        pos = self.player_details[player]["Position"]
+        if pos in [10, 30]:
+            self.action_frame_popup("Jail")
+        elif pos in [0, 4, 20, 38]:
+            self.action_frame_popup("Default")
+        elif pos in [2, 17, 33]:
+            self.action_frame_popup("Community Chest")
+        elif pos in [7, 22, 36]:
+            self.action_frame_popup("Chance")
+        elif pos:
+            self.property_frame_popup(pos)
+
+    def end_turn(self):
+        if self.show_message(
+            "End Turn?",
+            f"{self.player_details[self.turn]['Name']}, are you sure you want to end your turn?",
+            type="yesno",
+        ):
+            try:
+                self.turn = self.uuids[self.uuids.index(self.turn) + 1]
+            except:
+                self.turn = self.uuids[0]
+            self.me += 1
+            self.me %= 4
+            if not self.me:
+                self.me = 4
+
+        self.update_game()
 
 
 # TODO maybe: CLICK ESC TO GO BACK
+
+# TODO Fix Doubles (Roll Again, End Turn)
+
+# In player properties box, add colour highlight based on property
 
 root = tk.Tk()
 mono = Monopoly(
@@ -1478,6 +1629,7 @@ def CLI():
             else:
                 print("Die")
         else:
+            print("Closed CLI Thread")
             break
 
 
