@@ -3,12 +3,13 @@ import threading
 import tkinter as tk
 import tkinter.ttk as ttk
 from time import sleep
-from tkinter import N, messagebox as msgb
+from tkinter import messagebox as msgb
 
 import mysql.connector as msc
 from PIL import Image, ImageOps, ImageTk
 
 from musicplayer import play as music
+from client_framework import Client
 
 ASSET = "Monopoly/Assets"
 
@@ -73,6 +74,7 @@ class Monopoly(tk.Toplevel):
         self.player_details = playerdetails
         self.me = me
 
+        self.cobj = Client(("localhost", 6789), self.updater)
         self.create_window()
         self.create_gui_divisions()
         self.initialise()
@@ -99,6 +101,12 @@ class Monopoly(tk.Toplevel):
             self.player_details[i].update(
                 {"Money": 1500, "Injail": False, "Position": 0, "Properties": []}
             )  # Properties will store obj from properties dict
+
+    def updater(self, msg):
+        if msg[1] == "ROLL":
+            self.move(msg[0], msg[2], True)
+        elif msg[1] == "BUY":
+            self.buy_property(msg[2], msg[0], True)
 
     def create_window(self):
         screen_width = int(0.9 * self.winfo_screenwidth())
@@ -1227,7 +1235,7 @@ class Monopoly(tk.Toplevel):
         )  # command=lambda: self.end_turn(),
         action_label.place(relx=0.5, rely=0.75, anchor="center")
 
-    def buy_property(self, propertypos, buyer):
+    def buy_property(self, propertypos, buyer, received=False):
         if self.show_message(
             f"Buy {self.properties[propertypos].name}?",
             f"You'll be buying {self.properties[propertypos].name} for {self.properties[propertypos].price}, leaving {(self.player_details[buyer]['Money'])-self.properties[propertypos].price} cash with you",
@@ -1265,6 +1273,8 @@ class Monopoly(tk.Toplevel):
             else:
                 print("Can't Buy")
             self.update_game()
+            if not received:
+                self.cobj.send(("BUY", propertypos))
 
     def build_action_frame(self):
         self.build_frame = tk.Frame(
@@ -1536,7 +1546,7 @@ class Monopoly(tk.Toplevel):
                     self.house_images.append(house_image)
                     self.board_canvas.create_image(x, y, image=self.house_images[-1])
 
-    def move(self, player, move):
+    def move(self, player, move, received=False):
         colour = self.player_details[player]["Colour"]
         self.colour_token_dict = {
             "red": self.red_token,
@@ -1571,6 +1581,9 @@ class Monopoly(tk.Toplevel):
         elif pos:
             self.property_frame_popup(pos)
 
+        if not received:
+            self.cobj.send(("ROLL", self.current_move))
+
     def end_turn(self):
         if self.show_message(
             "End Turn?",
@@ -1589,13 +1602,14 @@ class Monopoly(tk.Toplevel):
         self.update_game()
 
 
-# TODO maybe: CLICK ESC TO GO BACK
-
 # TODO Fix Doubles (Roll Again, End Turn)
+
+# TODO BANKRUPTCY
 
 # In player properties box, add colour highlight based on property
 
 root = tk.Tk()
+
 mono = Monopoly(
     {
         1: {"Name": "Player 1", "Colour": "red"},
