@@ -1250,6 +1250,11 @@ class Monopoly(tk.Toplevel):
             )
             self.end_button.place(relx=0.5, rely=0.25, anchor="center")
 
+            if self.roll_button["state"] == "normal":
+                self.end_button.configure(state="disabled")
+            else:
+                self.end_button.configure(state="normal")
+
             if type == "Default":
                 self.current_txt = "Default"
             elif type == "Jail":
@@ -2189,6 +2194,7 @@ class Monopoly(tk.Toplevel):
             self.roll_button.configure(state="normal")
 
 
+# TODO Rent
 # TODO BANKRUPTCY
 
 # In player properties box, add colour highlight based on property
