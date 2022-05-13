@@ -1247,13 +1247,9 @@ class Monopoly(tk.Toplevel):
                 text="END TURN",
                 style="my.TButton",
                 command=lambda: self.end_turn(),
+                state="disabled",
             )
             self.end_button.place(relx=0.5, rely=0.25, anchor="center")
-
-            if self.roll_button["state"] == "normal":
-                self.end_button.configure(state="disabled")
-            else:
-                self.end_button.configure(state="normal")
 
             if type == "Default":
                 self.current_txt = "Default"
@@ -1942,9 +1938,17 @@ class Monopoly(tk.Toplevel):
             self.doubles_counter += 1
         else:
             self.doubles_counter = 0
+            try:
+                self.end_button.configure(state="normal")
+            except:
+                pass
         if self.doubles_counter == 3:
             self.roll_button.configure(state="disabled")
-            # GO TO JAIL #END TURN AUTOMATICALLY
+            try:
+                self.end_button.configure(state="normal")
+            except:
+                pass
+            # TODO GO TO JAIL #END TURN AUTOMATICALLY
             self.action_frame_popup("Jail")
 
     def show_message(self, title, message, type="info", timeout=0):
