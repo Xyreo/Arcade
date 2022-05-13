@@ -12,8 +12,8 @@ Recv - (uuid,RENT,isPaid)
 Tax - (TAX, isPaid)
 Recv - (uuid,TAX,isPaid)
 
-Build - (BUILD, {property_number :no of houses})
-recv - (uuid, BUILD, {property_number :no of houses})
+Build - (BUILD, property_number, no of houses)
+recv - (uuid, BUILD, property_number, no of houses)
 
 Mortgage - (MORTAGE,Sell/Mortgage,PROPERTY_NUMEBR,num (optional))
 Recv - (uuid, MORTAGE,Sell/Mortgage,PROPERTY_NUMEBR,num (optional))

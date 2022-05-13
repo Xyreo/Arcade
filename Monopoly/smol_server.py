@@ -65,7 +65,7 @@ class Client(threading.Thread):
             for player in players:
                 players[player].send_instruction(("START", p, players[player].uuid))
 
-        elif action in ["ROLL", "BUY", "RENT", "TAX", "MORTGAGE", "END"]:
+        elif action in ["ROLL", "BUY", "BUILD", "RENT", "TAX", "MORTGAGE", "END"]:
             self.broadcast_to_members((self.uuid,) + msg, self.uuid)
 
     def broadcast_to_members(self, msg, exclude=None):
@@ -80,7 +80,7 @@ class Client(threading.Thread):
 
 class Driver:
     def __init__(self):
-        PORT = 9696
+        PORT = 6789
         SERVER = "localhost"
         ADDRESS = (SERVER, PORT)
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
