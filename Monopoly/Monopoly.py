@@ -1867,9 +1867,9 @@ class Monopoly(tk.Toplevel):
             self.roll_button.configure(state="normal")
 
 
-# TODO Rent
-# TODO BANKRUPTCY
+# TODO: Rent, Mortgage, Bankruptcy, Pass GO, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
 
+# ? Voice Chat, Auctions, Select Colour, Custom Actions
 # In player properties box, add colour highlight based on property
 
 if __name__ == "__main__":
