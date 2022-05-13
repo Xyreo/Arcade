@@ -1,3 +1,4 @@
+import copy
 import random
 import threading
 import tkinter as tk
@@ -93,9 +94,13 @@ class Monopoly(tk.Toplevel):
         self.uuids = list(self.player_details.keys())
         self.turn = self.uuids[0]
         self.doubles_counter = 0
+
         self.radio_dict = {}
         self.extrahouse_label = None
         self.final_build_txt_label = None
+        self.final_build_button = None
+        self.clear_build_button = None
+
         self.properties = {}
         for i in range(40):
             self.properties[i] = Property(i)
@@ -1354,432 +1359,92 @@ class Monopoly(tk.Toplevel):
                 if self.extrahouse_label:
                     self.extrahouse_label.place_forget()
 
-            selected_houses = int(self.select_houses.get())
-            total_houses = selected_houses
-            self.build1 = self.build2 = self.build3 = 0
-            if len(set_properties) == 2:
-                a, b = set_properties.values()
-                if a == b:
-                    self.build1 = selected_houses // 2
-                    self.build2 = selected_houses // 2
-                    selected_houses -= (selected_houses // 2) * 2
-                elif a < b:
-                    while a + self.build1 < b and selected_houses > 0:
-                        self.build1 += 1
-                        selected_houses -= 1
-                    if selected_houses:
-                        self.build1 += selected_houses // 2
-                        self.build2 = selected_houses // 2
-                        selected_houses -= (selected_houses // 2) * 2
-                else:
-                    while b + self.build2 < a and selected_houses > 0:
-                        self.build2 += 1
-                        selected_houses -= 1
-                    if selected_houses:
-                        self.build1 = selected_houses // 2
-                        self.build2 += selected_houses // 2
-                        selected_houses -= (selected_houses // 2) * 2
-
-                self.build_before_extra1, self.build_before_extra2 = (
-                    self.build1,
-                    self.build2,
+            total_houses = int(self.select_houses.get())
+            no_of_properties = len(set_properties.values())
+            old_houses = list(set_properties.values())
+            plot = [(i, old_houses[i]) for i in range(len(old_houses))]
+            if no_of_properties == 3 and sum(old_houses) % 3 == 1 and total_houses == 1:
+                plot = sorted(plot, key=lambda x: x[-1])
+                self.new_building = [0, 0, 0, 1, (plot[0][0], plot[1][0])]
+            else:
+                base = (sum(old_houses) + total_houses) // no_of_properties
+                self.new_building = (
+                    [base - i for i in old_houses]
+                    + [(sum(old_houses) + total_houses) % no_of_properties]
+                    + [tuple(range(0, len(old_houses)))]
                 )
-                if selected_houses:
-                    self.extrahouse_label = tk.Label(
-                        self.build_frame,
-                        text="Build Extra House on?",
-                        font=("times", (self.board_side - 2) // 50),
-                    )
-                    self.extrahouse_label.place(relx=0.1, rely=0.5, anchor="nw")
-                    extrahouse = tk.IntVar()
-                    extrahouse.set(2)
+            new_before_extra = copy.deepcopy(self.new_building)
 
-                    def extrahouse_clicked(val):
-                        if sum((self.build1, self.build2)) < selected_houses:
-                            if val == 1:
-                                self.build1 += 1
-                            else:
-                                self.build2 += 1
-                        else:
-                            self.build1, self.build2 = (
-                                self.build_before_extra1,
-                                self.build_before_extra2,
-                            )
-                            if val == 1:
-                                self.build1 += 1
-                            else:
-                                self.build2 += 1
-                        if a + self.build1 == 5:
-                            finala = "A Hotel"
-                        else:
-                            finala = f"{a+self.build1} House"
+            def final_text_func():
+                d = {
+                    0: "0 Houses",
+                    1: "1 House",
+                    2: "2 Houses",
+                    3: "3 Houses",
+                    4: "4 Houses",
+                    5: "A Hotel",
+                }
+                finaltxt = f"You will have"
+                for i in range(len(self.new_building[:-2])):
+                    finaltxt += f"\n→{d[old_houses[i]+self.new_building[i]]} on {list(set_properties.keys())[i].name}"
+                finaltxt += f"\n on paying {list(set_properties.keys())[0].build * total_houses}"
+                try:
+                    self.final_build_txt_label.place_forget()
+                except:
+                    pass
+                self.final_build_txt_label = tk.Label(
+                    self.build_frame,
+                    text=finaltxt,
+                    font=("times", (self.board_side - 2) // 50),
+                )
+                self.final_build_txt_label.place(relx=0.5, rely=0.5, anchor="nw")
 
-                        if a + self.build1 not in [1, 5]:
-                            finala += "s"
+            def extrahouse_clicked(val, opposite):
+                if sum(self.new_building[:-2]) >= total_houses:
+                    self.new_building = copy.deepcopy(new_before_extra)
+                if opposite:
+                    for i in range(len(self.new_building[:-2])):
+                        if i != val:
+                            self.new_building[i] += 1
+                else:
+                    self.new_building[val] += 1
 
-                        if b + self.build2 == 5:
-                            finalb = "A Hotel"
-                        else:
-                            finalb = f"{b+self.build2} House"
+                final_text_func()
 
-                        if b + self.build2 not in [1, 5]:
-                            finalb += "s"
-                        finaltxt = f"You will have\n→{finala} on {list(set_properties.keys())[0].name}\n→{finalb} on {list(set_properties.keys())[1].name}\n on paying {list(set_properties.keys())[0].build * total_houses}"
+            if self.new_building[-2]:
+                extrahouse = tk.IntVar()
+                extrahouse_txt = "Build Extra House on?"
+                if self.new_building[-2] == 1:
+                    extrahouse.set(len(self.new_building) - 3)
+                    opp = False
 
-                        try:
-                            self.final_build_txt_label.place_forget()
-                        except:
-                            pass
-                        self.final_build_txt_label = tk.Label(
-                            self.build_frame,
-                            text=finaltxt,
-                            font=("times", (self.board_side - 2) // 50),
-                        )
-                        self.final_build_txt_label.place(
-                            relx=0.5, rely=0.5, anchor="nw"
-                        )
+                elif self.new_building[-2] == 2:
+                    extrahouse_txt = "DONT " + extrahouse_txt
+                    opp = True
+                self.extrahouse_label = tk.Label(
+                    self.build_frame,
+                    text=extrahouse_txt,
+                    font=("times", (self.board_side - 2) // 50),
+                )
+                self.extrahouse_label.place(relx=0.1, rely=0.5, anchor="nw")
 
-                    extrahouse_clicked(extrahouse.get())
-
-                    k = 1
-                    for i in set_properties:
+                extrahouse_clicked(extrahouse.get(), opp)
+                k = 0
+                for i in set_properties:
+                    if k in self.new_building[-1]:
                         self.radio_dict[i.name + " Button"] = ttk.Radiobutton(
                             self.build_frame,
                             text=i.name,
                             variable=extrahouse,
                             value=k,
-                            command=lambda: extrahouse_clicked(extrahouse.get()),
+                            command=lambda: extrahouse_clicked(extrahouse.get(), opp),
                         )
                         self.radio_dict[i.name + " Button"].place(
-                            relx=0.1, rely=0.5 + (k / 10), anchor="nw"
+                            relx=0.1, rely=0.6 + (k / 10), anchor="nw"
                         )
-                        k += 1
-                else:
-                    if a + self.build1 == 5:
-                        finala = "A Hotel"
-                    else:
-                        finala = f"{a+self.build1} House"
-
-                    if a + self.build1 not in [1, 5]:
-                        finala += "s"
-
-                    if b + self.build2 == 5:
-                        finalb = "A Hotel"
-                    else:
-                        finalb = f"{b+self.build2} House"
-
-                    if b + self.build2 not in [1, 5]:
-                        finalb += "s"
-
-                    finaltxt = f"You will have\n→{finala} on {list(set_properties.keys())[0].name}\n→{finalb} on {list(set_properties.keys())[1].name}\n on paying {list(set_properties.keys())[0].build * total_houses}"
-                    try:
-                        self.final_build_txt_label.place_forget()
-                    except:
-                        pass
-                    self.final_build_txt_label = tk.Label(
-                        self.build_frame,
-                        text=finaltxt,
-                        font=("times", (self.board_side - 2) // 50),
-                    )
-                    self.final_build_txt_label.place(relx=0.5, rely=0.5, anchor="nw")
+                    k += 1
             else:
-                a, b, c = set_properties.values()
-                only1_house = ()
-                if a == b > c:
-                    while c + self.build3 < b and selected_houses > 0:
-                        self.build3 += 1
-                        selected_houses -= 1
-                    if selected_houses:
-                        self.build1 = selected_houses // 3
-                        self.build2 = selected_houses // 3
-                        self.build3 += selected_houses // 3
-                        selected_houses -= (selected_houses // 3) * 3
-                elif a == b < c:
-                    if selected_houses == 1:
-                        only1_house = (1, 2)
-                    while a + self.build1 < c and selected_houses > 1:
-                        self.build1 += 1
-                        self.build2 += 1
-                        selected_houses -= 2
-                    if selected_houses:
-                        self.build1 += selected_houses // 3
-                        self.build2 += selected_houses // 3
-                        self.build3 = selected_houses // 3
-                        selected_houses -= (selected_houses // 3) * 3
-                elif a > b == c:
-                    if selected_houses == 1:
-                        only1_house = (2, 3)
-                    while b + self.build1 < a and selected_houses > 1:
-                        self.build2 += 1
-                        self.build3 += 1
-                        selected_houses -= 2
-                    if selected_houses:
-                        self.build1 = selected_houses // 3
-                        self.build2 += selected_houses // 3
-                        self.build3 += selected_houses // 3
-                        selected_houses -= (selected_houses // 3) * 3
-                elif a < b == c:
-                    while a + self.build1 < b and selected_houses > 0:
-                        self.build1 += 1
-                        selected_houses -= 1
-                    if selected_houses:
-                        self.build1 += selected_houses // 3
-                        self.build2 = selected_houses // 3
-                        self.build3 = selected_houses // 3
-                        selected_houses -= (selected_houses // 3) * 3
-                elif a == c > b:
-                    while b + self.build2 < a and selected_houses > 0:
-                        self.build2 += 1
-                        selected_houses -= 1
-                    if selected_houses:
-                        self.build1 = selected_houses // 3
-                        self.build2 += selected_houses // 3
-                        self.build3 = selected_houses // 3
-                        selected_houses -= (selected_houses // 3) * 3
-                elif a == c < b:
-                    if selected_houses == 1:
-                        only1_house = (1, 3)
-                    while a + self.build1 < b and selected_houses > 1:
-                        self.build1 += 1
-                        self.build3 += 1
-                        selected_houses -= 2
-                    if selected_houses:
-                        self.build1 += selected_houses // 3
-                        self.build2 = selected_houses // 3
-                        self.build3 += selected_houses // 3
-                        selected_houses -= (selected_houses // 3) * 3
-                elif a == b == c:
-                    self.build1 = selected_houses // 3
-                    self.build2 = selected_houses // 3
-                    self.build3 = selected_houses // 3
-                    selected_houses -= (selected_houses // 3) * 3
-                else:
-                    print("Invalid Build Present")
-
-                (
-                    self.build_before_extra1,
-                    self.build_before_extra2,
-                    self.build_before_extra3,
-                ) = (self.build1, self.build2, self.build3)
-
-                if selected_houses == 1:
-                    self.extrahouse_label = tk.Label(
-                        self.build_frame,
-                        text="Build Extra House on?",
-                        font=("times", (self.board_side - 2) // 50),
-                    )
-                    self.extrahouse_label.place(relx=0.1, rely=0.5, anchor="nw")
-                    extrahouse = tk.IntVar()
-                    if only1_house:
-                        extrahouse.set(2)
-                    else:
-                        extrahouse.set(3)
-
-                    def extrahouse_clicked(val):
-                        if (
-                            sum((self.build1, self.build2, self.build3))
-                            < selected_houses
-                        ):
-                            if val == 1:
-                                self.build1 += 1
-                            elif val == 2:
-                                self.build2 += 1
-                            elif val == 3:
-                                self.build3 += 1
-                        else:
-                            self.build1, self.build2, self.build3 = (
-                                self.build_before_extra1,
-                                self.build_before_extra2,
-                                self.build_before_extra3,
-                            )
-                            if val == 1:
-                                self.build1 += 1
-                            elif val == 2:
-                                self.build2 += 1
-                            elif val == 3:
-                                self.build3 += 1
-
-                        if a + self.build1 == 5:
-                            finala = "A Hotel"
-                        else:
-                            finala = f"{a+self.build1} House"
-
-                        if a + self.build1 not in [1, 5]:
-                            finala += "s"
-
-                        if b + self.build2 == 5:
-                            finalb = "A Hotel"
-                        else:
-                            finalb = f"{b+self.build2} House"
-
-                        if b + self.build2 not in [1, 5]:
-                            finalb += "s"
-
-                        if c + self.build3 == 5:
-                            finalc = "A Hotel"
-                        else:
-                            finalc = f"{c+self.build3} House"
-
-                        if c + self.build3 not in [1, 5]:
-                            finalc += "s"
-
-                        finaltxt = f"You will have\n→{finala} on {list(set_properties.keys())[0].name}\n→{finalb} on {list(set_properties.keys())[1].name}\n→{finalc} on {list(set_properties.keys())[2].name}\n on paying {list(set_properties.keys())[0].build * total_houses}"
-
-                        try:
-                            self.final_build_txt_label.place_forget()
-                        except:
-                            pass
-                        self.final_build_txt_label = tk.Label(
-                            self.build_frame,
-                            text=finaltxt,
-                            font=("times", (self.board_side - 2) // 50),
-                        )
-                        self.final_build_txt_label.place(
-                            relx=0.5, rely=0.5, anchor="nw"
-                        )
-
-                    extrahouse_clicked(extrahouse.get())
-
-                    k = 1
-                    for i in set_properties:
-                        if k in only1_house or not only1_house:
-                            self.radio_dict[i.name + " Button"] = ttk.Radiobutton(
-                                self.build_frame,
-                                text=i.name,
-                                variable=extrahouse,
-                                value=k,
-                                command=lambda: extrahouse_clicked(extrahouse.get()),
-                            )
-                            self.radio_dict[i.name + " Button"].place(
-                                relx=0.1, rely=0.5 + (k / 10), anchor="nw"
-                            )
-                        k += 1
-                elif selected_houses == 2:
-                    self.extrahouse_label = tk.Label(
-                        self.build_frame,
-                        text="DONT Build extra house on?",
-                        font=("times", (self.board_side - 2) // 50),
-                    )
-                    self.extrahouse_label.place(relx=0.1, rely=0.5, anchor="nw")
-                    extrahouse = tk.IntVar()
-                    extrahouse.set(1)
-
-                    def extrahouse_clicked(val):
-                        if (
-                            sum((self.build1, self.build2, self.build3))
-                            < selected_houses
-                        ):
-                            if val != 1:
-                                self.build2 += 1
-                            if val != 2:
-                                self.build2 += 1
-                            if val != 3:
-                                self.build3 += 1
-                        else:
-                            self.build1, self.build2, self.build3 = (
-                                self.build_before_extra1,
-                                self.build_before_extra2,
-                                self.build_before_extra3,
-                            )
-                            if val != 1:
-                                self.build1 += 1
-                            if val != 2:
-                                self.build2 += 1
-                            if val != 3:
-                                self.build3 += 1
-
-                        if a + self.build1 == 5:
-                            finala = "A Hotel"
-                        else:
-                            finala = f"{a+self.build1} House"
-
-                        if a + self.build1 not in [1, 5]:
-                            finala += "s"
-
-                        if b + self.build2 == 5:
-                            finalb = "A Hotel"
-                        else:
-                            finalb = f"{b+self.build2} House"
-
-                        if b + self.build2 not in [1, 5]:
-                            finalb += "s"
-
-                        if c + self.build3 == 5:
-                            finalc = "A Hotel"
-                        else:
-                            finalc = f"{c+self.build3} House"
-
-                        if c + self.build3 not in [1, 5]:
-                            finalc += "s"
-
-                        finaltxt = f"You will have\n→{finala} on {list(set_properties.keys())[0].name}\n→{finalb} on {list(set_properties.keys())[1].name}\n→{finalc} on {list(set_properties.keys())[2].name}\n on paying {list(set_properties.keys())[0].build * total_houses}"
-
-                        try:
-                            self.final_build_txt_label.place_forget()
-                        except:
-                            pass
-                        self.final_build_txt_label = tk.Label(
-                            self.build_frame,
-                            text=finaltxt,
-                            font=("times", (self.board_side - 2) // 50),
-                        )
-                        self.final_build_txt_label.place(
-                            relx=0.5, rely=0.5, anchor="nw"
-                        )
-
-                    extrahouse_clicked(extrahouse.get())
-
-                    k = 1
-                    for i in set_properties:
-                        if k in only1_house or not only1_house:
-                            self.radio_dict[i.name + " Button"] = ttk.Radiobutton(
-                                self.build_frame,
-                                text=i.name,
-                                variable=extrahouse,
-                                value=k,
-                                command=lambda: extrahouse_clicked(extrahouse.get()),
-                            )
-                            self.radio_dict[i.name + " Button"].place(
-                                relx=0.1, rely=0.5 + (k / 10), anchor="nw"
-                            )
-                        k += 1
-                else:
-                    if a + self.build1 == 5:
-                        finala = "A Hotel"
-                    else:
-                        finala = f"{a+self.build1} House"
-
-                    if a + self.build1 not in [1, 5]:
-                        finala += "s"
-
-                    if b + self.build2 == 5:
-                        finalb = "A Hotel"
-                    else:
-                        finalb = f"{b+self.build2} House"
-
-                    if b + self.build2 not in [1, 5]:
-                        finalb += "s"
-
-                    if c + self.build3 == 5:
-                        finalc = "A Hotel"
-                    else:
-                        finalc = f"{c+self.build3} House"
-
-                    if c + self.build3 not in [1, 5]:
-                        finalc += "s"
-
-                    finaltxt = f"You will have\n→{finala} on {list(set_properties.keys())[0].name}\n→{finalb} on {list(set_properties.keys())[1].name}\n→{finalc} on {list(set_properties.keys())[2].name}\n on paying {list(set_properties.keys())[0].build * total_houses}"
-
-                    try:
-                        self.final_build_txt_label.place_forget()
-                    except:
-                        pass
-                    self.final_build_txt_label = tk.Label(
-                        self.build_frame,
-                        text=finaltxt,
-                        font=("times", (self.board_side - 2) // 50),
-                    )
-                    self.final_build_txt_label.place(relx=0.5, rely=0.5, anchor="nw")
+                final_text_func()
 
             def build_all():
                 conftxt = f"Are you sure you want to pay {list(set_properties.keys())[0].build * total_houses} to build on the {list(set_properties.keys())[0].colour} set, leaving {(self.player_details[self.me]['Money'])-list(set_properties.keys())[0].build * total_houses} cash with you"
@@ -1789,30 +1454,29 @@ class Monopoly(tk.Toplevel):
                     conftxt,
                     type="okcancel",
                 ):
-                    if self.build1:
-                        self.build(list(set_properties.keys())[0].position, self.build1)
-                    if self.build2:
-                        self.build(list(set_properties.keys())[1].position, self.build2)
-                    if self.build3:
-                        self.build(list(set_properties.keys())[2].position, self.build3)
+                    for i in range(len(self.new_building[:-2])):
+                        self.build(
+                            list(set_properties.keys())[i].position,
+                            self.new_building[i],
+                        )
 
-            if self.build1 or self.build2:
-                self.final_build_button = tk.Button(
-                    self.build_frame,
-                    text="BUILD",
-                    font=("times", (self.board_side - 2) // 60),
-                    command=build_all,
-                )
-                self.final_build_button.place(relx=0.75, rely=0.9, anchor="nw")
+            self.final_build_button = tk.Button(
+                self.build_frame,
+                text="BUILD",
+                font=("times", (self.board_side - 2) // 60),
+                command=build_all,
+            )
+            self.final_build_button.place(relx=0.75, rely=0.9, anchor="nw")
+
             self.clear_build_button = tk.Button(
                 self.build_frame,
                 text="CLEAR",
                 font=("times", (self.board_side - 2) // 60),
-                command=lambda: self.select_set.set(""),
+                command=lambda: clear_all(True),
             )
             self.clear_build_button.place(relx=0.9, rely=0.9, anchor="nw")
 
-        def selected(event):
+        def clear_all(all):
             if self.radio_dict:
                 for i, j in self.radio_dict.items():
                     j.place_forget()
@@ -1820,16 +1484,20 @@ class Monopoly(tk.Toplevel):
                     self.extrahouse_label.place_forget()
             try:
                 self.final_build_txt_label.place_forget()
-            except:
-                pass
-            try:
+                self.clear_build_button.place_forget()
                 self.final_build_button.place_forget()
             except:
                 pass
-            try:
-                self.clear_build_button.place_forget()
-            except:
-                pass
+            if all:
+                self.select_set.set("")
+                try:
+                    self.select_houses.place_forget()
+                    self.select_houses_label.place_forget()
+                except:
+                    pass
+
+        def selected(event):
+            clear_all(False)
             selected_set = self.select_set.get()
             set_properties = {}
             for i in self.player_details[self.turn]["Properties"]:
@@ -1851,11 +1519,12 @@ class Monopoly(tk.Toplevel):
                 )
 
             self.houses_list = list(range(1, houses_possible + 1))
-            tk.Label(
+            self.select_houses_label = tk.Label(
                 self.build_frame,
                 text="Select the Number of Houses: ",
                 font=("times", (self.board_side - 2) // 50),
-            ).place(relx=0.1, rely=0.35, anchor="nw")
+            )
+            self.select_houses_label.place(relx=0.1, rely=0.35, anchor="nw")
             self.select_houses = ttk.Combobox(
                 self.build_frame, value=self.houses_list, width=15
             )
