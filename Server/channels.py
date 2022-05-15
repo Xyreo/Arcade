@@ -32,7 +32,7 @@ class Channels:
 
     def join(self, player):
         self.members.append(player)
-        player.send_instruction(("INIT",) + self.details())
+        player.send_instruction((self.uuid, "INIT", self.game, self.details()))
 
     def leave(self, pid):
         self.members.remove(pid)
@@ -45,7 +45,7 @@ class Lobby(Channels):
         self.rooms: list[Room] = []
 
     def create_room(self, host, settings):
-        room = Room(host, settings)
+        room = Room(host, settings, self.uuid)
         self.rooms.append(room)
         self.broadcast_to_members(
             ("ROOM", "ADD", room.details()), exclude=host.uuid
@@ -55,6 +55,9 @@ class Lobby(Channels):
         self.rooms[id].delete()
         del self.rooms[id]
         self.broadcast_to_members(("ROOM", "DELETE", id))
+
+    def join_room(self, player, id):
+        self.rooms[id].join(player)
 
     def broadcast_to_members(self, msg, exclude=None):
         super().broadcast_to_members((self.uuid,) + msg, exclude)
@@ -68,20 +71,22 @@ class Lobby(Channels):
 
 
 class Room(Channels):
-    def __init__(self, host, settings, status="OPEN"):
+    def __init__(self, host, settings, game, status="OPEN"):
         super().__init__(assign_uuid(rooms))
         rooms[self.uuid] = self
         self.host: Client = host
         self.settings = settings
         self.status = status
+        self.game = game
         self.join(host)
 
     def delete(self):
         pass
 
     def start(self, player):
-        if self.host.uuid != self.player.uuid:
+        if self.host.uuid != player.uuid:
             return
+
         self.status = "INGAME"
         if self.settings["game"] == "CHESS":
             self.chess_start()
@@ -92,6 +97,10 @@ class Room(Channels):
         super().join(player)
         self.broadcast_to_members(("PLAYER", "ADD", player.details()), player.uuid)
 
+    def leave(self, player):
+        super().leave(player)
+        self.broadcast_to_members(("PLAYER", "REMOVE", player.uuid))
+
     def chess_start(self):
         pass
 
@@ -99,7 +108,7 @@ class Room(Channels):
         pass
 
     def broadcast_to_members(self, msg, exclude=None):
-        super().broadcast_to_members((self.uuid) + msg, exclude)
+        super().broadcast_to_members((self.uuid, msg), exclude)
 
     def details(self):
         room = {
@@ -183,9 +192,7 @@ class Client(threading.Thread):
     def lobby_handler(self, lobby, msg):
         action = msg[0]
         if action == "JOIN":
-            pass
-        elif action == "LEAVE":
-            pass
+            lobbies[lobby].join_room(self, msg[1])
         elif action == "CREATE":
             lobbies[lobby].create_room(self, msg[1])
         elif action == "DELETE":
@@ -195,6 +202,12 @@ class Client(threading.Thread):
 
     def room_handler(self, room, msg):
         action = msg[0]
+        if action == "START":
+            rooms[room].start(self)
+        elif action == "LEAVE":
+            rooms[room].leave(self)
+        elif action == "MSG":
+            rooms[room].broadcast_to_members(msg[1:], self.uuid)
 
     def send_instruction(self, instruction):
         self.conn.send(pickle.dumps(instruction))

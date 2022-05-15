@@ -12,20 +12,5 @@ The Server runs on channels.
 Format of messages:
 msg = (CHANNEL, ACTION, ACTION-SPECFIFIC_DETAILS)
 
-Channel: 
-    1. Main ('0'):
-        1.1 JOIN 
-        1.2 LEAVE 
-        1.3 CREATE
-
-    2. Lobbies ('CHESS','MNPLY'):
-        2.1 JOIN
-        2.2 LEAVE
-
-    3. Rooms: 
-        Stuff
-
-
-Broadcast:
-    1. INIT: For Rooms and Lobbies
-    2. 
+(0, JOIN, <Lobby>)
+(0, LEAVE, <Lobby>)
