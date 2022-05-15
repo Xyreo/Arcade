@@ -303,7 +303,7 @@ class Lobby(ttk.Treeview):
         self.game = game
 
         self.column("#0", width=10)
-        width = g.width
+        width = g.width // 10
         self.column("Room", width=width, anchor="center", minwidth=width)
         self.column("Host", width=width, anchor="center", minwidth=width)
         self.column("Players", width=width, anchor="center", minwidth=width)
@@ -330,7 +330,7 @@ class Room(ttk.Treeview):
         self.game = game
 
         self.column("#0", width=10)
-        width = g.width
+        width = g.width // 10
         self.column("Player", width=width, anchor="center", minwidth=width)
 
         self.heading("#0", text="")
