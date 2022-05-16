@@ -43,6 +43,7 @@ class Lobby(Channels):
         super().__init__(uuid)
         lobbies[uuid] = self
         self.rooms: list[Room] = []
+        self.game = uuid
 
     def create_room(self, host, settings):
         room = Room(host, settings, self.uuid)
@@ -52,12 +53,13 @@ class Lobby(Channels):
         )  # TODO Broadcast Protocol
 
     def delete_room(self, id):
-        self.rooms[id].delete()
-        del self.rooms[id]
+        rooms[id].delete()
+        del rooms[id]
+        self.rooms.remove(id)
         self.broadcast_to_members(("ROOM", "DELETE", id))
 
     def join_room(self, player, id):
-        self.rooms[id].join(player)
+        rooms[id].join(player)
 
     def broadcast_to_members(self, msg, exclude=None):
         super().broadcast_to_members((self.uuid,) + msg, exclude)
@@ -108,7 +110,7 @@ class Room(Channels):
         pass
 
     def broadcast_to_members(self, msg, exclude=None):
-        super().broadcast_to_members((self.uuid, msg), exclude)
+        super().broadcast_to_members((self.uuid,) + msg, exclude)
 
     def details(self):
         room = {
@@ -171,6 +173,7 @@ class Client(threading.Thread):
     @dispatch(tuple)
     def instruction_handler(self, instruction):
         channel = instruction[0]
+        print("Recv:", instruction)
         if channel == "0":
             self.main_handler(instruction[1:])
         elif channel in lobbies:
@@ -222,7 +225,7 @@ class Driver:
     auth: Auth = Auth()
 
     def __init__(self):
-        PORT = 6787
+        PORT = 6778
         SERVER = "localhost"
         ADDRESS = (SERVER, PORT)
 

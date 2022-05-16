@@ -18,37 +18,46 @@ class Gamestate:
         self.create_room = {}
 
     def login(self, name):
-        self.cobj = Client(("localhost", 6787), self.event_handler)
+        self.cobj = Client(("localhost", 6778), self.event_handler)
         self.cobj.send(("Pramit"))
 
     def event_handler(self, msg):
         dest = msg[0]
+        print("Msg:", msg)
         if dest in ["CHESS", "MNPLY"]:
             if msg[1] == "INIT":
-                for i in msg[2][1]:
+                for i in msg[3][1]:
                     self.lobby_handler[dest]["add"](i)
             elif msg[1] == "ROOM":
                 if msg[2] == "ADD":
                     self.lobby_handler[dest]["add"](msg[3])
+                    print("hmmm")
                 elif msg[2] == "DELETE":
                     self.lobby_handler[dest]["delete"](msg[3])
         elif msg[1] == "INIT":
             self.room = dest
             for i in msg[3]["members"]:
-                print(i)
                 g.create_room[msg[2]](dest)
                 g.room_handler[dest]["add"](i)
 
+        elif dest == self.room:
+            if msg[1] == "PLAYER":
+                if msg[2] == "ADD":
+                    g.room_handler[dest]["add"](msg[3])
+                elif msg[2] == "REMOVE":
+                    pass
+
     def join_lobby(self, lobby):
-        self.send((0, "JOIN", lobby.upper()))
+        self.send(("0", "JOIN", lobby.upper()))
 
     def leave_lobby(self, lobby):
-        self.send((0, "LEAVE", lobby.upper()))
+        self.send(("0", "LEAVE", lobby.upper()))
 
     def start_room(self):
         self.send((self.room, "START"))
 
     def send(self, msg):
+        print("Sent:", msg)
         self.cobj.send(msg)
 
 
@@ -233,7 +242,7 @@ class Tab(tk.Frame):
             self.join_frame,
             text="Join",
             font=("times", 13),
-            command=lambda: self.join_selected_room(self.lobby_tree.selection()[0]),
+            command=lambda: g.send((game, "JOIN", self.lobby_tree.selection()[0])),
         ).place(relx=0.96, rely=1, anchor="se")
 
         scroll = ttk.Scrollbar(self.join_frame, orient="vertical")
@@ -243,7 +252,9 @@ class Tab(tk.Frame):
         g.lobby_handler[game] = {}
         g.lobby_handler[game]["add"] = self.lobby_tree.add_room
         g.lobby_handler[game]["delete"] = self.lobby_tree.remove_room
-        self.lobby_tree.insert("", "end", 1234, values=(1234, "1123", 3))
+        g.lobby_handler[game]["add"](
+            {"id": 123, "host": 123, "members": [1, 2, 3], "settings": [12]}
+        )
         self.lobby_tree.place(
             relx=0, rely=0.05, anchor="nw", relheight=0.9, relwidth=0.96
         )
@@ -318,7 +329,9 @@ class Lobby(ttk.Treeview):
         host = room["host"]
         nply = len(room["members"])
         settings = room["settings"]
-        self.insert(parent="", index="end", iid=id, text="", values=(id, host, nply))
+        self.insert(
+            parent="", index="end", iid=id, text="", values=(str(id)[:4], host, nply)
+        )
 
     def remove_room(self, room):
         self.delete(room)
@@ -326,21 +339,22 @@ class Lobby(ttk.Treeview):
 
 class Room(ttk.Treeview):
     def __init__(self, master, game):
-        super().__init__(master, columns=("Player",))
+        super().__init__(master, columns=("Player", "Name"))
         self.game = game
 
-        self.column("#0", width=10)
+        self.column("#0", width=0)
         width = g.width // 10
         self.column("Player", width=width, anchor="center", minwidth=width)
+        self.column("Name", width=width, anchor="center", minwidth=width)
 
         self.heading("#0", text="")
-        self.heading("Player", text="Members", anchor="center")
+        self.heading("Name", text="Name", anchor="center")
+        self.heading("Player", text="Player", anchor="center")
 
     def add_player(self, player):
         name = player["name"]
         id = player["puid"]
-        self.insert(parent="", index="end", iid=id, text="", values=(1, name))
-        print("WHY")
+        self.insert(parent="", index="end", iid=id, text="", values=(id[:4], name))
 
     def remove_player(self, player):
         self.delete(player)
