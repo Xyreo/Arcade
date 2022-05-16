@@ -59,7 +59,14 @@ class Property:
         """
 
     def rent(self):
-        return self.rent_values[self.houses + 1]
+        if self.rent_values[self.houses + 1]:
+            return self.rent_values[self.houses + 1]
+        elif self.colour == "Station":
+            return
+        elif self.colour == "Utility":
+            return
+        else:
+            print("Rent Error")
 
     def value(self):
         val = self.price
@@ -84,6 +91,8 @@ class Monopoly(tk.Toplevel):
         self.delete_property_frame()
         self.action_frame_popup("Default")
         self.player_frame_popup()
+        for i in self.player_details:
+            self.move(i, 0)
 
     def initialise(self):
         self.property_frame = None
@@ -373,9 +382,6 @@ class Monopoly(tk.Toplevel):
             command=lambda: self.open_children("gold"),
         )
 
-        for i in self.player_details:
-            self.move(i, 0)
-
     def count_colour(self, propertypos):
         owner = self.properties[propertypos].owner
         if owner:
@@ -391,7 +397,7 @@ class Monopoly(tk.Toplevel):
     def owner_detail(self, propertypos, s="Name"):
         return self.player_details[self.properties[propertypos].owner][s]
 
-    def update_game(self):
+    def update_game(self, action_frame_text=None):
         if self.property_frame:
             self.delete_property_frame()
             self.property_frame_popup(self.property_pos_displayed)
@@ -404,7 +410,10 @@ class Monopoly(tk.Toplevel):
             self.player_frame_popup(l)
         self.house_images = []
         self.place_houses()
-        self.action_frame_popup(self.current_txt)
+        if action_frame_text:
+            self.action_frame_popup(action_frame_text)
+        else:
+            self.action_frame_popup(self.current_txt)
         if self.turn != self.me:
             self.roll_button.configure(state="disabled")
 
@@ -1197,7 +1206,7 @@ class Monopoly(tk.Toplevel):
 
     # endregion
 
-    def action_frame_popup(self, type):
+    def action_frame_popup(self, txt):
         self.action_frame = tk.Frame(
             self.main_frame,
             width=(self.board_side - 2) // 1,
@@ -1221,9 +1230,19 @@ class Monopoly(tk.Toplevel):
                 command=lambda: self.buy_property(
                     self.player_details[self.turn]["Position"] % 40, self.turn
                 ),
+                state="disabled",
             )
 
             self.buy_button.place(relx=0.2, rely=0.1, anchor="center")
+
+            my_sets = []
+            for i in self.player_details[self.turn]["Properties"]:
+                if (
+                    i.houses >= 0
+                    and i.colour not in my_sets
+                    and i.colour not in ["Station", "Utility"]
+                ):
+                    my_sets.append(i.colour)
 
             self.build_button = ttk.Button(
                 self.action_frame,
@@ -1233,12 +1252,18 @@ class Monopoly(tk.Toplevel):
             )
             self.build_button.place(relx=0.2, rely=0.4, anchor="center")
 
+            if not my_sets:
+                self.build_button.configure(state="disabled")
+
             self.mortgage_button = ttk.Button(
                 self.action_frame,
                 text="MORTGAGE",
                 style="my.TButton",
             )  # command=lambda: self.mortgage(),
             self.mortgage_button.place(relx=0.8, rely=0.1, anchor="center")
+
+            if not self.player_details[self.turn]["Properties"]:
+                self.mortgage_button.configure(state="disabled")
 
             self.trade_button = ttk.Button(
                 self.action_frame,
@@ -1247,25 +1272,20 @@ class Monopoly(tk.Toplevel):
             )  # command=lambda: self.trade(),
             self.trade_button.place(relx=0.8, rely=0.4, anchor="center")
 
+            if not self.player_details[self.turn]["Properties"]:
+                self.trade_button.configure(state="disabled")
+
             self.end_button = ttk.Button(
                 self.action_frame,
                 text="END TURN",
                 style="my.TButton",
                 command=lambda: self.end_turn(),
-                state="disabled",
             )
             self.end_button.place(relx=0.5, rely=0.25, anchor="center")
+            if str(self.roll_button["state"]) == "normal":
+                self.end_button.configure(state="disabled")
 
-            if type == "Default":
-                self.current_txt = "Default"
-            elif type == "Jail":
-                self.current_txt = "Jail"
-            elif type == "Community Chest":
-                self.current_txt = "Community Chest"
-            elif type == "Chance":
-                self.current_txt = "Chance"
-            else:
-                self.current_txt = "You died again"
+            self.current_txt = txt
 
             action_label = tk.Label(self.action_frame, text=self.current_txt, font=30)
             action_label.place(relx=0.5, rely=0.75, anchor="center")
@@ -1311,12 +1331,10 @@ class Monopoly(tk.Toplevel):
                         if i.colour == self.properties[propertypos].colour:
                             i.houses = 0
             else:
-                self.buy_button.configure(state="disabled")
                 print("Owned")
         else:
-            self.buy_button.configure(state="disabled")
             print("Can't Buy")
-        self.update_game()
+        self.update_game("Default")
         if not received:
             self.cobj.send(("BUY", propertypos))
 
@@ -1341,7 +1359,11 @@ class Monopoly(tk.Toplevel):
 
         my_sets = []
         for i in self.player_details[self.turn]["Properties"]:
-            if i.houses >= 0 and i.colour not in my_sets:
+            if (
+                i.houses >= 0
+                and i.colour not in my_sets
+                and i.colour not in ["Station", "Utility"]
+            ):
                 my_sets.append(i.colour)
 
         tk.Label(
@@ -1600,10 +1622,11 @@ class Monopoly(tk.Toplevel):
         self.dice_spot1.update()
         self.dice_spot2.update()
         self.current_move = sum(dice_roll)
-        self.move(self.turn, self.current_move)
         self.update_game()
+        self.move(self.turn, self.current_move)
         if dice_roll[0] == dice_roll[1]:
             self.roll_button.configure(state="normal")
+            self.end_button.configure(state="disabled")
             self.doubles_counter += 1
         else:
             self.doubles_counter = 0
@@ -1810,7 +1833,11 @@ class Monopoly(tk.Toplevel):
                     self.house_images.append(house_image)
                     self.board_canvas.create_image(x, y, image=self.house_images[-1])
 
-    def move(self, player, move):
+    def pass_go(self, player):
+        self.player_details[player]["Money"] += 200
+        self.update_game("You received 200 as salary!")
+
+    def move(self, player, move, showmove=True):
         colour = self.player_details[player]["Colour"]
         self.colour_token_dict = {
             "red": self.red_token,
@@ -1819,7 +1846,7 @@ class Monopoly(tk.Toplevel):
             "gold": self.yellow_token,
         }
 
-        if move:
+        if move and showmove:
             for i in range(move):
                 self.player_details[player]["Position"] += 1
                 x1, y1 = self.position_to_tokenxy(
@@ -1828,22 +1855,47 @@ class Monopoly(tk.Toplevel):
                 self.colour_token_dict[colour].place(x=x1, y=y1, anchor="center")
                 sleep(0.2)
                 self.colour_token_dict[colour].update()
+                if not self.player_details[player]["Position"] % 40:
+                    self.pass_go(player)
         else:
+            self.player_details[player]["Position"] += move
             x1, y1 = self.position_to_tokenxy(
                 player, self.player_details[player]["Position"]
             )
             self.colour_token_dict[colour].place(x=x1, y=y1, anchor="center")
-        pos = self.player_details[player]["Position"]
+
+        pos = self.player_details[player]["Position"] % 40
         if pos in [10, 30]:
-            self.action_frame_popup("Jail")
+            self.update_game("Jail")
         elif pos in [0, 4, 20, 38]:
-            self.action_frame_popup("Default")
+            self.update_game("Default")
         elif pos in [2, 17, 33]:
-            self.action_frame_popup("Community Chest")
+            self.update_game("Community Chest")
         elif pos in [7, 22, 36]:
-            self.action_frame_popup("Chance")
+            self.update_game("Chance")
         elif pos:
             self.property_frame_popup(pos)
+            if self.properties[pos].owner:
+                self.pay_rent(self.turn, pos)
+            else:
+                self.update_game("Buy")
+                if self.turn == self.me:
+                    self.buy_button.configure(state="normal")
+
+    def pay_rent(self, payer, propertypos):
+        rent_amt = self.properties[propertypos].rent()
+        while self.player_details[payer]["Money"] < rent_amt:
+            # self.end_button.configure(state='disabled')
+            # Mortgage pop up
+            # Disable everything except mortgage
+            self.update_game(
+                f"You don't have enough money to pay!\nMortgage properties or sell houses worth {rent_amt- self.player_details[payer]['Money']}"
+            )
+        self.player_details[payer]["Money"] -= rent_amt
+        self.player_details[self.properties[propertypos].owner]["Money"] += rent_amt
+        self.update_game(
+            f"{self.player_details[payer]['Name']} paid {rent_amt} to {self.player_details[self.properties[propertypos].owner]['Name']}"
+        )
 
     def end_turn(self, received=False):
         if not received:
@@ -1859,15 +1911,17 @@ class Monopoly(tk.Toplevel):
             self.turn = self.uuids[self.uuids.index(self.turn) + 1]
         except:
             self.turn = self.uuids[0]
-        if not received:
-            self.cobj.send(("END",))
 
-        self.update_game()
         if self.turn == self.me:
             self.roll_button.configure(state="normal")
 
+        if not received:
+            self.cobj.send(("END",))
 
-# TODO: Rent, Mortgage, Bankruptcy, Pass GO, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
+        self.update_game("It's your turn now! Click 'Roll Dice'")
+
+
+# TODO: Mortgage, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
 
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
 # In player properties box, add colour highlight based on property
