@@ -1,21 +1,13 @@
-def tell(*stuff):
-    num = stuff[-1]
-    n = len(stuff) - 1
-    h = stuff[:n]
-    plot = [(i, h[i]) for i in range(len(h))]
-    if n == 3 and sum(h) % 3 == 1 and sum(h) % 3 != 0:
-        plot = sorted(plot, key=lambda x: x[-1])
-        return (0, 0, 0, 1, (plot[0][0], plot[1][0]))
-    else:
-        base = (sum(h) + num) // n
-        return tuple(base - i for i in h) + ((sum(h) + num) % n,)
+import random
 
+win = 0
+for i in range(100000):
+    secret = random.randint(1, 100)
+    hint = random.randint(1, 100)
+    choice = -1 if hint < 50 else 1
+    if hint > secret and choice == 1:
+        win += 1
+    elif hint < secret and choice == -1:
+        win += 1
 
-print(tell(1, 2, 1, 1))
-
-"""
-(1,2,1,4) - (1,0,1,2)
-(1,2,2,5) - (2,1,1,1)
-(1,2,2,6) - (2,1,1,2)
-(1,2,3) - (2,1,0)
-"""
+print(win)
