@@ -30,8 +30,15 @@ class Client:
     def send(self, msg):
         self.conn.send(pickle.dumps(msg))
 
+    def close(self):
+        self.connected = False
+        self.conn.close()
+
     def listener(self):
         while self.connected:
-            instruction = self.conn.recv(1024)
-            instruction = pickle.loads(instruction)
-            self.updater(instruction)
+            try:
+                instruction = self.conn.recv(1024)
+                instruction = pickle.loads(instruction)
+                self.updater(instruction)
+            except OSError:
+                pass

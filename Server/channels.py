@@ -32,10 +32,12 @@ class Channels:
 
     def join(self, player):
         self.members.append(player)
+        player.channel.append(self.uuid)
         player.send_instruction((self.uuid, "INIT", self.game, self.details()))
 
-    def leave(self, pid):
-        self.members.remove(pid)
+    def leave(self, player):
+        player.channels.remove(self.uuid)
+        self.members.remove(player.uuid)
 
 
 class Lobby(Channels):
@@ -101,7 +103,10 @@ class Room(Channels):
 
     def leave(self, player):
         super().leave(player)
-        self.broadcast_to_members(("PLAYER", "REMOVE", player.uuid))
+        if self.status == "OPEN" or self.status == "PRIVATE":
+            self.broadcast_to_members(("PLAYER", "REMOVE", player.uuid))
+        elif self.status == "INGAME":
+            self.broadcast_to_members(("PLAYER", "LEAVE", player.uuid))
 
     def chess_start(self):
         pass
@@ -147,6 +152,7 @@ class Client(threading.Thread):
         players[self.uuid] = self
 
         self.connected = True
+        self.channels = []
 
     def run(self):
         try:
@@ -158,10 +164,11 @@ class Client(threading.Thread):
                     self.instruction_handler(m[0], m[1:])
                 else:
                     self.instruction_handler(m)
-
-        except KeyboardInterrupt as e:
-            server.close()
-            exit()
+        except EOFError:
+            self.conn.close()
+            self.close()
+            print("Connection Closed")
+            return
 
     @dispatch(str, tuple)
     def instruction_handler(self, session_id, instruction):
@@ -220,6 +227,15 @@ class Client(threading.Thread):
         d = {"name": self.name, "puid": self.uuid}
         return d
 
+    def close(self):
+        for i in self.channels:
+            if i in lobbies:
+                lobbies[i].leave(self)
+            elif i in rooms:
+                rooms[i].leave(self)
+
+        del players[self.uuid]
+
 
 class Driver:
     auth: Auth = Auth()
@@ -241,10 +257,9 @@ class Driver:
         self.server.listen()
         while True:
             conn, addr = self.server.accept()
-            print("Accepted from", addr)
+            print(f"active connections {threading.active_count()-1}")
             client_thread = Client(conn, addr, False)
             client_thread.start()
-            print(f"active connections {threading.activeCount()-2}")
 
 
 players: dict[str, Client]

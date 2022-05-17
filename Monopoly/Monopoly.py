@@ -1884,7 +1884,7 @@ if __name__ == "__main__":
             cobj.updater = mono.updater
             mono.start_monopoly()
 
-    cobj = Client(("localhost", 6789), updater)
+    cobj = Client(("localhost", 6788), updater)
 
     def CLI():
         while True:

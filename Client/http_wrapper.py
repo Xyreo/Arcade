@@ -97,4 +97,4 @@ if __name__ == "__main__":
     print(app.register("test", "test"))
     print(app.login("test", "test"))
     print(app.mply_details(1))
-    print(app.logout())
+    # print(app.del_user())
