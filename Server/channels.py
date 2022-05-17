@@ -32,7 +32,7 @@ class Channels:
 
     def join(self, player):
         self.members.append(player)
-        player.channel.append(self.uuid)
+        player.channels.append(self.uuid)
 
     def leave(self, player):
         player.channels.remove(self.uuid)
