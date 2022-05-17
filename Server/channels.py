@@ -168,7 +168,7 @@ class Client(threading.Thread):
                     self.instruction_handler(m[0], m[1:])
                 else:
                     self.instruction_handler(m)
-        except EOFError:
+        except (EOFError, ConnectionResetError):
             self.conn.close()
             self.close()
             print("Connection Closed")

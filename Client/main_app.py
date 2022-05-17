@@ -54,11 +54,13 @@ class arcade(tk.Toplevel):
         dest = msg[0]
         print("Recv:", msg)
         created_room = False
+        print(self.rooms)
         if dest in ["CHESS", "MNPLY"]:
             if msg[1] == "INIT":
-                self.rooms[dest] = msg[2]
+                self.rooms.update({dest: msg[2]})
             elif msg[1] == "ROOM":
                 l = self.rooms[dest]
+                print(l)
                 if msg[2] == "ADD":
                     l.append(msg[3])
                     created_room = True
@@ -102,7 +104,6 @@ class arcade(tk.Toplevel):
                             i.update({"members": l2})
                             break
 
-                
                 self.rooms.update({dest: l})
                 if self.room_frame:
                     self.room_frame.place_forget()
