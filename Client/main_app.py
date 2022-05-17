@@ -26,6 +26,7 @@ class Gamestate:
         print("Msg:", msg)
         if dest in ["CHESS", "MNPLY"]:
             if msg[1] == "INIT":
+                print(msg[3][1])
                 for i in msg[3][1]:
                     self.lobby_handler[dest]["add"](i)
             elif msg[1] == "ROOM":
@@ -36,8 +37,8 @@ class Gamestate:
                     self.lobby_handler[dest]["delete"](msg[3])
         elif msg[1] == "INIT":
             self.room = dest
+            g.create_room[msg[2]](dest)
             for i in msg[3]["members"]:
-                g.create_room[msg[2]](dest)
                 g.room_handler[dest]["add"](i)
 
         elif dest == self.room:
@@ -260,7 +261,7 @@ class Tab(tk.Frame):
         )
 
         g.join_lobby(game)
-
+        print(g.lobby_handler)
         scroll.configure(command=self.lobby_tree.yview)
 
     def quit_lobby(self):
@@ -308,7 +309,7 @@ class Tab(tk.Frame):
         self.room_frame.destroy()
 
 
-class Lobby(ttk.Treeview):
+class Lobby(ttk.Treeview):  # JOIN
     def __init__(self, master, scroll, game):
         super().__init__(master, columns=("Room", "Host", "Players"), yscroll=scroll)
         self.game = game
@@ -337,7 +338,7 @@ class Lobby(ttk.Treeview):
         self.delete(room)
 
 
-class Room(ttk.Treeview):
+class Room(ttk.Treeview):  # Create
     def __init__(self, master, game):
         super().__init__(master, columns=("Player", "Name"))
         self.game = game
@@ -373,3 +374,25 @@ if __name__ == "__main__":
                     text="",
                     values=(i, j["Host"], j["Players"]),
                 )"""
+
+
+(
+    "101d51d9ecc1256c5cf71edcbf75618e",
+    "INIT",
+    "CHESS",
+    {
+        "id": "101d51d9ecc1256c5cf71edcbf75618e",
+        "host": "5abdf756a4142bfc98fb3ec284951e8e",
+        "settings": {},
+        "members": [
+            {"name": "Pramit", "puid": "5abdf756a4142bfc98fb3ec284951e8e"},
+            {"name": "Pramit", "puid": "4ab0caea05667a6fa5fddd4dad30bf3b"},
+        ],
+    },
+)
+(
+    "101d51d9ecc1256c5cf71edcbf75618e",
+    "PLAYER",
+    "ADD",
+    {"name": "Pramit", "puid": "4ab0caea05667a6fa5fddd4dad30bf3b"},
+)

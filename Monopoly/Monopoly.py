@@ -1605,9 +1605,10 @@ class Monopoly(tk.Toplevel):
         if not received:
             self.cobj.send(("BUILD", property, number))
 
-    def roll_dice(self, roll=None, received=False):
+    def roll_dice(self, roll=None, received=False, cli=False):
         music(ASSET + "/diceroll.mp3")
         dice_roll = roll if received else (random.randint(1, 6), random.randint(1, 6))
+        dice_roll = roll if cli else dice_roll
         if not received:
             self.cobj.send(("ROLL", dice_roll))
         for i in range(18):
@@ -1625,8 +1626,9 @@ class Monopoly(tk.Toplevel):
         self.update_game()
         self.move(self.turn, self.current_move)
         if dice_roll[0] == dice_roll[1]:
-            self.roll_button.configure(state="normal")
-            self.end_button.configure(state="disabled")
+            if self.turn == self.me:
+                self.roll_button.configure(state="normal")
+                self.end_button.configure(state="disabled")
             self.doubles_counter += 1
         else:
             self.doubles_counter = 0
@@ -1920,7 +1922,7 @@ class Monopoly(tk.Toplevel):
 
         self.update_game("It's your turn now! Click 'Roll Dice'")
 
-
+#TODO Rent for station, utility
 # TODO: Mortgage, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
 
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
@@ -1944,9 +1946,9 @@ if __name__ == "__main__":
         while True:
             t = tuple(i for i in input().split())
             if t:
-                if t[0] == "move":
+                if t[0] == "roll":  # TODO CHANGE TO ROLL DICE
                     try:
-                        mono.move(mono.me, int(t[1]))
+                        mono.roll_dice(roll=(int(t[1]), int(t[2])), cli=True)
                     except:
                         pass
                 elif t[0] == "buy":
