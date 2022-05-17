@@ -54,3 +54,5 @@ docs/_build/
 .vscode/
 venv/
 *.pem
+.env
+Client/main_app.py
