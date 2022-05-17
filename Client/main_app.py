@@ -10,7 +10,7 @@ from PIL import Image, ImageOps, ImageTk
 
 from client_framework import Client
 
-
+#! Host join immediately, everyone doesnt update that the host joins
 class arcade(tk.Toplevel):
     def __init__(self):
         super().__init__()
@@ -19,8 +19,6 @@ class arcade(tk.Toplevel):
         self.notebook()
         self.chess_tab()
         self.monopoly_tab()
-
-        self.me = "insert puid here"
 
         self.room_frame = None
         self.lobby_frame = None
@@ -53,49 +51,69 @@ class arcade(tk.Toplevel):
     def event_handler(self, msg):
         dest = msg[0]
         print("Recv:", msg)
-        created_room = False
         print(self.rooms)
-        if dest in ["CHESS", "MNPLY"]:
+        if dest == "NAME":
+            self.me = msg[1]
+        elif dest in ["CHESS", "MNPLY"]:
             if msg[1] == "INIT":
-                self.rooms.update({dest: msg[2]})
+                l = self.rooms[dest]
+                for i in msg[2]:
+                    l.append(i)
+                self.rooms.update({dest: l})
             elif msg[1] == "ROOM":
                 l = self.rooms[dest]
-                print(l)
                 if msg[2] == "ADD":
                     l.append(msg[3])
-                    created_room = True
+                    self.rooms.update({dest: l})
+                    if msg[3]["host"] == self.me:
+                        self.join_selected_room(dest, msg[3])
                 elif msg[2] == "REMOVE":
                     for i in l:
                         if i["id"] == msg[3]:
                             l.remove(i)
+                            self.rooms.update({dest: l})
                             break
-                self.rooms.update({dest: l})
-                if self.room_frame or created_room:
-                    print("Why")
-                    self.room_frame.place_forget()
+                if self.room_frame:
+                    print("ROMMMMMMMMMMMMMMM")
+                    try:
+                        self.room_frame.place_forget()
+                    except AttributeError:
+                        pass
                     self.join_room(dest, msg[3])
 
                 elif self.lobby_frame:
-                    self.lobby_frame.place_forget()
+                    print("LOBBBBBBBBBBBBBBBBBBBBBB")
+                    try:
+                        self.lobby_frame.place_forget()
+                    except AttributeError:
+                        pass
                     self.join_lobby(dest, True)
 
         elif dest == self.current_room:
+            game = ""
             for i, j in self.rooms.items():
+                print(self.rooms)
                 for k in j:
                     if k["id"] == dest:
                         game = i
+            print(game)
             l = self.rooms[game]
+            room_joined = {}
             if msg[1] == "PLAYER":
                 if msg[2] == "ADD":
                     for i in l:
                         if i["id"] == dest:
+                            room_joined = i
                             l2 = i["members"]
+                            print(l2)
                             l2.append(msg[3])
+                            print(l2)
                             i.update({"members": l2})
                             break
                 elif msg[2] == "REMOVE":
                     for i in l:
                         if i["id"] == dest:
+                            room_joined = i
                             l2 = i["members"]
                             for j in l2:
                                 if j["puid"] == msg[3]:
@@ -104,11 +122,13 @@ class arcade(tk.Toplevel):
                             i.update({"members": l2})
                             break
 
-                self.rooms.update({dest: l})
+                self.rooms.update({game: l})
                 if self.room_frame:
+                    print("ROmmmmmmmmmmmm")
                     self.room_frame.place_forget()
-                    self.join_room(game, dest)
+                    self.join_room(game, room_joined)
                 elif self.lobby_frame:
+                    print("Lobbyyyyyyyy")
                     self.lobby_frame.place_forget()
                     self.join_lobby(game, True)
 
@@ -243,13 +263,14 @@ class arcade(tk.Toplevel):
         self.lobby_tree.heading("Players", text="No. of Players", anchor="center")
 
         hostname = ""
+        print(self.rooms)
         for i in self.rooms[game]:
             for j in i["members"]:
                 if j["puid"] == i["host"]:
                     hostname = j["name"]
                     break
 
-            if 0 < len(i["members"]) < max_players:
+            if len(i["members"]) < max_players:
                 self.lobby_tree.insert(
                     parent="",
                     index="end",
@@ -278,25 +299,22 @@ class arcade(tk.Toplevel):
 
     def join_selected_room(self, game, room):
         self.send((game, "JOIN", room["id"]))
-        self.current_room = room
-        self.join_room(game, self.current_room)
+        self.current_room = room["id"]
+        self.join_room(game, room)
 
     def create_room(self, game):
-        if game == "CHESS":
-            parent = self.chess_frame
-        elif game == "MNPLY":
-            parent = self.monopoly_frame
 
         settings = {}
         # TODO: Select Settings
         self.send((game, "CREATE", settings))
 
     def leave_room(self, room):
-        self.send((room, "LEAVE"))
+        self.send((room["id"], "LEAVE"))
         self.room_frame.place_forget()
         self.room_frame = None
 
     def join_room(self, game, room):
+        print(game)
         if game == "CHESS":
             parent = self.chess_frame
         elif game == "MNPLY":
@@ -305,6 +323,7 @@ class arcade(tk.Toplevel):
         print(room)
         hostname = ""
         for i in room["members"]:
+            print(i)
             if i["puid"] == room["host"]:
                 hostname = i["name"]
                 break
@@ -344,7 +363,7 @@ class arcade(tk.Toplevel):
             font=("times", 13),
             highlightthickness=0,
             border=0,
-        ).place(relx=0.5, rely=0.07, anchor="center")
+        ).place(relx=0.5, rely=0.1, anchor="center")
 
         tk.Label(
             self.room_frame,
@@ -362,7 +381,9 @@ class arcade(tk.Toplevel):
                 font=("times", 13),
                 highlightthickness=0,
                 border=0,
-            ).place(relx=0.5, rely=0.2 + k / 25, anchor="center")
+            ).place(relx=0.5, rely=0.2 + (k / 25), anchor="center")
+
+            k += 1
 
         tk.Label(
             self.room_frame,

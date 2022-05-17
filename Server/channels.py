@@ -52,6 +52,7 @@ class Lobby(Channels):
         self.broadcast_to_members(
             ("ROOM", "ADD", room.details()), exclude=host.uuid
         )  # TODO Broadcast Protocol
+        host.send_instruction((self.uuid, "ROOM", "ADD", room.details()))
 
     def delete_room(self, id):
         rooms[id].delete()
@@ -71,10 +72,10 @@ class Lobby(Channels):
         super().broadcast_to_members((self.uuid,) + msg, exclude)
 
     def broadcast(self, msg, exclude=None):
-        super().broadcast(msg, exclude)
+        super().broadcast_to_members(msg, exclude)
 
     def details(self):
-        lobby = ([room.details() for room in self.rooms if room.status == "OPEN"],)
+        lobby = [room.details() for room in self.rooms if room.status == "OPEN"]
         return lobby
 
 
@@ -102,7 +103,8 @@ class Room(Channels):
 
     def join(self, player):
         lobbies[self.game].broadcast((self.uuid, "PLAYER", "ADD", player.details()))
-
+        if self.host not in lobbies[self.game].members:
+            self.host.send_instruction((self.uuid, "PLAYER", "ADD", player.details()))
         # player.send_instruction((self.game, "ROOM", self.uuid, "INIT", self.details()))
 
     def leave(self, player):
@@ -157,6 +159,7 @@ class Client(threading.Thread):
 
         self.connected = True
         self.channels = []
+        self.send_instruction(("NAME", self.uuid))
 
     def run(self):
         try:
