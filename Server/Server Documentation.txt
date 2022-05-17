@@ -23,6 +23,6 @@ RECEIVING:
 (<Lobby>, INIT, [{id:,host:,members:,settings:},......]) - When u join lobby
 (<Lobby>, ROOM, ADD, {id:,host:,members:,settings:}) - When room is added
 (<Lobby>, ROOM, REMOVE, id) - When room is deleted
-
+(<Loby>,ROOM,INIT,<Room ID>,[{pid:,name:},......])
 (<Room ID>,PLAYER,ADD,{pid:,name:}) - When player is addded
 (<Room ID>,PLAYER,REMOVE,id) - When player is removed
