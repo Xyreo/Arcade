@@ -276,7 +276,6 @@ class arcade(tk.Toplevel):
         self.lobby_frame = None
 
     def join_selected_room(self, game, room):
-        self.send(("0", "LEAVE", game.upper()))
         self.send((game, "JOIN", room["id"]))
         self.current_room = room
         self.join_room(game, self.current_room)
