@@ -36,7 +36,7 @@ class Channels:
 
     def leave(self, player):
         player.channels.remove(self.uuid)
-        self.members.remove(player.uuid)
+        self.members.remove(players[player.uuid])
 
 
 class Lobby(Channels):
