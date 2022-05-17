@@ -96,8 +96,7 @@ class Room(Channels):
     def join(self, player):
         super().join(player)
         for i in players:
-            if i.uuid != player.uuid:
-                players[i].send(("PLAYER", "ADD", player.details()), player.uuid)
+            players[i].send(("PLAYER", "ADD", player.details()), player.uuid)
         # player.send_instruction((self.game, "ROOM", self.uuid, "INIT", self.details()))
 
     def leave(self, player):
