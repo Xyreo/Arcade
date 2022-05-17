@@ -1,7 +1,4 @@
-import json
-import os
-import threading
-import time
+import threading, time, os, json
 import tkinter as tk
 from contextlib import suppress
 

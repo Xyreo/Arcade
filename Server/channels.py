@@ -32,10 +32,11 @@ class Channels:
 
     def join(self, player):
         self.members.append(player)
-        player.send_instruction((self.uuid, "INIT", self.game, self.details()))
+        player.channel.append(self.uuid)
 
-    def leave(self, pid):
-        self.members.remove(pid)
+    def leave(self, player):
+        player.channels.remove(self.uuid)
+        self.members.remove(player.uuid)
 
 
 class Lobby(Channels):
@@ -60,15 +61,13 @@ class Lobby(Channels):
 
     def join_room(self, player, id):
         rooms[id].join(player)
+        player.send_instruction((self.uuid, "INIT", self.details()))
 
     def broadcast_to_members(self, msg, exclude=None):
         super().broadcast_to_members((self.uuid,) + msg, exclude)
 
     def details(self):
-        lobby = (
-            self.uuid,
-            [room.details() for room in self.rooms if room.status == "OPEN"],
-        )
+        lobby = ([room.details() for room in self.rooms if room.status == "OPEN"],)
         return lobby
 
 
@@ -98,10 +97,14 @@ class Room(Channels):
     def join(self, player):
         super().join(player)
         self.broadcast_to_members(("PLAYER", "ADD", player.details()), player.uuid)
+        player.send_instruction((self.game, "ROOM", self.uuid, "INIT", self.details()))
 
     def leave(self, player):
         super().leave(player)
-        self.broadcast_to_members(("PLAYER", "REMOVE", player.uuid))
+        if self.status == "OPEN" or self.status == "PRIVATE":
+            self.broadcast_to_members(("PLAYER", "REMOVE", player.uuid))
+        elif self.status == "INGAME":
+            self.broadcast_to_members(("PLAYER", "LEAVE", player.uuid))
 
     def chess_start(self):
         pass
@@ -110,7 +113,7 @@ class Room(Channels):
         pass
 
     def broadcast_to_members(self, msg, exclude=None):
-        super().broadcast_to_members((self.uuid,) + msg, exclude)
+        super().broadcast_to_members((self.game, self.uuid) + msg, exclude)
 
     def details(self):
         room = {
@@ -147,6 +150,7 @@ class Client(threading.Thread):
         players[self.uuid] = self
 
         self.connected = True
+        self.channels = []
 
     def run(self):
         try:
@@ -158,10 +162,11 @@ class Client(threading.Thread):
                     self.instruction_handler(m[0], m[1:])
                 else:
                     self.instruction_handler(m)
-
-        except KeyboardInterrupt as e:
-            server.close()
-            exit()
+        except EOFError:
+            self.conn.close()
+            self.close()
+            print("Connection Closed")
+            return
 
     @dispatch(str, tuple)
     def instruction_handler(self, session_id, instruction):
@@ -220,6 +225,15 @@ class Client(threading.Thread):
         d = {"name": self.name, "puid": self.uuid}
         return d
 
+    def close(self):
+        for i in self.channels:
+            if i in lobbies:
+                lobbies[i].leave(self)
+            elif i in rooms:
+                rooms[i].leave(self)
+
+        del players[self.uuid]
+
 
 class Driver:
     auth: Auth = Auth()
@@ -241,10 +255,9 @@ class Driver:
         self.server.listen()
         while True:
             conn, addr = self.server.accept()
-            print("Accepted from", addr)
+            print(f"active connections {threading.active_count()-1}")
             client_thread = Client(conn, addr, False)
             client_thread.start()
-            print(f"active connections {threading.activeCount()-2}")
 
 
 players: dict[str, Client]

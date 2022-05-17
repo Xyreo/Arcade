@@ -2,51 +2,56 @@ from flask import Flask, request, jsonify, Blueprint
 from datetime import date
 from authenticator import Auth
 import mysql.connector as msc
-import bcrypt, threading, json
+import bcrypt, threading, json, pickle, os, dotenv
+import hashlib
 import redis
 
+dotenv.load_dotenv()
+password = os.getenv("password")
 
 app = Flask(__name__)
 db = msc.connect(
     host="167.71.231.52",
     username="project-work",
-    password="mySQLpass",
+    password=password,
     database="arcade",
 )
 
 
 class Database:
     def __init__(self):
-        self.cursor = None
-        self.cursor = db.cursor()
-        t = threading.Thread(target=self.initialise)
-        t.start()
+        cache.flushdb()
 
     def execute(self, query):
+        if "select" in query.lower() and "user" not in query.lower():
+            hash = hashlib.sha224(query.encode("utf-8")).hexdigest()
+            key = "sql_cache" + hash
+            key = key.encode("utf-8")
+            if cache.get(key):
+                return pickle.loads(cache.get(key))
+            else:
+                response = self.exec(query)
+                cache.set(key, pickle.dumps(response))
+                return response
+        else:
+            return self.exec(query)
+
+    def exec(self, query):
         try:
-            self.cursor.execute(query)
-            response = self.cursor.fetchall()
+            cursor = db.cursor()
+            cursor.execute(query)
+            response = cursor.fetchall()
+            cursor.close()
             return response
+
         except Exception as e:
             print(e)
             print(query)
             return None
 
-    def initialise(self):
-        # Users
-        cache.flushdb()
-        # Monopoly Board Values
-        query = f"SELECT * FROM monopoly_board_values"
-        self.cursor.execute(query)
-        details = {}
-        for i in self.cursor.fetchall():
-            details[int(i[1])] = i
-        cache.set("monopoly_board_values", json.dumps(details))
-        print("Loaded DB into cache")
-
     def data_change(self, query):
         try:
-            self.cursor.execute(query)
+            cursor.execute(query)
             # self.cursor.fetchall()
             db.commit()
 
@@ -54,7 +59,7 @@ class Database:
             db.rollback()
 
 
-cache = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+cache = redis.Redis(host="localhost", port=6379, db=0)
 cursor = Database()
 
 monopoly = Blueprint("monopoly", __name__)
@@ -88,6 +93,7 @@ def register():
     username = data["username"]
     password = data["password"].encode("utf-8")
     count = cursor.execute(f"SELECT * FROM user WHERE name = '{username}'")
+    print(count)
     if len(count):
         return jsonify("User Already Exists"), 400
     password = bcrypt.hashpw(password, bcrypt.gensalt(12))
@@ -107,6 +113,7 @@ def login():
     password = data["password"].encode("utf-8")
 
     storedpw = cursor.execute(f"SELECT password FROM user where name='{username}'")
+    print(storedpw)
     if len(storedpw):
         if bcrypt.checkpw(password, storedpw[0][0].encode("utf-8")):
             session = auth.add(username)
@@ -160,17 +167,17 @@ def logout():
 # region Monopoly
 @monopoly.route("/details")
 def list_details():
-    details = json.loads(cache.get("monopoly_board_values"))
+    details = cursor.execute("SELECT * FROM monopoly_board_values")
     l = [i for i in details.values()]
     return jsonify(l), 200
 
 
 @monopoly.route("/details/<string:pos>")
 def details(pos):
-    detail = json.loads(cache.get("monopoly_board_values"))
-    if pos not in detail.keys():
+    detail = cursor.execute(f"SELECT * FROM monopoly_board_values where position={pos}")
+    if not pos:
         return jsonify("Not Found"), 404
-    return jsonify(detail[pos]), 200
+    return jsonify(detail), 200
 
 
 # endregion
