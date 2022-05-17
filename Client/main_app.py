@@ -89,6 +89,7 @@ class arcade(tk.Toplevel):
                         if i["id"] == dest:
                             l2 = i["members"]
                             l2.append(msg[3])
+                            i.update({"members": l2})
                             break
                 elif msg[2] == "REMOVE":
                     for i in l:
@@ -98,9 +99,10 @@ class arcade(tk.Toplevel):
                                 if j["puid"] == msg[3]:
                                     l2.remove(j)
                                     break
+                            i.update({"members": l2})
                             break
 
-                i.update({"members": l2})
+                
                 self.rooms.update({dest: l})
                 if self.room_frame:
                     self.room_frame.place_forget()
