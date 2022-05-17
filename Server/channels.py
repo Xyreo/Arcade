@@ -61,7 +61,6 @@ class Lobby(Channels):
 
     def join_room(self, player, id):
         rooms[id].join(player)
-        player.send_instruction((self.uuid, "INIT", self.details()))
 
     def broadcast_to_members(self, msg, exclude=None):
         super().broadcast_to_members((self.uuid,) + msg, exclude)

@@ -52,7 +52,8 @@ class arcade(tk.Toplevel):
 
     def event_handler(self, msg):
         dest = msg[0]
-        print("Msg:", msg)
+        print("Recv:", msg)
+        created_room = False
         if dest in ["CHESS", "MNPLY"]:
             if msg[1] == "INIT":
                 self.rooms[dest] = msg[2]
@@ -60,17 +61,18 @@ class arcade(tk.Toplevel):
                 l = self.rooms[dest]
                 if msg[2] == "ADD":
                     l.append(msg[3])
-                    if not self.lobby_frame:  # and self.me==msg[3]['host]
-                        self.join_room(dest, msg[3]["id"])
+                    created_room = True
                 elif msg[2] == "REMOVE":
                     for i in l:
                         if i["id"] == msg[3]:
                             l.remove(i)
                             break
                 self.rooms.update({dest: l})
-                if self.room_frame:
+                if self.room_frame or created_room:
+                    print("Why")
                     self.room_frame.place_forget()
-                    self.join_room(dest, msg[3]["id"])
+                    self.join_room(dest, msg[3])
+
                 elif self.lobby_frame:
                     self.lobby_frame.place_forget()
                     self.join_lobby(dest, True)
@@ -273,7 +275,7 @@ class arcade(tk.Toplevel):
 
     def join_selected_room(self, game, room):
         self.send(("0", "LEAVE", game.upper()))
-        self.send((game, "JOIN", room))
+        self.send((game, "JOIN", room["id"]))
         self.current_room = room
         self.join_room(game, self.current_room)
 
