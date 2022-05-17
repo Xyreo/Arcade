@@ -57,13 +57,21 @@ class Lobby(Channels):
         rooms[id].delete()
         del rooms[id]
         self.rooms.remove(id)
-        self.broadcast_to_members(("ROOM", "DELETE", id))
+        self.broadcast_to_members(("ROOM", "REMOVE", id))
 
     def join_room(self, player, id):
         rooms[id].join(player)
 
+    def join(self, player):
+        self.members.append(player)
+        player.channels.append(self.uuid)
+        player.send_instruction((self.uuid, "INIT", self.details()))
+
     def broadcast_to_members(self, msg, exclude=None):
         super().broadcast_to_members((self.uuid,) + msg, exclude)
+
+    def broadcast(self, msg, exclude=None):
+        super().broadcast(msg, exclude)
 
     def details(self):
         lobby = ([room.details() for room in self.rooms if room.status == "OPEN"],)
@@ -78,7 +86,6 @@ class Room(Channels):
         self.settings = settings
         self.status = status
         self.game = game
-        self.join(host)
 
     def delete(self):
         pass
@@ -94,15 +101,14 @@ class Room(Channels):
             self.mnply_start()
 
     def join(self, player):
-        super().join(player)
-        for i in players:
-            players[i].send(("PLAYER", "ADD", player.details()), player.uuid)
+        lobbies[self.game].broadcast((self.uuid, "PLAYER", "ADD", player.details()))
+
         # player.send_instruction((self.game, "ROOM", self.uuid, "INIT", self.details()))
 
     def leave(self, player):
         super().leave(player)
         if self.status == "OPEN" or self.status == "PRIVATE":
-            self.broadcast_to_members(("PLAYER", "REMOVE", player.uuid))
+            lobbies[self.game].broadcast((self.uuid, "PLAYER", "REMOVE", player.uuid))
         elif self.status == "INGAME":
             self.broadcast_to_members(("PLAYER", "LEAVE", player.uuid))
 

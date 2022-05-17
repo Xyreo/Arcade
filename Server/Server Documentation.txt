@@ -12,17 +12,27 @@ The Server runs on channels.
 Format of messages:
 msg = (CHANNEL, ACTION, ACTION-SPECFIFIC_DETAILS)
 
-SENDING STUFF
-(0, JOIN, <Lobby>) - Joins Lobby - join  lobby
+Just Receive:
+(0,me,<id>)
+
+Just Send:
 (0, LEAVE, <Lobby>) - Leaves Lobby - back from lobby,/join room
-(<Lobby>, JOIN, <Room ID>) - Joins selected room - join room
+
+Action-Reaction Pairs
+(0, JOIN, <Lobby>) - Joins Lobby - join  lobby 
+(<Lobby>, INIT, [{id:,host:,members:,settings:},......]) - To only you
+
 (<Lobby>, CREATE,<settings>) - Creates Room - create a room
+(<Lobby>, ROOM, ADD, {id:,host:,members:,settings:}) - To members of lobby
+
+(<Lobby>, JOIN, <Room ID>) - Joins selected room - join room
+(<Room ID>,PLAYER,ADD,{pid:,name:}) - To everyone in lobby and room
+
 (<Room ID>, LEAVE) - Leaves room - back from room
+(<Room ID>,PLAYER,REMOVE,id) - To everyone in lobby and room
 
-RECEIVING:
-(<Lobby>, INIT, [{id:,host:,members:,settings:},......]) - When u join lobby
-(<Lobby>, ROOM, ADD, {id:,host:,members:,settings:}) - When room is added
-(<Lobby>, ROOM, REMOVE, id) - When room is deleted
+(<Lobby>, DELETE, <Room ID>) - Delete room
+(<Lobby>, ROOM, REMOVE, id) - To players in lobby and room
 
-(<Room ID>,PLAYER,ADD,{pid:,name:}) - When player is addded
-(<Room ID>,PLAYER,REMOVE,id) - When player is removed
+
+
