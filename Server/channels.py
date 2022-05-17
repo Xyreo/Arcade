@@ -33,7 +33,6 @@ class Channels:
     def join(self, player):
         self.members.append(player)
         player.channel.append(self.uuid)
-        player.send_instruction((self.uuid, "INIT", self.game, self.details()))
 
     def leave(self, player):
         player.channels.remove(self.uuid)
@@ -62,15 +61,13 @@ class Lobby(Channels):
 
     def join_room(self, player, id):
         rooms[id].join(player)
+        player.send_instruction((self.uuid, "INIT", self.details()))
 
     def broadcast_to_members(self, msg, exclude=None):
         super().broadcast_to_members((self.uuid,) + msg, exclude)
 
     def details(self):
-        lobby = (
-            self.uuid,
-            [room.details() for room in self.rooms if room.status == "OPEN"],
-        )
+        lobby = ([room.details() for room in self.rooms if room.status == "OPEN"],)
         return lobby
 
 
@@ -100,6 +97,7 @@ class Room(Channels):
     def join(self, player):
         super().join(player)
         self.broadcast_to_members(("PLAYER", "ADD", player.details()), player.uuid)
+        player.send_instruction((self.game, "ROOM", self.uuid, "INIT", self.details()))
 
     def leave(self, player):
         super().leave(player)
@@ -115,7 +113,7 @@ class Room(Channels):
         pass
 
     def broadcast_to_members(self, msg, exclude=None):
-        super().broadcast_to_members((self.uuid,) + msg, exclude)
+        super().broadcast_to_members((self.game, self.uuid) + msg, exclude)
 
     def details(self):
         room = {

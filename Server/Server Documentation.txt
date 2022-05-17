@@ -12,5 +12,17 @@ The Server runs on channels.
 Format of messages:
 msg = (CHANNEL, ACTION, ACTION-SPECFIFIC_DETAILS)
 
-(0, JOIN, <Lobby>)
-(0, LEAVE, <Lobby>)
+SENDING STUFF
+(0, JOIN, <Lobby>) - Joins Lobby
+(0, LEAVE, <Lobby>) - Creates Lobby
+(<Lobby>, JOIN, <Room ID>) - Joins selected room
+(<Lobby>, CREATE,<settings>) - Creates Room
+(<Room ID>>, LEAVE) - Leaves room
+
+RECEIVING:
+(<Lobby>, INIT, [{id:,host:,members:,settings:},......]) - When u join lobby
+(<Lobby>, ROOM, ADD, {id:,host:,members:,settings:}) - When room is added
+(<Lobby>, ROOM, REMOVE, id) - When room is deleted
+(<Loby>,ROOM,INIT,<Room ID>,[{pid:,name:},......])
+(<Room ID>,PLAYER,ADD,{pid:,name:}) - When player is addded
+(<Room ID>,PLAYER,REMOVE,id) - When player is removed
