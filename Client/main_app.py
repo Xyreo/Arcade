@@ -8,7 +8,7 @@ from PIL import Image, ImageOps, ImageTk
 
 from client_framework import Client
 
-# TODO Confirmation Popups, Delete Room
+# TODO Confirmation Popups, Delete Room, Life
 class arcade(tk.Toplevel):
     def __init__(self):
         super().__init__()
@@ -403,13 +403,13 @@ class arcade(tk.Toplevel):
                 text="START",
                 font=("times", 13),
                 command=lambda: self.start_room(game, room),
-            ).place(relx=0.5, rely=0.9, anchor="se")
+            ).place(relx=0.5, rely=0.9, anchor="center")
         else:
             tk.Label(
                 self.room_frame,
                 text="Waiting for Host to start the game",
                 font=("times", 13),
-            ).place(relx=0.5, rely=0.9, anchor="se")
+            ).place(relx=0.5, rely=0.9, anchor="center")
 
 
 if __name__ == "__main__":
