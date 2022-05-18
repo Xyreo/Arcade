@@ -4,7 +4,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from time import sleep
 from tkinter import messagebox as msgb
-
+import json
 import mysql.connector as msc
 from PIL import Image, ImageOps, ImageTk
 
@@ -48,10 +48,12 @@ class arcade(tk.Toplevel):
         self.cobj = Client(("localhost", 6778), self.event_handler)
         self.cobj.send(("Pramit"))
 
+    def pprint(self, d):
+        print(json.dumps(d, indent=4))
+
     def event_handler(self, msg):
         dest = msg[0]
         print("Recv:", msg)
-        print(self.rooms)
         if dest == "NAME":
             self.me = msg[1]
         elif dest in ["CHESS", "MNPLY"]:
@@ -74,7 +76,6 @@ class arcade(tk.Toplevel):
                             self.rooms.update({dest: l})
                             break
                 if self.room_frame:
-                    print("ROMMMMMMMMMMMMMMM")
                     try:
                         self.room_frame.place_forget()
                     except AttributeError:
@@ -82,21 +83,18 @@ class arcade(tk.Toplevel):
                     self.join_room(dest, msg[3])
 
                 elif self.lobby_frame:
-                    print("LOBBBBBBBBBBBBBBBBBBBBBB")
                     try:
                         self.lobby_frame.place_forget()
                     except AttributeError:
                         pass
                     self.join_lobby(dest, True)
 
-        elif dest == self.current_room:
+        elif dest:
             game = ""
             for i, j in self.rooms.items():
-                print(self.rooms)
                 for k in j:
                     if k["id"] == dest:
                         game = i
-            print(game)
             l = self.rooms[game]
             room_joined = {}
             if msg[1] == "PLAYER":
@@ -105,9 +103,7 @@ class arcade(tk.Toplevel):
                         if i["id"] == dest:
                             room_joined = i
                             l2 = i["members"]
-                            print(l2)
                             l2.append(msg[3])
-                            print(l2)
                             i.update({"members": l2})
                             break
                 elif msg[2] == "REMOVE":
@@ -124,11 +120,9 @@ class arcade(tk.Toplevel):
 
                 self.rooms.update({game: l})
                 if self.room_frame:
-                    print("ROmmmmmmmmmmmm")
                     self.room_frame.place_forget()
                     self.join_room(game, room_joined)
                 elif self.lobby_frame:
-                    print("Lobbyyyyyyyy")
                     self.lobby_frame.place_forget()
                     self.join_lobby(game, True)
 
@@ -263,7 +257,6 @@ class arcade(tk.Toplevel):
         self.lobby_tree.heading("Players", text="No. of Players", anchor="center")
 
         hostname = ""
-        print(self.rooms)
         for i in self.rooms[game]:
             for j in i["members"]:
                 if j["puid"] == i["host"]:
@@ -314,16 +307,13 @@ class arcade(tk.Toplevel):
         self.room_frame = None
 
     def join_room(self, game, room):
-        print(game)
         if game == "CHESS":
             parent = self.chess_frame
         elif game == "MNPLY":
             parent = self.monopoly_frame
 
-        print(room)
         hostname = ""
         for i in room["members"]:
-            print(i)
             if i["puid"] == room["host"]:
                 hostname = i["name"]
                 break
