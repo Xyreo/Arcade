@@ -102,6 +102,8 @@ class Room(Channels):
             self.mnply_start()
 
     def join(self, player):
+        player.channels.append(self.uuid)
+        self.members.append(player)
         lobbies[self.game].broadcast((self.uuid, "PLAYER", "ADD", player.details()))
         if self.host not in lobbies[self.game].members:
             self.host.send_instruction((self.uuid, "PLAYER", "ADD", player.details()))
@@ -111,6 +113,8 @@ class Room(Channels):
         super().leave(player)
         if self.status == "OPEN" or self.status == "PRIVATE":
             lobbies[self.game].broadcast((self.uuid, "PLAYER", "REMOVE", player.uuid))
+            if self.host not in lobbies[self.game].members:
+                self.host.send_instruction((self.uuid, "PLAYER", "REMOVE", player.uuid))
         elif self.status == "INGAME":
             self.broadcast_to_members(("PLAYER", "LEAVE", player.uuid))
 
@@ -172,8 +176,8 @@ class Client(threading.Thread):
                 else:
                     self.instruction_handler(m)
         except (EOFError, ConnectionResetError):
-            self.conn.close()
             self.close()
+            self.conn.close()
             print("Connection Closed")
             return
 
