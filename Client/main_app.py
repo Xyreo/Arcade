@@ -1,16 +1,14 @@
-import random
-import threading
+import json
 import tkinter as tk
 import tkinter.ttk as ttk
 from time import sleep
 from tkinter import messagebox as msgb
-import json
-import mysql.connector as msc
+
 from PIL import Image, ImageOps, ImageTk
 
 from client_framework import Client
 
-#! Host join immediately, everyone doesnt update that the host joins
+# TODO Confirmation Popups, Delete Room
 class arcade(tk.Toplevel):
     def __init__(self):
         super().__init__()
@@ -306,6 +304,9 @@ class arcade(tk.Toplevel):
         self.room_frame.place_forget()
         self.room_frame = None
 
+    def delete_room(self, room):
+        pass
+
     def join_room(self, game, room):
         if game == "CHESS":
             parent = self.chess_frame
@@ -328,16 +329,28 @@ class arcade(tk.Toplevel):
         )
         self.room_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        tk.Button(
-            self.room_frame,
-            text="← BACK",
-            font=("times", 10),
-            highlightthickness=0,
-            border=0,
-            command=lambda: self.leave_room(room),
-        ).place(relx=0.01, rely=0.01, anchor="nw")
+        if hostname == "You":
+            tk.Button(
+                self.room_frame,
+                text="← BACK",
+                font=("times", 10),
+                highlightthickness=0,
+                border=0,
+                command=lambda: self.delete_room(room),
+            ).place(relx=0.01, rely=0.01, anchor="nw")
 
-        self.bind("<Escape>", lambda a: self.leave_room(room))
+            self.bind("<Escape>", lambda a: self.delete_room(room))
+        else:
+            tk.Button(
+                self.room_frame,
+                text="← BACK",
+                font=("times", 10),
+                highlightthickness=0,
+                border=0,
+                command=lambda: self.leave_room(room),
+            ).place(relx=0.01, rely=0.01, anchor="nw")
+
+            self.bind("<Escape>", lambda a: self.leave_room(room))
 
         tk.Label(
             self.room_frame,
@@ -384,15 +397,7 @@ class arcade(tk.Toplevel):
         ).place(relx=0.5, rely=0.5, anchor="center")
 
         # print settings here
-        tk.Button(
-            self.room_frame,
-            text="START",
-            font=("times", 13),
-            command=lambda: self.start_room(game, room),
-        ).place(relx=0.5, rely=0.9, anchor="center")
-
-        """#REMOVE BUTTON ON TOP, UNCOMMENT THIS
-        if hostname=='You':
+        if hostname == "You":
             tk.Button(
                 self.room_frame,
                 text="START",
@@ -404,12 +409,7 @@ class arcade(tk.Toplevel):
                 self.room_frame,
                 text="Waiting for Host to start the game",
                 font=("times", 13),
-            ).place(relx=0.5, rely=0.9, anchor="se")"""
-
-    def start_room(self, game, room):
-        # self.send((self.current_room, "START"))
-        # Do stuff here
-        print("Starting", game, room)
+            ).place(relx=0.5, rely=0.9, anchor="se")
 
 
 if __name__ == "__main__":
