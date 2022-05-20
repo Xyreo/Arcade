@@ -52,6 +52,7 @@ class arcade(tk.Toplevel):
     def event_handler(self, msg):
         dest = msg[0]
         print("Recv:", msg)
+        room_stuff = None
         if dest == "NAME":
             self.me = msg[1]
         elif dest in ["CHESS", "MNPLY"]:
@@ -61,6 +62,7 @@ class arcade(tk.Toplevel):
                     l.append(i)
                 self.rooms.update({dest: l})
             elif msg[1] == "ROOM":
+                room_stuff = msg[3]
                 l = self.rooms[dest]
                 if msg[2] == "ADD":
                     l.append(msg[3])
@@ -71,12 +73,18 @@ class arcade(tk.Toplevel):
                     for i in l:
                         if i["id"] == msg[3]:
                             l.remove(i)
+                            room_stuff = i
+                            try:
+                                self.room_frame.place_forget()
+                            except:
+                                pass
+                            self.room_frame = None
                             self.rooms.update({dest: l})
                             break
                 if self.room_frame:
                     self.room_frame.place_forget()
                     self.room_frame = None
-                    self.join_room(dest, msg[3])
+                    self.join_room(dest, room_stuff)
 
                 elif self.lobby_frame:
                     self.lobby_frame.place_forget()
@@ -260,13 +268,16 @@ class arcade(tk.Toplevel):
                     break
 
             if len(i["members"]) < max_players:
-                self.lobby_tree.insert(
-                    parent="",
-                    index="end",
-                    iid=i,
-                    text="",
-                    values=(i["id"], hostname, len(i["members"])),
-                )
+                try:
+                    self.lobby_tree.insert(
+                        parent="",
+                        index="end",
+                        iid=i,
+                        text="",
+                        values=(i["id"], hostname, len(i["members"])),
+                    )
+                except:
+                    pass
 
         self.lobby_tree.place(
             relx=0, rely=0.05, anchor="nw", relheight=0.9, relwidth=0.96
@@ -306,6 +317,12 @@ class arcade(tk.Toplevel):
         self.room_frame.place_forget()
         self.room_frame = None
         self.send((game, "DELETE", room["id"]))
+        try:
+            self.lobby_frame.place_forget()
+            self.lobby_frame = None
+        except:
+            pass
+        self.join_lobby(game, True)
 
     def join_room(self, game, room):
         if game == "CHESS":

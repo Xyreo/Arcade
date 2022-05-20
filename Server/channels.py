@@ -56,8 +56,8 @@ class Lobby(Channels):
 
     def delete_room(self, id):
         rooms[id].delete()
+        self.rooms.remove(rooms[id])
         del rooms[id]
-        self.rooms.remove(id)
         self.broadcast_to_members(("ROOM", "REMOVE", id))
 
     def join_room(self, player, id):
