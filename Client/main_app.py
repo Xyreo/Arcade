@@ -74,17 +74,13 @@ class arcade(tk.Toplevel):
                             self.rooms.update({dest: l})
                             break
                 if self.room_frame:
-                    try:
-                        self.room_frame.place_forget()
-                    except AttributeError:
-                        pass
+                    self.room_frame.place_forget()
+                    self.room_frame = None
                     self.join_room(dest, msg[3])
 
                 elif self.lobby_frame:
-                    try:
-                        self.lobby_frame.place_forget()
-                    except AttributeError:
-                        pass
+                    self.lobby_frame.place_forget()
+                    self.lobby_frame = None
                     self.join_lobby(dest, True)
 
         elif dest:
@@ -119,9 +115,11 @@ class arcade(tk.Toplevel):
                 self.rooms.update({game: l})
                 if self.room_frame:
                     self.room_frame.place_forget()
+                    self.room_frame = None
                     self.join_room(game, room_joined)
                 elif self.lobby_frame:
                     self.lobby_frame.place_forget()
+                    self.lobby_frame = None
                     self.join_lobby(game, True)
 
     def send(self, msg):
@@ -284,9 +282,9 @@ class arcade(tk.Toplevel):
         ).place(relx=0.96, rely=1, anchor="se")
 
     def leave_lobby(self, game):
-        self.send(("0", "LEAVE", game.upper()))
         self.lobby_frame.place_forget()
         self.lobby_frame = None
+        self.send(("0", "LEAVE", game.upper()))
 
     def join_selected_room(self, game, room):
         self.send((game, "JOIN", room["id"]))
@@ -300,12 +298,14 @@ class arcade(tk.Toplevel):
         self.send((game, "CREATE", settings))
 
     def leave_room(self, room):
-        self.send((room["id"], "LEAVE"))
         self.room_frame.place_forget()
         self.room_frame = None
+        self.send((room["id"], "LEAVE"))
 
-    def delete_room(self, room):
-        pass
+    def delete_room(self, game, room):
+        self.room_frame.place_forget()
+        self.room_frame = None
+        self.send((game, "DELETE", room["id"]))
 
     def join_room(self, game, room):
         if game == "CHESS":
@@ -336,7 +336,7 @@ class arcade(tk.Toplevel):
                 font=("times", 10),
                 highlightthickness=0,
                 border=0,
-                command=lambda: self.delete_room(room),
+                command=lambda: self.delete_room(game, room),
             ).place(relx=0.01, rely=0.01, anchor="nw")
 
             self.bind("<Escape>", lambda a: self.delete_room(room))
