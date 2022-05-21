@@ -1,140 +1,63 @@
-import json
 import tkinter as tk
 import tkinter.ttk as ttk
-from time import sleep
+import time, threading, json
 from tkinter import messagebox as msgb
-
 from PIL import Image, ImageOps, ImageTk
-
 from client_framework import Client
 
 # TODO Confirmation Popups, Delete Room, Life
-class arcade(tk.Toplevel):
+
+
+class Rooms(dict):
+    def __init__(self):
+        super().__init__({"CHESS": {}, "MNPLY": {}})
+
+    def initialize(self, game, rooms):
+        for room in rooms:
+            self.add_room(game, room)
+
+    def add_room(self, game, room):
+        room["members"] = {i["puid"]: i for i in room["members"]}
+        self[game][room["id"]] = room
+
+    def remove_room(self, game, id):
+        del self[game][id]
+
+    def get_rooms(self) -> dict:
+        d = {}
+        d.update(self["CHESS"])
+        d.update(self["MNPLY"])
+        return d
+
+    def add_player(self, rid, player):
+        key = "CHESS" if rid in self["CHESS"] else "MNPLY"
+        self[key][rid]["members"][player["puid"]] = player
+
+    def remove_player(self, rid, player):
+        key = "CHESS" if rid in self["CHESS"] else "MNPLY"
+        del self[key][rid]["members"][player]
+
+
+class Arcade(tk.Toplevel):
     def __init__(self):
         super().__init__()
         self.initialize()
-        self.create_window()
-        self.notebook()
-        self.chess_tab()
-        self.monopoly_tab()
-
-        self.room_frame = None
-        self.lobby_frame = None
+        self.lobby_frames = {"CHESS": None, "MNPLY": None}
+        self.lobby_trees = {"CHESS": None, "MNPLY": None}
+        self.room_frames = {"CHESS": None, "MNPLY": None}
+        self.room_members = {"CHESS": None, "MNPLY": None}
+        self.current_room = None
+        self.sent_time = time.perf_counter()
 
     def initialize(self):
-        self.rooms = {
-            "CHESS": [
-                {
-                    "id": "123",
-                    "host": "456",
-                    "settings": {},
-                    "members": [{"name": "die1", "puid": "456"}],
-                },
-            ],
-            "MNPLY": [
-                {
-                    "id": "345",
-                    "host": "876",
-                    "settings": {},
-                    "members": [{"name": "die1", "puid": "456"}],
-                }
-            ],
-        }
+        self.rooms = Rooms()
 
         self.current_room = None
 
         self.cobj = Client(("localhost", 6778), self.event_handler)
         self.cobj.send(("Pramit"))
 
-    def pprint(self, d):
-        print(json.dumps(d, indent=4))
-
-    def event_handler(self, msg):
-        dest = msg[0]
-        print("Recv:", msg)
-        room_stuff = None
-        if dest == "NAME":
-            self.me = msg[1]
-        elif dest in ["CHESS", "MNPLY"]:
-            if msg[1] == "INIT":
-                l = self.rooms[dest]
-                for i in msg[2]:
-                    l.append(i)
-                self.rooms.update({dest: l})
-            elif msg[1] == "ROOM":
-                room_stuff = msg[3]
-                l = self.rooms[dest]
-                if msg[2] == "ADD":
-                    l.append(msg[3])
-                    self.rooms.update({dest: l})
-                    if msg[3]["host"] == self.me:
-                        self.join_selected_room(dest, msg[3])
-                elif msg[2] == "REMOVE":
-                    for i in l:
-                        if i["id"] == msg[3]:
-                            l.remove(i)
-                            room_stuff = i
-                            try:
-                                self.room_frame.place_forget()
-                            except:
-                                pass
-                            self.room_frame = None
-                            self.rooms.update({dest: l})
-                            break
-                if self.room_frame:
-                    self.room_frame.place_forget()
-                    self.room_frame = None
-                    self.join_room(dest, room_stuff)
-
-                elif self.lobby_frame:
-                    self.lobby_frame.place_forget()
-                    self.lobby_frame = None
-                    self.join_lobby(dest, True)
-
-        elif dest:
-            game = ""
-            for i, j in self.rooms.items():
-                for k in j:
-                    if k["id"] == dest:
-                        game = i
-            l = self.rooms[game]
-            room_joined = {}
-            if msg[1] == "PLAYER":
-                if msg[2] == "ADD":
-                    for i in l:
-                        if i["id"] == dest:
-                            room_joined = i
-                            l2 = i["members"]
-                            l2.append(msg[3])
-                            i.update({"members": l2})
-                            break
-                elif msg[2] == "REMOVE":
-                    for i in l:
-                        if i["id"] == dest:
-                            room_joined = i
-                            l2 = i["members"]
-                            for j in l2:
-                                if j["puid"] == msg[3]:
-                                    l2.remove(j)
-                                    break
-                            i.update({"members": l2})
-                            break
-
-                self.rooms.update({game: l})
-                if self.room_frame:
-                    self.room_frame.place_forget()
-                    self.room_frame = None
-                    self.join_room(game, room_joined)
-                elif self.lobby_frame:
-                    self.lobby_frame.place_forget()
-                    self.lobby_frame = None
-                    self.join_lobby(game, True)
-
-    def send(self, msg):
-        print("Sent:", msg)
-        self.cobj.send(msg)
-
-    def create_window(self):
+        # GUI Initializing
         self.screen_width = int(0.9 * self.winfo_screenwidth())
         self.screen_height = int(self.screen_width / 1.9)
         x_coord = self.winfo_screenwidth() // 2 - self.screen_width // 2
@@ -146,72 +69,115 @@ class arcade(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", root.destroy)
         self.withdraw()
 
-    def start_arcade(self):
-        self.deiconify()
-        root.withdraw()
-
-    def notebook(self):
+        # region Notebook
         self.main_notebook = ttk.Notebook(
             self, height=self.screen_height, width=self.screen_width
         )
         self.main_notebook.place(relx=0, rely=0, anchor="nw")
 
-    def chess_tab(self):
+        # Chess stuff
         self.chess_frame = tk.Frame(self.main_notebook, background="white")
         self.chess_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
         self.main_notebook.add(self.chess_frame, text="Chess")
         self.join_create("CHESS")
 
-    def monopoly_tab(self):
+        # Monopoly stuff
         self.monopoly_frame = tk.Frame(self.main_notebook, background="white")
         self.monopoly_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
         self.main_notebook.add(self.monopoly_frame, text="Monopoly")
         self.join_create("MNPLY")
+        # endregion
+
+    def pprint(self, d):
+        print(json.dumps(d, indent=4))
+
+    def event_handler(self, msg):
+        dest = msg[0]
+        print("Recv:", msg)
+        room = None
+        if dest == "NAME":
+            self.me = msg[1]
+
+        elif dest in ["CHESS", "MNPLY"]:
+            if msg[1] == "INIT":
+                self.rooms.initialize(dest, msg[2])
+            elif msg[1] == "ROOM":
+                room = msg[3]
+                if msg[2] == "ADD":
+                    self.rooms.add_room(dest, room)
+                elif msg[2] == "REMOVE":
+                    self.rooms.remove_room(dest, msg[3])
+            elif msg[1] == "PLAYER":
+                if msg[2] == "ADD":
+                    self.rooms.add_player(msg[4], msg[3])
+                elif msg[2] == "REMOVE":
+                    self.rooms.remove_player(msg[4], msg[3])
+            self.update_lobby(dest)
+
+        elif dest == "ROOM":
+            self.rooms.add_room(msg[1], msg[2])
+            self.join_room(msg[1], msg[2]["id"])
+
+        elif dest == self.current_room:
+            game = "CHESS" if dest in self.rooms["CHESS"] else "MNPLY"
+            if msg[1] == "PLAYER":
+                if msg[2] == "ADD":
+                    self.rooms.add_player(dest, msg[3])
+                elif msg[2] == "REMOVE":
+                    self.rooms.remove_player(dest, msg[3])
+            self.update_room(game, self.rooms[game][dest])
+
+    def send(self, msg, sleep=0):
+        if sleep:
+            time.sleep(sleep)
+        new_time = time.perf_counter()
+        if new_time - self.sent_time > 0.1:
+            print("Sent:", msg)
+            self.cobj.send(msg)
+            self.sent_time = new_time
+        else:
+            t = threading.Thread(
+                target=self.send, kwargs={"sleep": self.sent_time + 0.1 - new_time}
+            )
+
+    def start_arcade(self):
+        self.deiconify()
+        root.withdraw()
 
     def join_create(self, game):
         button_style = ttk.Style()
         button_style.configure("my.TButton", font=("times", 20))
-        if game == "CHESS":
-            parent = self.chess_frame
-        elif game == "MNPLY":
-            parent = self.monopoly_frame
+        parent = self.chess_frame if game == "CHESS" else self.monopoly_frame
 
-        self.join_button = ttk.Button(
+        join_button = ttk.Button(
             parent,
             text="Join A Room",
             style="my.TButton",
             command=lambda: self.join_lobby(game),
         )
-        self.join_button.place(relx=0.5, rely=0.4, anchor="center")
+        join_button.place(relx=0.5, rely=0.4, anchor="center")
 
-        self.create_button = ttk.Button(
+        create_button = ttk.Button(
             parent,
             text="Create A Room",
             style="my.TButton",
             command=lambda: self.create_room(game),
         )
-        self.create_button.place(relx=0.5, rely=0.6, anchor="center")
+        create_button.place(relx=0.5, rely=0.6, anchor="center")
 
-    def join_lobby(self, game, updating=False):
-        if not updating:
-            self.send(("0", "JOIN", game.upper()))
+    def join_lobby(self, game):
 
-        if game == "CHESS":
-            parent = self.chess_frame
-            max_players = 2
-        elif game == "MNPLY":
-            parent = self.monopoly_frame
-            max_players = 4
-
-        self.lobby_frame = tk.Frame(
+        parent = self.chess_frame if game == "CHESS" else self.monopoly_frame
+        self.lobby_frames[game] = tk.Frame(
             parent,
             width=self.screen_width / 3,
             height=self.screen_height / 1.1,
         )
-        self.lobby_frame.place(relx=0.5, rely=0.5, anchor="center")
+        self.lobby_frames[game].place(relx=0.5, rely=0.5, anchor="center")
+        frame = self.lobby_frames[game]
 
         tk.Button(
-            self.lobby_frame,
+            frame,
             text="← BACK",
             font=("times", 10),
             highlightthickness=0,
@@ -221,192 +187,156 @@ class arcade(tk.Toplevel):
 
         self.bind("<Escape>", lambda a: self.leave_lobby(game))
 
-        scroll = ttk.Scrollbar(self.lobby_frame, orient="vertical")
+        scroll = ttk.Scrollbar(frame, orient="vertical")
         scroll.place(relx=1, rely=0, anchor="ne", relheight=1)
 
-        self.lobby_tree = ttk.Treeview(
-            self.lobby_frame,
+        self.lobby_trees[game] = ttk.Treeview(
+            frame,
             columns=("Room", "Host", "Players"),
             yscrollcommand=scroll.set,
         )
+        tree = self.lobby_trees[game]
+        tree.place(relx=0, rely=0.05, anchor="nw", relheight=0.9, relwidth=0.96)
 
-        scroll.configure(command=self.lobby_tree.yview)
-
-        self.lobby_tree.column(
+        tk.Button(
+            frame,
+            text="Join",
+            font=("times", 13),
+            command=lambda: self.join_selected_room(game, tree.selection()),
+        ).place(relx=0.96, rely=1, anchor="se")
+        scroll.configure(command=tree.yview)
+        tree.column(
             "#0",
             width=10,
         )
-        self.lobby_tree.column(
+        tree.column(
             "Room",
             width=self.screen_width // 10,
             anchor="center",
             minwidth=self.screen_width // 10,
         )
-        self.lobby_tree.column(
+        tree.column(
             "Host",
             width=self.screen_width // 10,
             anchor="center",
             minwidth=self.screen_width // 10,
         )
-        self.lobby_tree.column(
+        tree.column(
             "Players",
             width=self.screen_width // 10,
             anchor="center",
             minwidth=self.screen_width // 10,
         )
 
-        self.lobby_tree.heading("#0", text="")
-        self.lobby_tree.heading("Room", text="Room No.", anchor="center")
-        self.lobby_tree.heading("Host", text="Host", anchor="center")
-        self.lobby_tree.heading("Players", text="No. of Players", anchor="center")
+        tree.heading("#0", text="")
+        tree.heading("Room", text="Room No.", anchor="center")
+        tree.heading("Host", text="Host", anchor="center")
+        tree.heading("Players", text="No. of Players", anchor="center")
 
-        hostname = ""
-        for i in self.rooms[game]:
-            for j in i["members"]:
-                if j["puid"] == i["host"]:
-                    hostname = j["name"]
-                    break
+        self.send(("0", "JOIN", game.upper()))
 
-            if len(i["members"]) < max_players:
-                try:
-                    self.lobby_tree.insert(
-                        parent="",
-                        index="end",
-                        iid=i,
-                        text="",
-                        values=(i["id"], hostname, len(i["members"])),
-                    )
-                except:
-                    pass
+    def update_lobby(self, game):
+        for item in self.lobby_trees[game].get_children():
+            self.lobby_trees[game].delete(item)
 
-        self.lobby_tree.place(
-            relx=0, rely=0.05, anchor="nw", relheight=0.9, relwidth=0.96
-        )
-
-        tk.Button(
-            self.lobby_frame,
-            text="Join",
-            font=("times", 13),
-            command=lambda: self.join_selected_room(
-                game, eval(self.lobby_tree.selection()[0])
-            ),
-        ).place(relx=0.96, rely=1, anchor="se")
+        for id, room in self.rooms[game].items():
+            hostname = room["members"][room["host"]]["name"]
+            self.lobby_trees[game].insert(
+                parent="",
+                index="end",
+                iid=id,
+                text="",
+                values=(id, hostname, len(room["members"])),
+            )
 
     def leave_lobby(self, game):
-        self.lobby_frame.place_forget()
-        self.lobby_frame = None
+        self.lobby_frames[game].destroy()
         self.send(("0", "LEAVE", game.upper()))
 
     def join_selected_room(self, game, room):
-        self.send((game, "JOIN", room["id"]))
-        self.current_room = room["id"]
-        self.join_room(game, room)
+        if len(room) != 1:
+            return
+        self.leave_lobby(game)
+        self.send((game, "JOIN", room[0]))
 
     def create_room(self, game):
-
         settings = {}
         # TODO: Select Settings
         self.send((game, "CREATE", settings))
 
-    def leave_room(self, room):
-        self.room_frame.place_forget()
-        self.room_frame = None
-        self.send((room["id"], "LEAVE"))
-
-    def delete_room(self, game, room):
-        self.room_frame.place_forget()
-        self.room_frame = None
-        self.send((game, "DELETE", room["id"]))
-        try:
-            self.lobby_frame.place_forget()
-            self.lobby_frame = None
-        except:
-            pass
-        self.join_lobby(game, True)
+    def leave_room(self, game, room, delete=False):
+        self.current_room = None
+        self.room_frames[game].destroy()
+        self.send((room, "LEAVE"))
+        self.join_lobby(game)
 
     def join_room(self, game, room):
-        if game == "CHESS":
-            parent = self.chess_frame
-        elif game == "MNPLY":
-            parent = self.monopoly_frame
-
-        hostname = ""
-        for i in room["members"]:
-            if i["puid"] == room["host"]:
-                hostname = i["name"]
-                break
-
-        if self.me == room["host"]:
-            hostname = "You"
-
-        self.room_frame = tk.Frame(
-            parent,
-            width=self.screen_width / 3,
-            height=self.screen_height / 1.1,
+        room = self.rooms[game][room]
+        self.current_room = room["id"]
+        parent = self.chess_frame if game == "CHESS" else self.monopoly_frame
+        hostname = (
+            "You" if self.me == room["host"] else room["members"][room["host"]]["name"]
         )
-        self.room_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        if hostname == "You":
-            tk.Button(
-                self.room_frame,
-                text="← BACK",
-                font=("times", 10),
-                highlightthickness=0,
-                border=0,
-                command=lambda: self.delete_room(game, room),
-            ).place(relx=0.01, rely=0.01, anchor="nw")
+        self.room_frames[game] = tk.Frame(
+            parent,
+            width=self.screen_width // 3,
+            height=self.screen_height // 1.1,
+        )
+        frame = self.room_frames[game]
+        frame.place(relx=0.5, rely=0.5, anchor="center")
 
-            self.bind("<Escape>", lambda a: self.delete_room(room))
-        else:
-            tk.Button(
-                self.room_frame,
-                text="← BACK",
-                font=("times", 10),
-                highlightthickness=0,
-                border=0,
-                command=lambda: self.leave_room(room),
-            ).place(relx=0.01, rely=0.01, anchor="nw")
+        # Back Button
+        tk.Button(
+            frame,
+            text="← BACK",
+            font=("times", 10),
+            highlightthickness=0,
+            border=0,
+            command=lambda: self.leave_room(game, room["id"], delete=hostname == "You"),
+        ).place(relx=0.01, rely=0.01, anchor="nw")
 
-            self.bind("<Escape>", lambda a: self.leave_room(room))
+        self.bind(
+            "<Escape>",
+            lambda: self.leave_room(game, room["id"], delete=hostname == "You"),
+        )
 
+        # Room ID
         tk.Label(
-            self.room_frame,
+            frame,
             text=f"Room ID: {room['id']}",
             font=("times", 13),
             highlightthickness=0,
             border=0,
         ).place(relx=0.5, rely=0.05, anchor="center")
 
+        # Host
         tk.Label(
-            self.room_frame,
+            frame,
             text=f"Host: {hostname}",
             font=("times", 13),
             highlightthickness=0,
             border=0,
         ).place(relx=0.5, rely=0.1, anchor="center")
 
+        self.room_members[game] = tk.Frame(
+            frame,
+            width=self.screen_width // 3,
+            height=self.screen_height // (2.5 * 1.1),
+        )
+        members = self.room_members[game]
+        members.place(relx=0.5, rely=0.4, anchor="center")
+
         tk.Label(
-            self.room_frame,
+            members,
             text=f"Members",
             font=("times 13 underline"),
             highlightthickness=0,
             border=0,
         ).place(relx=0.5, rely=0.2, anchor="center")
 
-        k = 1
-        for i in room["members"]:
-            tk.Label(
-                self.room_frame,
-                text=i["name"],
-                font=("times", 13),
-                highlightthickness=0,
-                border=0,
-            ).place(relx=0.5, rely=0.2 + (k / 25), anchor="center")
-
-            k += 1
-
         tk.Label(
-            self.room_frame,
+            frame,
             text=f"Settings",
             font=("times 13 underline"),
             highlightthickness=0,
@@ -416,21 +346,37 @@ class arcade(tk.Toplevel):
         # print settings here
         if hostname == "You":
             tk.Button(
-                self.room_frame,
+                frame,
                 text="START",
                 font=("times", 13),
                 command=lambda: self.start_room(game, room),
             ).place(relx=0.5, rely=0.9, anchor="center")
         else:
             tk.Label(
-                self.room_frame,
+                frame,
                 text="Waiting for Host to start the game",
                 font=("times", 13),
             ).place(relx=0.5, rely=0.9, anchor="center")
 
+        self.update_room(game, room)
+
+    def update_room(self, game, room):
+        for child in self.room_members[game].winfo_children():
+            child.destroy()
+        k = 1
+        for i in room["members"].values():
+            tk.Label(
+                self.room_members[game],
+                text=i["name"],
+                font=("times", 13),
+                highlightthickness=0,
+                border=0,
+            ).place(relx=0.5, rely=(k / 12), anchor="center")
+            k += 1
+
 
 if __name__ == "__main__":
     root = tk.Tk()
-    arc = arcade()
+    arc = Arcade()
     arc.start_arcade()
     root.mainloop()

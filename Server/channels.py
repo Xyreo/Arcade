@@ -3,7 +3,6 @@ from authenticator import Auth
 import pickle, random, threading, secrets
 import socket, ssl
 from ssl import SSLContext
-from multipledispatch import dispatch
 
 # endregion
 
@@ -52,7 +51,7 @@ class Lobby(Channels):
         self.broadcast_to_members(
             ("ROOM", "ADD", room.details()), exclude=host.uuid
         )  # TODO Broadcast Protocol
-        host.send_instruction((self.uuid, "ROOM", "ADD", room.details()))
+        host.send_instruction(("ROOM", self.game, room.details()))
 
     def delete_room(self, id):
         rooms[id].delete()
@@ -64,15 +63,11 @@ class Lobby(Channels):
         rooms[id].join(player)
 
     def join(self, player):
-        self.members.append(player)
-        player.channels.append(self.uuid)
-        player.send_instruction((self.uuid, "INIT", self.details()))
+        super().join(player)
+        player.send_instruction((self.game, "INIT", self.details()))
 
     def broadcast_to_members(self, msg, exclude=None):
         super().broadcast_to_members((self.uuid,) + msg, exclude)
-
-    def broadcast(self, msg, exclude=None):
-        super().broadcast_to_members(msg, exclude)
 
     def details(self):
         lobby = [room.details() for room in self.rooms if room.status == "OPEN"]
@@ -87,6 +82,7 @@ class Room(Channels):
         self.settings = settings
         self.status = status
         self.game = game
+        self.members.append(host)
 
     def delete(self):
         pass
@@ -94,29 +90,23 @@ class Room(Channels):
     def start(self, player):
         if self.host.uuid != player.uuid:
             return
-
         self.status = "INGAME"
-        if self.settings["game"] == "CHESS":
+        if self.game == "CHESS":
             self.chess_start()
-        elif self.settings["game"] == "MNPLY":
+        elif self.game == "MNPLY":
             self.mnply_start()
 
     def join(self, player):
-        player.channels.append(self.uuid)
-        self.members.append(player)
-        lobbies[self.game].broadcast((self.uuid, "PLAYER", "ADD", player.details()))
-        if self.host not in lobbies[self.game].members:
-            self.host.send_instruction((self.uuid, "PLAYER", "ADD", player.details()))
-        # player.send_instruction((self.game, "ROOM", self.uuid, "INIT", self.details()))
+        super().join(player)
+        self.broadcast(("PLAYER", "ADD", player.details()), self.uuid)
+        player.send_instruction(("ROOM", self.game, self.details()))
 
     def leave(self, player):
         super().leave(player)
         if self.status == "OPEN" or self.status == "PRIVATE":
-            lobbies[self.game].broadcast((self.uuid, "PLAYER", "REMOVE", player.uuid))
-            if self.host not in lobbies[self.game].members:
-                self.host.send_instruction((self.uuid, "PLAYER", "REMOVE", player.uuid))
+            self.broadcast(("PLAYER", "REMOVE", player.uuid))
         elif self.status == "INGAME":
-            self.broadcast_to_members(("PLAYER", "LEAVE", player.uuid))
+            self.broadcast(("PLAYER", "LEAVE", player.uuid))
 
     def chess_start(self):
         pass
@@ -124,8 +114,12 @@ class Room(Channels):
     def mnply_start(self):
         pass
 
+    def broadcast(self, msg, exclude=None):
+        self.broadcast_to_members(msg, exclude)
+        lobbies[self.game].broadcast_to_members(msg + (self.uuid,))
+
     def broadcast_to_members(self, msg, exclude=None):
-        super().broadcast_to_members((self.game, self.uuid) + msg, exclude)
+        super().broadcast_to_members((self.uuid,) + msg, exclude)
 
     def details(self):
         room = {
@@ -171,24 +165,27 @@ class Client(threading.Thread):
                 sent = self.conn.recv(1048)
                 m = pickle.loads(sent)
                 print("Received", m)
-                if self.auth:
-                    self.instruction_handler(m[0], m[1:])
-                else:
-                    self.instruction_handler(m)
+                t = threading.Thread(
+                    target=self.authneticate,
+                    args=(m,),
+                    kwargs={"auth": self.auth},
+                )
+                t.start()
         except (EOFError, ConnectionResetError):
             self.close()
             self.conn.close()
             print("Connection Closed")
             return
 
-    @dispatch(str, tuple)
-    def instruction_handler(self, session_id, instruction):
-        if Driver.auth(session_id):
-            self.instruction_handler(instruction)
+    def authneticate(self, message, auth=False):
+        if auth:
+            if Driver.auth(message[0]):
+                self.instruction_handler(message[1:])
+            else:
+                pass  # TODO unverified packet things
         else:
-            pass  # TODO unverified packet things
+            self.instruction_handler(message)
 
-    @dispatch(tuple)
     def instruction_handler(self, instruction):
         channel = instruction[0]
         print("Recv:", instruction)
