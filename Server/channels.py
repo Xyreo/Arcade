@@ -233,8 +233,11 @@ class Client(threading.Thread):
             rooms[room].broadcast_to_members(("MSG", msg[1]), self.uuid)
 
     def send_instruction(self, instruction):
-        self.conn.send(pickle.dumps(instruction))
-        print(instruction, "SENT.")
+        try:
+            self.conn.send(pickle.dumps(instruction))
+            print(instruction, "SENT.")
+        except (ConnectionResetError, EOFError):
+            print("Couldnt send the message-", instruction)
 
     def details(self):
         d = {"name": self.name, "puid": self.uuid}
