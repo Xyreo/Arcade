@@ -358,16 +358,7 @@ class Arcade(tk.Toplevel):
             width=self.screen_width // 3,
             height=self.screen_height // (2.5 * 1.1),
         )
-        members = self.room_members[game]
-        members.place(relx=0.5, rely=0.4, anchor="center")
-
-        tk.Label(
-            members,
-            text=f"Members",
-            font=("times 13 underline"),
-            highlightthickness=0,
-            border=0,
-        ).place(relx=0.5, rely=0.2, anchor="center")
+        self.room_members[game].place(relx=0.5, rely=0.4, anchor="center")
 
         tk.Label(
             frame,
@@ -397,15 +388,23 @@ class Arcade(tk.Toplevel):
     def update_room(self, game, room):
         for child in self.room_members[game].winfo_children():
             child.destroy()
-        k = 1
-        for i in room["members"].values():
+        tk.Label(
+            self.room_members[game],
+            text=f"Members",
+            font=("times 13 underline"),
+            highlightthickness=0,
+            border=0,
+        ).place(relx=0.5, rely=0.1, anchor="center")
+        k = 2
+        d = sorted(list(room["members"].values()), key=lambda x: x["name"])
+        for i in d:
             tk.Label(
                 self.room_members[game],
                 text=i["name"],
                 font=("times", 13),
                 highlightthickness=0,
                 border=0,
-            ).place(relx=0.5, rely=(k / 12), anchor="center")
+            ).place(relx=0.5, rely=(k / 10), anchor="center")
             k += 1
 
     def leave_room(self, game, room, delete=False):
@@ -428,15 +427,18 @@ class Login(tk.Frame):
         self.uname = tk.StringVar()
         self.pwd = tk.StringVar()
 
-        tk.Label(self, text="Username * ").pack()
+        tk.Label(self, text="Username: ").pack()
         self.uentry = tk.Entry(self, textvariable=self.uname)
         self.uentry.pack()
+        self.uentry.focus_set()
         tk.Label(self, text="").pack()
         tk.Label(self, text="Password * ").pack()
         self.pwdentry = tk.Entry(self, textvariable=self.pwd, show="*")
         self.pwdentry.pack()
+        self.uentry.bind("<Return>", lambda a: self.pwdentry.focus_set())
         tk.Label(self, text="").pack()
         tk.Button(self, text="Login", width=10, height=1, command=self.login).pack()
+        self.pwdentry.bind("<Return>", lambda a: self.login())
 
         self.notif = None
         self.notifc = 0
@@ -461,8 +463,11 @@ class Login(tk.Frame):
         try:
             self.destroyprompt()
             self.notifc += 1
+            color = "red"
+            if msg == "Success":
+                color = "green"
             self.notif = (
-                tk.Label(self, text=msg, fg="green", font=("calibri", 11)),
+                tk.Label(self, text=msg, fg=color, font=("calibri", 11)),
                 self.notifc,
             )
             self.notif[0].pack()

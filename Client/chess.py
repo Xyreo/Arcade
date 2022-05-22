@@ -25,12 +25,15 @@ class Chess(tk.Toplevel):
 
     def __init__(self, side, update, debug=False):
         super().__init__()
+        print("Why life")
         self.side = side
         self.board: dict[int, Piece] = Board()
         self.board_ids: dict = {}
         self.imgs: dict = {}  # TKINTER SUCKS
         self.possible_moves: list = []
+        print("whylifept2")
         self.initialize_canvas()
+        print("whylifept3")
         self.initialize_board()
         self.selected: int = None
         self.hover: int = None
