@@ -5,6 +5,7 @@ from tkinter import messagebox as msgb
 from PIL import Image, ImageOps, ImageTk
 from client_framework import Client
 from chess import Chess
+from http_wrapper import Http
 
 # TODO Confirmation Popups, Delete Room, Life
 
@@ -43,7 +44,6 @@ class Rooms(dict):
 class Arcade(tk.Toplevel):
     def __init__(self):
         super().__init__()
-        self.initialize()
         self.lobby_frames = {"CHESS": None, "MNPLY": None}
         self.lobby_trees = {"CHESS": None, "MNPLY": None}
         self.room_frames = {"CHESS": None, "MNPLY": None}
@@ -51,13 +51,16 @@ class Arcade(tk.Toplevel):
         self.current_room = None
         self.sent_time = time.perf_counter()
 
-    def initialize(self):
+    def initialize(self, name, token):
+        self.login.destroy()
+        self.name = name
+        self.token = token
         self.rooms = Rooms()
 
         self.current_room = None
 
         self.cobj = Client(("localhost", 6778), self.event_handler)
-        self.cobj.send(("Pramit"))
+        self.cobj.send((self.name))
 
         # GUI Initializing
         self.screen_width = int(0.9 * self.winfo_screenwidth())
@@ -89,6 +92,7 @@ class Arcade(tk.Toplevel):
         self.main_notebook.add(self.monopoly_frame, text="Monopoly")
         self.join_create("MNPLY")
         # endregion
+        self.deiconify()
 
     def pprint(self, d):
         print(json.dumps(d, indent=4))
@@ -166,7 +170,9 @@ class Arcade(tk.Toplevel):
         self.cobj.send(msg)
 
     def start_arcade(self):
-        self.deiconify()
+        self.http = Http("http://167.71.231.52:5000")
+        self.login = Login(self, self.http, self.initialize)
+        self.login.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         root.withdraw()
 
     def join_create(self, game):
@@ -412,6 +418,62 @@ class Arcade(tk.Toplevel):
 
     def start_room(self, game, room):
         self.send((room, "START"))
+
+
+class Login(tk.Frame):
+    def __init__(self, master, http, complete):
+        super().__init__(master)
+        tk.Label(self, text="Please enter details below to login").pack()
+        tk.Label(self, text="").pack()
+        self.uname = tk.StringVar()
+        self.pwd = tk.StringVar()
+
+        tk.Label(self, text="Username * ").pack()
+        self.uentry = tk.Entry(self, textvariable=self.uname)
+        self.uentry.pack()
+        tk.Label(self, text="").pack()
+        tk.Label(self, text="Password * ").pack()
+        self.pwdentry = tk.Entry(self, textvariable=self.pwd, show="*")
+        self.pwdentry.pack()
+        tk.Label(self, text="").pack()
+        tk.Button(self, text="Login", width=10, height=1, command=self.login).pack()
+
+        self.notif = None
+        self.notifc = 0
+        self.http = http
+        self.complete = complete
+
+    def login(self):
+        uname = self.uentry.get().strip()
+        pwd = self.pwd.get().strip()
+        self.pwdentry.delete(0, tk.END)
+        msg = ""
+        if not (uname and pwd):
+            msg = "Enter Required Fields"
+        elif self.http.login(uname, pwd):
+            msg = "Success"
+            self.complete(uname, self.http.TOKEN)
+        else:
+            msg = "Failure"
+        self.prompt(msg)
+
+    def prompt(self, msg):
+        try:
+            self.destroyprompt()
+            self.notifc += 1
+            self.notif = (
+                tk.Label(self, text=msg, fg="green", font=("calibri", 11)),
+                self.notifc,
+            )
+            self.notif[0].pack()
+            self.after(3000, self.destroyprompt)
+        except:
+            pass
+
+    def destroyprompt(self):
+        if self.notif and self.notif[1] == self.notifc:
+            self.notif[0].destroy()
+            self.notif = None
 
 
 if __name__ == "__main__":
