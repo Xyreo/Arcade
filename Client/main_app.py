@@ -13,6 +13,7 @@ class Rooms(dict):
         super().__init__({"CHESS": {}, "MNPLY": {}})
 
     def initialize(self, game, rooms):
+        self[game] = {}
         for room in rooms:
             self.add_room(game, room)
 
@@ -125,7 +126,13 @@ class Arcade(tk.Toplevel):
                     self.rooms.add_player(dest, msg[3])
                 elif msg[2] == "REMOVE":
                     self.rooms.remove_player(dest, msg[3])
-            self.update_room(game, self.rooms[game][dest])
+                self.update_room(game, self.rooms[game][dest])
+
+            elif msg[1] == "ROOM":
+                if msg[2] == "REMOVE":
+                    self.rooms.remove_room(game, dest)
+                    self.room_frames[game].destroy()
+                    self.room_frames[game] = None
 
     def send(self, msg, sleep=0):
         time_gap = 0.1
@@ -140,12 +147,12 @@ class Arcade(tk.Toplevel):
             self.send_time(msg, None)
 
     def send_time(self, msg, t):
-        print(msg, t)
         if t != None:
             self.sent_time = self.sent_time + 0.1
             time.sleep(t)
         else:
             self.sent_time = time.perf_counter() + 0.1
+        print("Sent:", msg)
         self.cobj.send(msg)
 
     def start_arcade(self):
@@ -248,6 +255,8 @@ class Arcade(tk.Toplevel):
             self.lobby_trees[game].delete(item)
 
         for id, room in self.rooms[game].items():
+            if len(room["members"]) >= room["settings"]["MAX_PLAYERS"]:
+                continue
             hostname = room["members"][room["host"]]["name"]
             self.lobby_trees[game].insert(
                 parent="",
@@ -261,6 +270,7 @@ class Arcade(tk.Toplevel):
         if not frame_preserve:
             self.lobby_frames[game].destroy()
             self.lobby_frames[game] = None
+        self.unbind("<Escape>")
         self.send(("0", "LEAVE", game.upper()))
 
     def join_selected_room(self, game, room):
@@ -270,7 +280,7 @@ class Arcade(tk.Toplevel):
         self.send((game, "JOIN", room[0]))
 
     def create_room(self, game):
-        settings = {}
+        settings = {"INITAL_STATUS": "OPEN", "MAX_PLAYERS": 2 if game == "CHESS" else 4}
         # TODO: Select Settings
         self.send((game, "CREATE", settings))
 
@@ -279,12 +289,12 @@ class Arcade(tk.Toplevel):
         self.room_frames[game].destroy()
         self.room_frames[game] = None
         self.send((room, "LEAVE"))
-        self.join_lobby(game)
+        if not delete:
+            self.join_lobby(game)
 
     def join_room(self, game, room):
         if self.lobby_frames[game]:
             self.lobby_frames[game].destroy()
-            print(self.lobby_frames[game])
             self.lobby_frames[game] = None
 
         room = self.rooms[game][room]

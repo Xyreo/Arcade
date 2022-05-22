@@ -35,7 +35,7 @@ class Channels:
 
     def leave(self, player):
         player.channels.remove(self.uuid)
-        self.members.remove(players[player.uuid])
+        self.members.remove(player)
 
 
 class Lobby(Channels):
@@ -51,13 +51,6 @@ class Lobby(Channels):
         self.broadcast_to_members(
             ("ROOM", "ADD", room.details()), exclude=host.uuid
         )  # TODO Broadcast Protocol
-        host.send_instruction(("ROOM", self.game, room.details()))
-
-    def delete_room(self, id):
-        rooms[id].delete()
-        self.rooms.remove(rooms[id])
-        del rooms[id]
-        self.broadcast_to_members(("ROOM", "REMOVE", id))
 
     def join_room(self, player, id):
         rooms[id].join(player)
@@ -75,17 +68,20 @@ class Lobby(Channels):
 
 
 class Room(Channels):
-    def __init__(self, host, settings, game, status="OPEN"):
+    def __init__(self, host, settings, game):
         super().__init__(assign_uuid(rooms))
         rooms[self.uuid] = self
         self.host: Client = host
         self.settings = settings
-        self.status = status
+        self.status = self.settings["INITAL_STATUS"]
         self.game = game
-        self.members.append(host)
+        super().join(host)
+        host.send_instruction(("ROOM", self.game, self.details()))
 
     def delete(self):
-        pass
+        self.broadcast(("ROOM", "REMOVE"))
+        lobbies[self.game].rooms.remove(self)
+        del rooms[self.uuid]
 
     def start(self, player):
         if self.host.uuid != player.uuid:
@@ -102,11 +98,16 @@ class Room(Channels):
         player.send_instruction(("ROOM", self.game, self.details()))
 
     def leave(self, player):
-        super().leave(player)
-        if self.status == "OPEN" or self.status == "PRIVATE":
-            self.broadcast(("PLAYER", "REMOVE", player.uuid))
+        if self.status in ["OPEN", "PRIVATE"]:
+            if player.uuid == self.host.uuid:
+                self.delete()
+            else:
+                self.broadcast(("PLAYER", "REMOVE", player.uuid))
+
         elif self.status == "INGAME":
             self.broadcast(("PLAYER", "LEAVE", player.uuid))
+
+        super().leave(player)
 
     def chess_start(self):
         pass
@@ -156,7 +157,7 @@ class Client(threading.Thread):
         players[self.uuid] = self
 
         self.connected = True
-        self.channels = []
+        self.channels: list = []
         self.send_instruction(("NAME", self.uuid))
 
     def run(self):
@@ -241,7 +242,6 @@ class Client(threading.Thread):
                 lobbies[i].leave(self)
             elif i in rooms:
                 rooms[i].leave(self)
-
         del players[self.uuid]
 
 
