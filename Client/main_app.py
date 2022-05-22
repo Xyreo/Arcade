@@ -128,17 +128,25 @@ class Arcade(tk.Toplevel):
             self.update_room(game, self.rooms[game][dest])
 
     def send(self, msg, sleep=0):
-        if sleep:
-            time.sleep(sleep)
+        time_gap = 0.1
         new_time = time.perf_counter()
-        if new_time - self.sent_time > 0.1:
-            print("Sent:", msg)
-            self.cobj.send(msg)
-            self.sent_time = new_time
-        else:
+        if (self.sent_time + time_gap) > new_time:
             t = threading.Thread(
-                target=self.send, kwargs={"sleep": self.sent_time + 0.1 - new_time}
+                target=self.send_time,
+                args=(msg, (self.sent_time + time_gap - new_time)),
             )
+            t.start()
+        else:
+            self.send_time(msg, None)
+
+    def send_time(self, msg, t):
+        print(msg, t)
+        if t != None:
+            self.sent_time = self.sent_time + 0.1
+            time.sleep(t)
+        else:
+            self.sent_time = time.perf_counter() + 0.1
+        self.cobj.send(msg)
 
     def start_arcade(self):
         self.deiconify()
@@ -249,14 +257,16 @@ class Arcade(tk.Toplevel):
                 values=(id, hostname, len(room["members"])),
             )
 
-    def leave_lobby(self, game):
-        self.lobby_frames[game].destroy()
+    def leave_lobby(self, game, frame_preserve=False):
+        if not frame_preserve:
+            self.lobby_frames[game].destroy()
+            self.lobby_frames[game] = None
         self.send(("0", "LEAVE", game.upper()))
 
     def join_selected_room(self, game, room):
         if len(room) != 1:
             return
-        self.leave_lobby(game)
+        self.leave_lobby(game, frame_preserve=True)
         self.send((game, "JOIN", room[0]))
 
     def create_room(self, game):
@@ -267,10 +277,16 @@ class Arcade(tk.Toplevel):
     def leave_room(self, game, room, delete=False):
         self.current_room = None
         self.room_frames[game].destroy()
+        self.room_frames[game] = None
         self.send((room, "LEAVE"))
         self.join_lobby(game)
 
     def join_room(self, game, room):
+        if self.lobby_frames[game]:
+            self.lobby_frames[game].destroy()
+            print(self.lobby_frames[game])
+            self.lobby_frames[game] = None
+
         room = self.rooms[game][room]
         self.current_room = room["id"]
         parent = self.chess_frame if game == "CHESS" else self.monopoly_frame
@@ -298,7 +314,7 @@ class Arcade(tk.Toplevel):
 
         self.bind(
             "<Escape>",
-            lambda: self.leave_room(game, room["id"], delete=hostname == "You"),
+            lambda a: self.leave_room(game, room["id"], delete=hostname == "You"),
         )
 
         # Room ID
