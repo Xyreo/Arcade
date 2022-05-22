@@ -4,6 +4,7 @@ import time, threading, json
 from tkinter import messagebox as msgb
 from PIL import Image, ImageOps, ImageTk
 from client_framework import Client
+from chess import Chess
 
 # TODO Confirmation Popups, Delete Room, Life
 
@@ -133,20 +134,29 @@ class Arcade(tk.Toplevel):
                     self.rooms.remove_room(game, dest)
                     self.room_frames[game].destroy()
                     self.room_frames[game] = None
+                elif msg[2] == "START":
+                    self.withdraw()
+                    if game == "CHESS":
+                        self.game = Chess(
+                            msg[3], lambda move: self.send((dest, "MSG", move))
+                        )
+            elif msg[1] == "MSG":
+                if game == "CHESS":
+                    self.game.opp_move(msg[2])
 
-    def send(self, msg, sleep=0):
+    def send(self, msg):
         time_gap = 0.1
         new_time = time.perf_counter()
         if (self.sent_time + time_gap) > new_time:
             t = threading.Thread(
-                target=self.send_time,
+                target=self.queue_send,
                 args=(msg, (self.sent_time + time_gap - new_time)),
             )
             t.start()
         else:
-            self.send_time(msg, None)
+            self.queue_send(msg, None)
 
-    def send_time(self, msg, t):
+    def queue_send(self, msg, t):
         if t != None:
             self.sent_time = self.sent_time + 0.1
             time.sleep(t)
@@ -284,14 +294,6 @@ class Arcade(tk.Toplevel):
         # TODO: Select Settings
         self.send((game, "CREATE", settings))
 
-    def leave_room(self, game, room, delete=False):
-        self.current_room = None
-        self.room_frames[game].destroy()
-        self.room_frames[game] = None
-        self.send((room, "LEAVE"))
-        if not delete:
-            self.join_lobby(game)
-
     def join_room(self, game, room):
         if self.lobby_frames[game]:
             self.lobby_frames[game].destroy()
@@ -375,7 +377,7 @@ class Arcade(tk.Toplevel):
                 frame,
                 text="START",
                 font=("times", 13),
-                command=lambda: self.start_room(game, room),
+                command=lambda: self.start_room(game, room["id"]),
             ).place(relx=0.5, rely=0.9, anchor="center")
         else:
             tk.Label(
@@ -399,6 +401,17 @@ class Arcade(tk.Toplevel):
                 border=0,
             ).place(relx=0.5, rely=(k / 12), anchor="center")
             k += 1
+
+    def leave_room(self, game, room, delete=False):
+        self.current_room = None
+        self.room_frames[game].destroy()
+        self.room_frames[game] = None
+        self.send((room, "LEAVE"))
+        if not delete:
+            self.join_lobby(game)
+
+    def start_room(self, game, room):
+        self.send((room, "START"))
 
 
 if __name__ == "__main__":

@@ -557,7 +557,6 @@ class Chess(tk.Toplevel):
         start, end, pawn = msg
         if pawn:
             self.pawn_promotion = pawn
-
         self.start_move(start, end, multi=True)
 
     @staticmethod

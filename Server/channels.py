@@ -110,7 +110,11 @@ class Room(Channels):
         super().leave(player)
 
     def chess_start(self):
-        pass
+        for i in self.members:
+            if i.uuid == self.host.uuid:
+                i.send_instruction((self.uuid, "ROOM", "START", "WHITE"))
+            else:
+                i.send_instruction((self.uuid, "ROOM", "START", "BLACK"))
 
     def mnply_start(self):
         pass
@@ -226,7 +230,7 @@ class Client(threading.Thread):
         elif action == "LEAVE":
             rooms[room].leave(self)
         elif action == "MSG":
-            rooms[room].broadcast_to_members(msg[1:], self.uuid)
+            rooms[room].broadcast_to_members(("MSG", msg[1]), self.uuid)
 
     def send_instruction(self, instruction):
         self.conn.send(pickle.dumps(instruction))
