@@ -9,6 +9,9 @@ from http_wrapper import Http
 
 # TODO Confirmation Popups, Delete Room, Life
 
+ASSET = "Client"
+HTTP = Http("http://167.71.231.52:5000")
+
 
 class Rooms(dict):
     def __init__(self):
@@ -51,8 +54,24 @@ class Arcade(tk.Toplevel):
         self.current_room = None
         self.sent_time = time.perf_counter()
 
+        # GUI Initializing
+        self.screen_width = int(0.9 * self.winfo_screenwidth())
+        self.screen_height = int(self.screen_width / 1.9)
+        self.x_coord = self.winfo_screenwidth() // 2 - self.screen_width // 2
+        self.y_coord = (self.winfo_screenheight() - 70) // 2 - self.screen_height // 2
+
+        self.title("Arcade")
+        self.geometry(
+            f"{self.screen_width//2}x{self.screen_height}+{self.x_coord+self.screen_width//4}+{self.y_coord}"
+        )
+        self.config(bg="white")
+        self.protocol("WM_DELETE_WINDOW", root.destroy)
+
     def initialize(self, name, token):
-        self.login.destroy()
+        # self.login.destroy()
+        self.geometry(
+            f"{self.screen_width}x{self.screen_height}+{self.x_coord}+{self.y_coord}"
+        )
         self.name = name
         self.token = token
         self.rooms = Rooms()
@@ -62,19 +81,6 @@ class Arcade(tk.Toplevel):
         self.cobj = Client(("localhost", 6778), self.event_handler)
         self.cobj.send((self.name))
 
-        # GUI Initializing
-        self.screen_width = int(0.9 * self.winfo_screenwidth())
-        self.screen_height = int(self.screen_width / 1.9)
-        x_coord = self.winfo_screenwidth() // 2 - self.screen_width // 2
-        y_coord = (self.winfo_screenheight() - 70) // 2 - self.screen_height // 2
-
-        self.title("Arcade")
-        self.geometry(f"{self.screen_width}x{self.screen_height}+{x_coord}+{y_coord}")
-        self.config(bg="white")
-        self.protocol("WM_DELETE_WINDOW", root.destroy)
-        self.withdraw()
-
-        # region Notebook
         self.main_notebook = ttk.Notebook(
             self, height=self.screen_height, width=self.screen_width
         )
@@ -91,8 +97,6 @@ class Arcade(tk.Toplevel):
         self.monopoly_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
         self.main_notebook.add(self.monopoly_frame, text="Monopoly")
         self.join_create("MNPLY")
-        # endregion
-        self.deiconify()
 
     def pprint(self, d):
         print(json.dumps(d, indent=4))
@@ -170,10 +174,12 @@ class Arcade(tk.Toplevel):
         self.cobj.send(msg)
 
     def start_arcade(self):
-        self.http = Http("http://167.71.231.52:5000")
-        self.login = Login(self, self.http, self.initialize)
-        self.login.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         root.withdraw()
+
+        # TODO: Add Logo, Terms of Use, Credits, date, time, (Greeting)
+
+        self.login = Login(self, HTTP, self.initialize)
+        self.login.place(relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n")
 
     def join_create(self, game):
         button_style = ttk.Style()
@@ -240,6 +246,8 @@ class Arcade(tk.Toplevel):
             "#0",
             width=10,
         )
+        tree.bind("<Return>", lambda a: self.join_selected_room(game, tree.selection()))
+
         tree.column(
             "Room",
             width=self.screen_width // 10,
@@ -422,22 +430,85 @@ class Arcade(tk.Toplevel):
 class Login(tk.Frame):
     def __init__(self, master, http, complete):
         super().__init__(master)
-        tk.Label(self, text="Please enter details below to login").pack()
-        tk.Label(self, text="").pack()
+        tk.Label(
+            self, text="Welcome to idk!\nPlease Enter your Credentials to Login:"
+        ).place(relx=0.5, rely=0.1, anchor="center")
         self.uname = tk.StringVar()
         self.pwd = tk.StringVar()
 
-        tk.Label(self, text="Username: ").pack()
+        tk.Label(self, text="Username: ").place(relx=0.44, rely=0.3, anchor="e")
         self.uentry = tk.Entry(self, textvariable=self.uname)
-        self.uentry.pack()
+        self.uentry.place(relx=0.45, rely=0.3, anchor="w")
         self.uentry.focus_set()
-        tk.Label(self, text="").pack()
-        tk.Label(self, text="Password * ").pack()
+        tk.Label(self, text="Password: ").place(relx=0.44, rely=0.4, anchor="e")
         self.pwdentry = tk.Entry(self, textvariable=self.pwd, show="*")
-        self.pwdentry.pack()
+        self.pass_hidden = True
+        self.pwdentry.place(relx=0.45, rely=0.4, anchor="w")
         self.uentry.bind("<Return>", lambda a: self.pwdentry.focus_set())
-        tk.Label(self, text="").pack()
-        tk.Button(self, text="Login", width=10, height=1, command=self.login).pack()
+
+        button_style = ttk.Style()
+        button_style.configure("my.TButton", font=("times", 15))
+
+        self.login_button = ttk.Button(
+            self,
+            text="LOGIN",
+            style="my.TButton",
+            command=self.login,
+        )
+        self.login_button.place(relx=0.5, rely=0.8, anchor="center")
+
+        def forget_reg():
+            self.reg.place_forget()
+
+        def register():
+            self.reg = Register(self, HTTP, forget_reg)
+            self.reg.place(relx=0.5, rely=0.5, relheight=1, relwidth=1, anchor="center")
+
+        tk.Button(
+            self,
+            text="New User? Click Here To Sign Up",
+            font=("times", 11),
+            fg="blue",
+            highlightthickness=0,
+            border=0,
+            command=lambda: register(),
+        ).place(relx=0.5, rely=0.6, anchor="center")
+
+        self.show_password = ImageTk.PhotoImage(
+            ImageOps.expand(
+                Image.open(ASSET + "/show_password.png").resize(
+                    (20, 15), Image.Resampling.LANCZOS
+                )
+            )
+        )
+
+        self.hide_password = ImageTk.PhotoImage(
+            ImageOps.expand(
+                Image.open(ASSET + "/hide_password.png").resize(
+                    (20, 15), Image.Resampling.LANCZOS
+                )
+            )
+        )
+
+        self.show_hide_pass = tk.Button(
+            self,
+            image=self.show_password,
+            highlightthickness=0,
+            border=0,
+            command=lambda: toggle_hide_password(),
+        )
+        self.show_hide_pass.place(relx=0.65, rely=0.4, anchor="center")
+
+        def toggle_hide_password():
+            if self.pass_hidden:
+                self.pwdentry.config(show="")
+                self.show_hide_pass.config(image=self.hide_password)
+            else:
+                self.pwdentry.config(show="*")
+                self.show_hide_pass.config(image=self.show_password)
+
+            self.pass_hidden = not self.pass_hidden
+
         self.pwdentry.bind("<Return>", lambda a: self.login())
 
         self.notif = None
@@ -450,27 +521,182 @@ class Login(tk.Frame):
         pwd = self.pwd.get().strip()
         self.pwdentry.delete(0, tk.END)
         msg = ""
-        if not (uname and pwd):
-            msg = "Enter Required Fields"
+        if uname and not pwd:
+            msg = "Enter Password"
+            self.prompt(msg)
+        elif not uname:
+            msg = "Enter your Credentials"
+            pwd = ""
+            self.prompt(msg)
         elif self.http.login(uname, pwd):
-            msg = "Success"
-            self.complete(uname, self.http.TOKEN)
+            msg = "Logging in..."
+            self.prompt(msg)
+            self.after(1000, lambda: self.complete(uname, self.http.TOKEN))
         else:
-            msg = "Failure"
-        self.prompt(msg)
+            msg = "Incorrect Username or Password"
+            self.prompt(msg)
 
     def prompt(self, msg):
         try:
             self.destroyprompt()
             self.notifc += 1
             color = "red"
-            if msg == "Success":
+            if msg == "Logging in...":
                 color = "green"
             self.notif = (
                 tk.Label(self, text=msg, fg=color, font=("calibri", 11)),
                 self.notifc,
             )
-            self.notif[0].pack()
+            self.notif[0].place(relx=0.5, rely=0.7, anchor="center")
+            self.after(3000, self.destroyprompt)
+        except:
+            pass
+
+    def destroyprompt(self):
+        if self.notif and self.notif[1] == self.notifc:
+            self.notif[0].destroy()
+            self.notif = None
+
+
+class Register(tk.Frame):
+    def __init__(self, master, http, complete):
+        super().__init__(master)
+        tk.Label(
+            self,
+            text="Welcome to idk!\nPlease Enter your Details to Create an Account:",
+        ).place(relx=0.5, rely=0.1, anchor="center")
+        self.uname = tk.StringVar()
+        self.pwd = tk.StringVar()
+        self.confpwd = tk.StringVar()
+        tk.Button(
+            self,
+            text="← Sign In",
+            font=("times", 11),
+            highlightthickness=0,
+            border=0,
+            command=self.place_forget,
+        ).place(relx=0.01, rely=0.01, anchor="nw")
+        self.bind("<Escape>", lambda a: self.place_forget())
+        tk.Label(self, text="Create Username: ").place(relx=0.24, rely=0.3, anchor="e")
+        self.uentry = tk.Entry(self, textvariable=self.uname)
+        self.uentry.place(relx=0.25, rely=0.3, anchor="w")
+        self.uentry.focus_set()
+        self.uentry.bind("<Escape>", lambda a: self.place_forget())
+        tk.Label(self, text="Create Password: ").place(relx=0.24, rely=0.4, anchor="e")
+        self.pwdentry = tk.Entry(self, textvariable=self.pwd, show="*")
+        self.pass_hidden = True
+        self.pwdentry.place(relx=0.25, rely=0.4, anchor="w")
+        self.pwdentry.bind("<Escape>", lambda a: self.place_forget())
+        tk.Label(self, text="Confirm Password: ").place(relx=0.24, rely=0.5, anchor="e")
+        self.confpwdentry = tk.Entry(self, textvariable=self.confpwd, show="*")
+        self.conf_pass_hidden = True
+        self.confpwdentry.place(relx=0.25, rely=0.5, anchor="w")
+        self.confpwdentry.bind("<Escape>", lambda a: self.place_forget())
+
+        self.uentry.bind("<Return>", lambda a: self.pwdentry.focus_set())
+        self.pwdentry.bind("<Return>", lambda a: self.confpwdentry.focus_set())
+
+        button_style = ttk.Style()
+        button_style.configure("my.TButton", font=("times", 15))
+
+        self.reg_button = ttk.Button(
+            self,
+            text="REGISTER",
+            style="my.TButton",
+            command=self.login,
+        )
+        self.reg_button.place(relx=0.5, rely=0.8, anchor="center")
+
+        self.show_password = ImageTk.PhotoImage(
+            ImageOps.expand(
+                Image.open(ASSET + "/show_password.png").resize(
+                    (20, 15), Image.Resampling.LANCZOS
+                )
+            )
+        )
+
+        self.hide_password = ImageTk.PhotoImage(
+            ImageOps.expand(
+                Image.open(ASSET + "/hide_password.png").resize(
+                    (20, 15), Image.Resampling.LANCZOS
+                )
+            )
+        )
+
+        self.show_hide_pass = tk.Button(
+            self,
+            image=self.show_password,
+            highlightthickness=0,
+            border=0,
+            command=lambda: toggle_hide_password(False),
+        )
+        self.show_hide_conf_pass = tk.Button(
+            self,
+            image=self.show_password,
+            highlightthickness=0,
+            border=0,
+            command=lambda: toggle_hide_password(True),
+        )
+        self.show_hide_pass.place(relx=0.45, rely=0.4, anchor="center")
+        self.show_hide_conf_pass.place(relx=0.45, rely=0.5, anchor="center")
+
+        def toggle_hide_password(conf):
+            if conf:
+                if self.conf_pass_hidden:
+                    self.confpwdentry.config(show="")
+                    self.show_hide_conf_pass.config(image=self.hide_password)
+                else:
+                    self.confpwdentry.config(show="*")
+                    self.show_hide_conf_pass.config(image=self.show_password)
+                self.conf_pass_hidden = not self.conf_pass_hidden
+            else:
+                if self.pass_hidden:
+                    self.pwdentry.config(show="")
+                    self.show_hide_pass.config(image=self.hide_password)
+                else:
+                    self.pwdentry.config(show="*")
+                    self.show_hide_pass.config(image=self.show_password)
+                self.pass_hidden = not self.pass_hidden
+
+        self.confpwdentry.bind("<Return>", lambda a: self.login())
+
+        self.notif = None
+        self.notifc = 0
+        self.http = http
+        self.complete = complete
+
+    def login(self):
+        uname = self.uentry.get().strip()
+        pwd = self.pwd.get().strip()
+        self.pwdentry.delete(0, tk.END)
+        msg = ""
+        if uname and not pwd:
+            msg = "Enter Password"
+            self.prompt(msg)
+        elif not uname:
+            msg = "Enter your Credentials"
+            pwd = ""
+            self.prompt(msg)
+        elif self.http.login(uname, pwd):
+            msg = "Logging in..."
+            self.prompt(msg)
+            self.after(1000, lambda: self.complete(uname, self.http.TOKEN))
+        else:
+            msg = "Incorrect Username or Password"
+            self.prompt(msg)
+
+    def prompt(self, msg):
+        try:
+            self.destroyprompt()
+            self.notifc += 1
+            color = "red"
+            if msg == "Logging in...":
+                color = "green"
+            self.notif = (
+                tk.Label(self, text=msg, fg=color, font=("calibri", 11)),
+                self.notifc,
+            )
+            self.notif[0].place(relx=0.5, rely=0.7, anchor="center")
             self.after(3000, self.destroyprompt)
         except:
             pass
