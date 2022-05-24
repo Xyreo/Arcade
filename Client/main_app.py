@@ -528,7 +528,7 @@ class Login(tk.Frame):
             msg = "Enter your Credentials"
             pwd = ""
             self.prompt(msg)
-        elif self.http.login(uname, pwd):
+        elif self.http.login(uname.strip(), pwd.strip()):
             msg = "Logging in..."
             self.prompt(msg)
             self.after(1000, lambda: self.complete(uname, self.http.TOKEN))
@@ -672,7 +672,7 @@ class Register(tk.Frame):
             "lower": False,
             "char": False,
             "digit": False,
-            "space": False,
+            "space": True,
         }
         if len(pwd) >= 8:
             check["length"] = True
@@ -685,7 +685,7 @@ class Register(tk.Frame):
         if any(not i.isalnum() for i in pwd):
             check["char"] = True
         if any(i.isspace() for i in pwd):
-            check["char"] = True
+            check["space"] = False
 
         return [i for i, j in check.items() if not j]
 
@@ -729,7 +729,7 @@ class Register(tk.Frame):
             msg = "Password does not match"
             self.prompt(msg)
         else:
-            if self.http.register(uname, pwd):
+            if self.http.register(uname.strip(), pwd.strip()):
                 msg = "Registering..."
                 self.prompt(msg)
                 self.after(1000, self.complete)
