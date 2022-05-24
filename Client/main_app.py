@@ -7,7 +7,7 @@ from client_framework import Client
 from chess import Chess
 from http_wrapper import Http
 
-# TODO Confirmation Popups, Delete Room, Life
+# TODO Confirmation Popups
 
 ASSET = "Client"
 HTTP = Http("http://167.71.231.52:5000")
@@ -603,7 +603,7 @@ class Register(tk.Frame):
             self,
             text="REGISTER",
             style="my.TButton",
-            command=self.register,
+            command=self.reg_user,
         )
         self.reg_button.place(relx=0.5, rely=0.8, anchor="center")
 
@@ -658,7 +658,7 @@ class Register(tk.Frame):
                     self.show_hide_pass.config(image=self.show_password)
                 self.pass_hidden = not self.pass_hidden
 
-        self.confpwdentry.bind("<Return>", lambda a: self.login())
+        self.confpwdentry.bind("<Return>", lambda a: self.reg_user())
 
         self.notif = None
         self.notifc = 0
@@ -672,6 +672,7 @@ class Register(tk.Frame):
             "lower": False,
             "char": False,
             "digit": False,
+            "space": False,
         }
         if len(pwd) >= 8:
             check["length"] = True
@@ -683,21 +684,24 @@ class Register(tk.Frame):
             check["digit"] = True
         if any(not i.isalnum() for i in pwd):
             check["char"] = True
+        if any(i.isspace() for i in pwd):
+            check["char"] = True
 
         return [i for i, j in check.items() if not j]
 
-    def register(self):
+    def reg_user(self):
         uname = self.uentry.get().strip()
         pwd = self.pwd.get().strip()
         confpwd = self.confpwd.get().strip()
 
         self.confpwdentry.delete(0, tk.END)
         prompts = {
-            "length": "8 Characters in Total",
+            "length": "Atleast 8 Characters in Total",
             "upper": "1 Upper Case Letter",
             "lower": "1 Lower Case Letter",
             "char": "1 Special Character",
             "digit": "1 Digit",
+            "space": "No Spaces",
         }
         missing = self.check_pass(pwd)
 
@@ -717,7 +721,7 @@ class Register(tk.Frame):
             self.prompt(msg)
         elif missing:
             self.pwdentry.delete(0, tk.END)
-            msg = "Password should have atleast:"
+            msg = "Password should have:"
             for i in missing:
                 msg += "\n" + prompts[i]
             self.prompt(msg)
@@ -725,16 +729,15 @@ class Register(tk.Frame):
             msg = "Password does not match"
             self.prompt(msg)
         else:
-            msg = "Registering..."
-            self.prompt(msg)
-            self.after(1000, self.complete)
-        # elif self.http.register(uname, pwd):
-        #     msg = "Registering..."
-        #     self.prompt(msg)
-        #     self.after(1000, self.complete)
-        # else:
-        #     msg = "User Already Registered"
-        #     self.prompt(msg)
+            if self.http.register(uname, pwd):
+                msg = "Registering..."
+                self.prompt(msg)
+                self.after(1000, self.complete)
+            else:
+                self.uentry.delete(0, tk.END)
+                self.pwdentry.delete(0, tk.END)
+                msg = "User Already Registered"
+                self.prompt(msg)
 
     def prompt(self, msg):
         try:
