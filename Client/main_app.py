@@ -603,7 +603,7 @@ class Register(tk.Frame):
             self,
             text="REGISTER",
             style="my.TButton",
-            command=self.login,
+            command=self.register,
         )
         self.reg_button.place(relx=0.5, rely=0.8, anchor="center")
 
@@ -665,39 +665,90 @@ class Register(tk.Frame):
         self.http = http
         self.complete = complete
 
-    def login(self):
+    def check_pass(self, pwd):
+        check = {
+            "length": False,
+            "upper": False,
+            "lower": False,
+            "char": False,
+            "digit": False,
+        }
+        if len(pwd) >= 8:
+            check["length"] = True
+        if any(i.isupper() for i in pwd):
+            check["upper"] = True
+        if any(i.islower() for i in pwd):
+            check["lower"] = True
+        if any(i.isdigit() for i in pwd):
+            check["digit"] = True
+        if any(not i.isalnum() for i in pwd):
+            check["char"] = True
+
+        return [i for i, j in check.items() if not j]
+
+    def register(self):
         uname = self.uentry.get().strip()
         pwd = self.pwd.get().strip()
-        self.pwdentry.delete(0, tk.END)
+        confpwd = self.confpwd.get().strip()
+
+        self.confpwdentry.delete(0, tk.END)
+        prompts = {
+            "length": "8 Characters in Total",
+            "upper": "1 Upper Case Letter",
+            "lower": "1 Lower Case Letter",
+            "char": "1 Special Character",
+            "digit": "1 Digit",
+        }
+        missing = self.check_pass(pwd)
+
         msg = ""
         if uname and not pwd:
+            self.pwdentry.delete(0, tk.END)
             msg = "Enter Password"
+            self.prompt(msg)
+        elif uname and pwd and not confpwd:
+            msg = "Confirm Password"
             self.prompt(msg)
         elif not uname:
             msg = "Enter your Credentials"
             pwd = ""
+            confpwd = ""
+            self.pwdentry.delete(0, tk.END)
             self.prompt(msg)
-        elif self.http.login(uname, pwd):
-            msg = "Logging in..."
+        elif missing:
+            self.pwdentry.delete(0, tk.END)
+            msg = "Password should have atleast:"
+            for i in missing:
+                msg += "\n" + prompts[i]
             self.prompt(msg)
-            self.after(1000, lambda: self.complete(uname, self.http.TOKEN))
+        elif confpwd != pwd:
+            msg = "Password does not match"
+            self.prompt(msg)
         else:
-            msg = "Incorrect Username or Password"
+            msg = "Registering..."
             self.prompt(msg)
+            self.after(1000, self.complete)
+        # elif self.http.register(uname, pwd):
+        #     msg = "Registering..."
+        #     self.prompt(msg)
+        #     self.after(1000, self.complete)
+        # else:
+        #     msg = "User Already Registered"
+        #     self.prompt(msg)
 
     def prompt(self, msg):
         try:
             self.destroyprompt()
             self.notifc += 1
             color = "red"
-            if msg == "Logging in...":
+            if msg == "Registering...":
                 color = "green"
             self.notif = (
                 tk.Label(self, text=msg, fg=color, font=("calibri", 11)),
                 self.notifc,
             )
-            self.notif[0].place(relx=0.5, rely=0.7, anchor="center")
-            self.after(3000, self.destroyprompt)
+            self.notif[0].place(relx=0.25, rely=0.7, anchor="center")
+            self.after(5000, self.destroyprompt)
         except:
             pass
 
