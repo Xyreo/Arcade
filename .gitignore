@@ -55,4 +55,3 @@ docs/_build/
 venv/
 *.pem
 .env
-Client/main_app.py
