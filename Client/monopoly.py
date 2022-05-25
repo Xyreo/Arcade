@@ -12,7 +12,7 @@ from PIL import Image, ImageOps, ImageTk
 from client_framework import Client
 from musicplayer import play as music
 
-ASSET = "Assets"
+ASSET = "./Assets/Mnply_Assets"
 
 db = msc.connect(
     host="167.71.231.52",
@@ -1922,7 +1922,8 @@ class Monopoly(tk.Toplevel):
 
         self.update_game("It's your turn now! Click 'Roll Dice'")
 
-#TODO Rent for station, utility
+
+# TODO Rent for station, utility
 # TODO: Mortgage, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
 
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
@@ -1940,7 +1941,7 @@ if __name__ == "__main__":
             cobj.updater = mono.updater
             mono.start_monopoly()
 
-    cobj = Client(("localhost", 6788), updater)
+    cobj = Client(("localhost", 6789), updater)
 
     def CLI():
         while True:

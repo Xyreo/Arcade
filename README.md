@@ -1,4 +1,4 @@
 # Gr12-CompProject
-Monopoly: Dead atm
+Arcade (Monopoly, Chess, Scrabble hopefully)
 
-Chess: Not Dead
+Run 'Client/Arcade.py' to play.

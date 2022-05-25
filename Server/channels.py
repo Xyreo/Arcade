@@ -171,7 +171,7 @@ class Client(threading.Thread):
                 m = pickle.loads(sent)
                 print("Received", m)
                 t = threading.Thread(
-                    target=self.authneticate,
+                    target=self.authenticate,
                     args=(m,),
                     kwargs={"auth": self.auth},
                 )
@@ -182,7 +182,7 @@ class Client(threading.Thread):
             print("Connection Closed")
             return
 
-    def authneticate(self, message, auth=False):
+    def authenticate(self, message, auth=False):
         if auth:
             if Driver.auth(message[0]):
                 self.instruction_handler(message[1:])

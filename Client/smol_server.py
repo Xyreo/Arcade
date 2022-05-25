@@ -17,7 +17,7 @@ def assign_uuid(l):
     return i
 
 
-PORT = 6788
+PORT = 6789
 SERVER = "0.0.0.0"  # TODO Option for local host/server
 ADDRESS = (SERVER, PORT)
 

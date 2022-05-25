@@ -1,10 +1,13 @@
-import threading, time, os, json
+import json
+import os
+import threading
+import time
 import tkinter as tk
 from contextlib import suppress
 
 from PIL import Image, ImageOps, ImageTk
 
-ASSET_PATH = "./"
+ASSET_PATH = "./Assets"
 
 
 class Chess(tk.Toplevel):

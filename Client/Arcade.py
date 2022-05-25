@@ -1,15 +1,20 @@
+import json
+import threading
+import time
 import tkinter as tk
 import tkinter.ttk as ttk
-import time, threading, json
 from tkinter import messagebox as msgb
+
 from PIL import Image, ImageOps, ImageTk
-from client_framework import Client
+
 from chess import Chess
+from client_framework import Client
 from http_wrapper import Http
+from monopoly import Monopoly
 
 # TODO Confirmation Popups
 
-ASSET = "Client"
+ASSET = "./Assets"
 HTTP = Http("http://167.71.231.52:5000")
 
 
@@ -148,6 +153,8 @@ class Arcade(tk.Toplevel):
                         self.game = Chess(
                             msg[3], lambda move: self.send((dest, "MSG", move))
                         )
+                    elif game == "MNPLY":
+                        pass
             elif msg[1] == "MSG":
                 if game == "CHESS":
                     self.game.opp_move(msg[2])
@@ -431,19 +438,19 @@ class Login(tk.Frame):
     def __init__(self, master, http, complete):
         super().__init__(master)
         tk.Label(
-            self, text="Welcome to idk!\nPlease Enter your Credentials to Login:"
+            self, text="Welcome to the Arcade!\nPlease Enter your Credentials to Login:"
         ).place(relx=0.5, rely=0.1, anchor="center")
         self.uname = tk.StringVar()
         self.pwd = tk.StringVar()
 
         tk.Label(self, text="Username: ").place(relx=0.44, rely=0.3, anchor="e")
         self.uentry = tk.Entry(self, textvariable=self.uname)
-        self.uentry.place(relx=0.45, rely=0.3, anchor="w")
+        self.uentry.place(relx=0.45, rely=0.3, relwidth=0.2, anchor="w")
         self.uentry.focus_set()
         tk.Label(self, text="Password: ").place(relx=0.44, rely=0.4, anchor="e")
         self.pwdentry = tk.Entry(self, textvariable=self.pwd, show="*")
         self.pass_hidden = True
-        self.pwdentry.place(relx=0.45, rely=0.4, anchor="w")
+        self.pwdentry.place(relx=0.45, rely=0.4, relwidth=0.2, anchor="w")
         self.uentry.bind("<Return>", lambda a: self.pwdentry.focus_set())
 
         button_style = ttk.Style()
@@ -497,7 +504,7 @@ class Login(tk.Frame):
             border=0,
             command=lambda: toggle_hide_password(),
         )
-        self.show_hide_pass.place(relx=0.65, rely=0.4, anchor="center")
+        self.show_hide_pass.place(relx=0.66, rely=0.4, anchor="w")
 
         def toggle_hide_password():
             if self.pass_hidden:
@@ -547,7 +554,7 @@ class Login(tk.Frame):
                 tk.Label(self, text=msg, fg=color, font=("calibri", 11)),
                 self.notifc,
             )
-            self.notif[0].place(relx=0.5, rely=0.7, anchor="center")
+            self.notif[0].place(relx=0.5, rely=0.69, anchor="center")
             self.after(3000, self.destroyprompt)
         except:
             pass
@@ -563,7 +570,7 @@ class Register(tk.Frame):
         super().__init__(master)
         tk.Label(
             self,
-            text="Welcome to idk!\nPlease Enter your Details to Create an Account:",
+            text="Welcome to the Arcade!\nPlease Enter your Details to Create an Account:",
         ).place(relx=0.5, rely=0.1, anchor="center")
         self.uname = tk.StringVar()
         self.pwd = tk.StringVar()
@@ -579,19 +586,16 @@ class Register(tk.Frame):
         self.bind("<Escape>", lambda a: self.place_forget())
         tk.Label(self, text="Create Username: ").place(relx=0.24, rely=0.3, anchor="e")
         self.uentry = tk.Entry(self, textvariable=self.uname)
-        self.uentry.place(relx=0.25, rely=0.3, anchor="w")
+        self.uentry.place(relx=0.25, rely=0.3, relwidth=0.2, anchor="w")
         self.uentry.focus_set()
-        self.uentry.bind("<Escape>", lambda a: self.place_forget())
         tk.Label(self, text="Create Password: ").place(relx=0.24, rely=0.4, anchor="e")
         self.pwdentry = tk.Entry(self, textvariable=self.pwd, show="*")
         self.pass_hidden = True
-        self.pwdentry.place(relx=0.25, rely=0.4, anchor="w")
-        self.pwdentry.bind("<Escape>", lambda a: self.place_forget())
+        self.pwdentry.place(relx=0.25, rely=0.4, relwidth=0.2, anchor="w")
         tk.Label(self, text="Confirm Password: ").place(relx=0.24, rely=0.5, anchor="e")
         self.confpwdentry = tk.Entry(self, textvariable=self.confpwd, show="*")
         self.conf_pass_hidden = True
-        self.confpwdentry.place(relx=0.25, rely=0.5, anchor="w")
-        self.confpwdentry.bind("<Escape>", lambda a: self.place_forget())
+        self.confpwdentry.place(relx=0.25, rely=0.5, relwidth=0.2, anchor="w")
 
         self.uentry.bind("<Return>", lambda a: self.pwdentry.focus_set())
         self.pwdentry.bind("<Return>", lambda a: self.confpwdentry.focus_set())
@@ -637,8 +641,11 @@ class Register(tk.Frame):
             border=0,
             command=lambda: toggle_hide_password(True),
         )
-        self.show_hide_pass.place(relx=0.45, rely=0.4, anchor="center")
-        self.show_hide_conf_pass.place(relx=0.45, rely=0.5, anchor="center")
+        self.show_hide_pass.place(relx=0.46, rely=0.4, anchor="w")
+        self.show_hide_conf_pass.place(relx=0.46, rely=0.5, anchor="w")
+
+        for i in self.winfo_children():
+            i.bind("<Escape>", lambda a: self.place_forget())
 
         def toggle_hide_password(conf):
             if conf:

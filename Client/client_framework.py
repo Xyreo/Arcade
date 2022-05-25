@@ -1,8 +1,8 @@
 import pickle
 import socket
-from ssl import SSLContext, CERT_REQUIRED
-import threading
 import ssl
+import threading
+from ssl import CERT_REQUIRED, SSLContext
 
 
 class Client:
