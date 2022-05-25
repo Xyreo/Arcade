@@ -1,10 +1,9 @@
-# region Setup
-from authenticator import Auth
-import pickle, random, threading, secrets
-import socket, ssl
-from ssl import SSLContext
+import pickle
+import secrets
+import socket
+import threading
 
-# endregion
+from authenticator import Auth
 
 lobbies = {}
 rooms = {}

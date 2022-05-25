@@ -1,9 +1,7 @@
-import json
 import os
 import threading
 import time
 import tkinter as tk
-from contextlib import suppress
 
 from PIL import Image, ImageOps, ImageTk
 

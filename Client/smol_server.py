@@ -1,10 +1,7 @@
-# region Setup
 import pickle
 import secrets
 import socket
 import threading
-
-# endregion
 
 players = {}  # Stores the socks of all the players connected to the server
 

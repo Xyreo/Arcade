@@ -1,24 +1,14 @@
 import pickle
 import socket
-import ssl
 import threading
-from ssl import CERT_REQUIRED, SSLContext
 
 
 class Client:
     # Class that creates the client object for handling communications from the client's end
     # Implemented seperately to abstract the communications part from the game logic
-
     def __init__(self, ADDRESS, updater):
         # Takes the address and connects to the server. Also strats a thread to handle listening
-
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        """sslcontext = SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        sslcontext.check_hostname = False
-        sslcontext = ssl.create_default_context()
-        sslcontext.check_hostname = False
-        self.conn = sslcontext.wrap_socket(self.conn, server_hostname="Arcade")"""
-
         self.conn.connect(ADDRESS)
         print("Connected")
         self.connected = True

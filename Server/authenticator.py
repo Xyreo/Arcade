@@ -1,6 +1,7 @@
-import redis
-from datetime import timedelta
 import secrets
+from datetime import timedelta
+
+import redis
 
 
 class Auth:

@@ -1,6 +1,5 @@
-import requests, json
+import requests
 from urllib3.exceptions import InsecureRequestWarning
-import time
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 

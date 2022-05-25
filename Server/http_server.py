@@ -1,10 +1,16 @@
-from flask import Flask, request, jsonify, Blueprint
-from datetime import date
-from authenticator import Auth
-import mysql.connector as msc
-import bcrypt, threading, json, pickle, os, dotenv
 import hashlib
+import json
+import os
+import pickle
+from datetime import date
+
+import bcrypt
+import dotenv
+import mysql.connector as msc
 import redis
+from flask import Blueprint, Flask, jsonify, request
+
+from authenticator import Auth
 
 dotenv.load_dotenv()
 password = os.getenv("password")
