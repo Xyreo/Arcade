@@ -1,5 +1,5 @@
 # Gr12-CompProject
-! In Progress
+!!! IN PROGRESS !!!
 
 Arcade (Monopoly, Chess, Scrabble hopefully)
 
