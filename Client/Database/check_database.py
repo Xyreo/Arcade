@@ -8,7 +8,7 @@ db = msc.connect(
     database="arcade"
 )
 cursor = db.cursor()
-cursor.execute("select * from user")
+cursor.execute("select * from monopoly_board_values")
 # cursor.execute('drop table monopoly_board_values')
 
 print(tab.tabulate(cursor))

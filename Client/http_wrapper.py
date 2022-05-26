@@ -46,7 +46,7 @@ class Http:
 
     def mply_details(self, pos=None):
         path = "details"
-        if pos:
+        if pos >= 0:
             path += "/" + str(pos)
         r = self.monopoly_send(Http.GET, path)
         if r.status_code == 404:

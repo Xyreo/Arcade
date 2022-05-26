@@ -6,27 +6,23 @@ import tkinter.ttk as ttk
 from time import sleep
 from tkinter import messagebox as msgb
 
-import mysql.connector as msc
 from PIL import Image, ImageOps, ImageTk
 
 from client_framework import Client
-from musicplayer import play as music
+from http_wrapper import Http
+
+try:
+    from musicplayer import play as music
+except:
+    print("No Output Devices Found")
 
 ASSET = "./Assets/Mnply_Assets"
-
-db = msc.connect(
-    host="167.71.231.52",
-    username="project-work",
-    password="mySQLpass",
-    database="arcade",
-)
-cursor = db.cursor()
 
 
 class Property:
     def __init__(self, position):
-        cursor.execute(f"select * from monopoly_board_values where position={position}")
-        details = list(cursor)[0]
+        details = Monopoly.hobj.mply_details(position)
+        print(details)
         self.name = details[0]
         self.position = details[1]
         self.colour = details[2]
@@ -77,10 +73,11 @@ class Property:
 
 
 class Monopoly(tk.Toplevel):
-    def __init__(self, playerdetails, me, cobj):
+    def __init__(self, playerdetails, me, cobj, hobj):
         super().__init__()
         self.player_details = playerdetails
         self.me = me
+        Monopoly.hobj = hobj
         print(self.player_details[self.me])
         self.cobj = cobj
         self.create_window()
@@ -113,8 +110,6 @@ class Monopoly(tk.Toplevel):
         self.properties = {}
         for i in range(40):
             self.properties[i] = Property(i)
-
-        cursor.close()
 
         for i in self.player_details:
             self.player_details[i].update(
@@ -165,6 +160,7 @@ class Monopoly(tk.Toplevel):
         self.main_frame.place(relx=0.99, rely=0.04, anchor="ne")
 
     def start_monopoly(self):  # Starting Game, withdrawing start window
+        print("Why")
         self.deiconify()
         root.withdraw()
 
@@ -1937,17 +1933,23 @@ if __name__ == "__main__":
     def updater(msg):
         global mono
         if msg[0] == "START":
-            mono = Monopoly(msg[1], msg[2], cobj)
+            print("Bruh")
+            mono = Monopoly(msg[1], msg[2], cobj, hobj)
+            print("Why life")
             cobj.updater = mono.updater
+            print("Ntuh")
             mono.start_monopoly()
+            print("srg")
 
     cobj = Client(("localhost", 6789), updater)
+    hobj = Http("http://167.71.231.52:5000")
+    hobj.login(input("Username: "), input("Password: "))
 
     def CLI():
         while True:
             t = tuple(i for i in input().split())
             if t:
-                if t[0] == "roll":  # TODO CHANGE TO ROLL DICE
+                if t[0] == "roll":
                     try:
                         mono.roll_dice(roll=(int(t[1]), int(t[2])), cli=True)
                     except:
