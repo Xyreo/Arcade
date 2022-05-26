@@ -20,8 +20,7 @@ ASSET = "./Assets/Mnply_Assets"
 
 
 class Property:
-    def __init__(self, position):
-        details = Monopoly.hobj.mply_details(position)
+    def __init__(self, details):
         print(details)
         self.name = details[0]
         self.position = details[1]
@@ -73,13 +72,13 @@ class Property:
 
 
 class Monopoly(tk.Toplevel):
-    def __init__(self, playerdetails, me, cobj, hobj):
+    def __init__(self, playerdetails, me, send, hobj: Http):
         super().__init__()
         self.player_details = playerdetails
         self.me = me
         Monopoly.hobj = hobj
         print(self.player_details[self.me])
-        self.cobj = cobj
+        self.send_msg = send
         self.create_window()
         self.create_gui_divisions()
         self.initialise()
@@ -108,8 +107,9 @@ class Monopoly(tk.Toplevel):
         self.clear_build_button = None
 
         self.properties = {}
+        details = self.hobj.mply_details()
         for i in range(40):
-            self.properties[i] = Property(i)
+            self.properties[i] = Property(details[i])
 
         for i in self.player_details:
             self.player_details[i].update(
@@ -1332,7 +1332,7 @@ class Monopoly(tk.Toplevel):
             print("Can't Buy")
         self.update_game("Default")
         if not received:
-            self.cobj.send(("BUY", propertypos))
+            self.send_msg(("BUY", propertypos))
 
     def build_action_frame(self):
         self.build_frame = tk.Frame(
@@ -1599,14 +1599,14 @@ class Monopoly(tk.Toplevel):
             print("Bruh Die")
 
         if not received:
-            self.cobj.send(("BUILD", property, number))
+            self.send_msg(("BUILD", property, number))
 
     def roll_dice(self, roll=None, received=False, cli=False):
         music(ASSET + "/diceroll.mp3")
         dice_roll = roll if received else (random.randint(1, 6), random.randint(1, 6))
         dice_roll = roll if cli else dice_roll
         if not received:
-            self.cobj.send(("ROLL", dice_roll))
+            self.send_msg(("ROLL", dice_roll))
         for i in range(18):
             self.dice_spot1.configure(image=self.die_dict[random.randint(1, 6)])
             self.dice_spot2.configure(image=self.die_dict[random.randint(1, 6)])
@@ -1914,7 +1914,7 @@ class Monopoly(tk.Toplevel):
             self.roll_button.configure(state="normal")
 
         if not received:
-            self.cobj.send(("END",))
+            self.send_msg(("END",))
 
         self.update_game("It's your turn now! Click 'Roll Dice'")
 

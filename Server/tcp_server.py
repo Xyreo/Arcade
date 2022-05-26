@@ -116,7 +116,14 @@ class Room(Channels):
                 i.send_instruction((self.uuid, "ROOM", "START", "BLACK"))
 
     def mnply_start(self):
-        pass
+        p = {}
+        color = ["red", "green", "blue", "gold"]
+        i = 0
+        for player in self.members:
+            p[player.uuid] = {"Name": player.name, "Colour": color[i]}
+            i += 1
+        for player in self.members:
+            player.send_instruction((self.uuid, "ROOM", "START", (p, player.uuid)))
 
     def broadcast(self, msg, exclude=None):
         self.broadcast_to_members(msg, exclude)

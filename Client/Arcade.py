@@ -154,10 +154,19 @@ class Arcade(tk.Toplevel):
                             msg[3], lambda move: self.send((dest, "MSG", move))
                         )
                     elif game == "MNPLY":
-                        pass
+                        det = msg[3]
+                        self.game = Monopoly(
+                            det[0],
+                            det[1],
+                            lambda msg: self.send((dest, "MSG", msg)),
+                            HTTP,
+                        )
+
             elif msg[1] == "MSG":
                 if game == "CHESS":
                     self.game.opp_move(msg[2])
+                if game == "MNPLY":
+                    self.game.updater(msg[2])
 
     def send(self, msg):
         time_gap = 0.1
