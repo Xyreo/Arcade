@@ -21,7 +21,6 @@ ASSET = "./Assets/Mnply_Assets"
 
 class Property:
     def __init__(self, details):
-        print(details)
         self.name = details[0]
         self.position = details[1]
         self.colour = details[2]
@@ -141,9 +140,7 @@ class Monopoly(tk.Toplevel):
         self.resizable(False, False)
         self.geometry(f"{screen_width}x{screen_height}+{x_coord}+{y_coord}")
         self.config(bg="white")
-        self.protocol("WM_DELETE_WINDOW", root.destroy)
-        # Withdrawing Monopoly screen initially, to show only when game starts
-        self.withdraw()
+        # self.protocol("WM_DELETE_WINDOW", root.destroy)
 
     def create_gui_divisions(self):
         self.board_canvas = tk.Canvas(
@@ -159,11 +156,6 @@ class Monopoly(tk.Toplevel):
         )
         self.main_frame.place(relx=0.99, rely=0.04, anchor="ne")
 
-    def start_monopoly(self):  # Starting Game, withdrawing start window
-        print("Why")
-        self.deiconify()
-        root.withdraw()
-
     def create_image_obj(self):
         self.board_image = ImageTk.PhotoImage(
             ImageOps.expand(
@@ -176,7 +168,7 @@ class Monopoly(tk.Toplevel):
 
         self.info_tag = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open(ASSET + "/big_info.png").resize(
+                Image.open(ASSET + "/Info/big_info.png").resize(
                     (int(self.property_width / 2), int(self.property_width / 2)),
                     Image.Resampling.LANCZOS,
                 )
@@ -212,7 +204,7 @@ class Monopoly(tk.Toplevel):
 
         self.dice1 = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open(ASSET + "/dice1.png").resize(
+                Image.open(ASSET + "/Die/dice1.png").resize(
                     (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -220,7 +212,7 @@ class Monopoly(tk.Toplevel):
         )
         self.dice2 = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open(ASSET + "/dice2.png").resize(
+                Image.open(ASSET + "/Die/dice2.png").resize(
                     (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -228,7 +220,7 @@ class Monopoly(tk.Toplevel):
         )
         self.dice3 = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open(ASSET + "/dice3.png").resize(
+                Image.open(ASSET + "/Die/dice3.png").resize(
                     (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -236,7 +228,7 @@ class Monopoly(tk.Toplevel):
         )
         self.dice4 = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open(ASSET + "/dice4.png").resize(
+                Image.open(ASSET + "/Die/dice4.png").resize(
                     (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -244,7 +236,7 @@ class Monopoly(tk.Toplevel):
         )
         self.dice5 = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open(ASSET + "/dice5.png").resize(
+                Image.open(ASSET + "/Die/dice5.png").resize(
                     (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -252,7 +244,7 @@ class Monopoly(tk.Toplevel):
         )
         self.dice6 = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open(ASSET + "/dice6.png").resize(
+                Image.open(ASSET + "/Die/dice6.png").resize(
                     (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                     Image.Resampling.LANCZOS,
                 )
@@ -261,7 +253,7 @@ class Monopoly(tk.Toplevel):
 
         self.red_token_image = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open(ASSET + "/red.png").resize(
+                Image.open(ASSET + "/Tokens/red.png").resize(
                     (self.token_width, self.token_width),
                     Image.Resampling.LANCZOS,
                 )
@@ -269,7 +261,7 @@ class Monopoly(tk.Toplevel):
         )
         self.green_token_image = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open(ASSET + "/green.png").resize(
+                Image.open(ASSET + "/Tokens/green.png").resize(
                     (self.token_width, self.token_width),
                     Image.Resampling.LANCZOS,
                 )
@@ -277,7 +269,7 @@ class Monopoly(tk.Toplevel):
         )
         self.blue_token_image = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open(ASSET + "/blue.png").resize(
+                Image.open(ASSET + "/Tokens/blue.png").resize(
                     (self.token_width, self.token_width),
                     Image.Resampling.LANCZOS,
                 )
@@ -285,7 +277,7 @@ class Monopoly(tk.Toplevel):
         )
         self.yellow_token_image = ImageTk.PhotoImage(
             ImageOps.expand(
-                Image.open(ASSET + "/yellow.png").resize(
+                Image.open(ASSET + "/Tokens/yellow.png").resize(
                     (self.token_width, self.token_width),
                     Image.Resampling.LANCZOS,
                 )
@@ -1602,7 +1594,7 @@ class Monopoly(tk.Toplevel):
             self.send_msg(("BUILD", property, number))
 
     def roll_dice(self, roll=None, received=False, cli=False):
-        music(ASSET + "/diceroll.mp3")
+        music(ASSET + "/Die/diceroll.mp3")
         dice_roll = roll if received else (random.randint(1, 6), random.randint(1, 6))
         dice_roll = roll if cli else dice_roll
         if not received:
@@ -1933,13 +1925,9 @@ if __name__ == "__main__":
     def updater(msg):
         global mono
         if msg[0] == "START":
-            print("Bruh")
             mono = Monopoly(msg[1], msg[2], cobj, hobj)
-            print("Why life")
             cobj.updater = mono.updater
-            print("Ntuh")
             mono.start_monopoly()
-            print("srg")
 
     cobj = Client(("localhost", 6778), updater)
     hobj = Http("http://167.71.231.52:5000")
