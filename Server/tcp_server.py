@@ -135,14 +135,6 @@ class Room(Channels):
         return room
 
 
-PORT = 6789
-SERVER = "0.0.0.0"  # TODO Option for local host/server
-ADDRESS = (SERVER, PORT)
-
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind(ADDRESS)
-
-
 class Client(threading.Thread):
     # Class that gets threaded for every new client object
     # Handles all communication from client to servers

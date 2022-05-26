@@ -1941,7 +1941,7 @@ if __name__ == "__main__":
             mono.start_monopoly()
             print("srg")
 
-    cobj = Client(("localhost", 6789), updater)
+    cobj = Client(("localhost", 6778), updater)
     hobj = Http("http://167.71.231.52:5000")
     hobj.login(input("Username: "), input("Password: "))
 
