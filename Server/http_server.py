@@ -1,20 +1,16 @@
-import hashlib
-import json
-import os
-import pickle
+from flask import Flask, request, jsonify, Blueprint
 from datetime import date
-
-import bcrypt
-import dotenv
-import mysql.connector as msc
-import redis
-from flask import Blueprint, Flask, jsonify, request
-
 from authenticator import Auth
+import mysql.connector as msc
+import bcrypt, threading, json, pickle, os, sys, datetime, time
+import hashlib
+import redis
+from dotenv import load_dotenv, find_dotenv
 
-dotenv.load_dotenv()
+sys.stdout = open("log.txt", "w")
+
+load_dotenv(find_dotenv())
 password = os.getenv("password")
-
 app = Flask(__name__)
 db = msc.connect(
     host="167.71.231.52",
@@ -51,8 +47,8 @@ class Database:
             return response
 
         except Exception as e:
-            print(e)
-            print(query)
+            print(f'{time.time()}: {e} Avoided, Query was "{query}"')
+
             return None
 
     def data_change(self, query):
@@ -81,6 +77,11 @@ def ping():
     return jsonify("Pong")
 
 
+@app.before_request
+def logging():
+    print(datetime.datetime.now().strftime("[%m/%d/%Y %H:%M:%S]-"), request)
+
+
 @authorisation.before_request
 def check_authdata():
     try:
@@ -99,7 +100,6 @@ def register():
     username = data["username"]
     password = data["password"].encode("utf-8")
     count = cursor.execute(f"SELECT * FROM user WHERE name = '{username}'")
-    print(count)
     if len(count):
         return jsonify("User Already Exists"), 400
     password = bcrypt.hashpw(password, bcrypt.gensalt(12))
@@ -119,7 +119,6 @@ def login():
     password = data["password"].encode("utf-8")
 
     storedpw = cursor.execute(f"SELECT password FROM user where name='{username}'")
-    print(storedpw)
     if len(storedpw):
         if bcrypt.checkpw(password, storedpw[0][0].encode("utf-8")):
             session = auth.add(username)
@@ -174,16 +173,17 @@ def logout():
 @monopoly.route("/details")
 def list_details():
     details = cursor.execute("SELECT * FROM monopoly_board_values")
-    l = [i for i in details.values()]
+    print(details)
+    l = [i for i in details]
     return jsonify(l), 200
 
 
 @monopoly.route("/details/<string:pos>")
 def details(pos):
     detail = cursor.execute(f"SELECT * FROM monopoly_board_values where position={pos}")
-    if not pos:
+    if len(detail) != 1:
         return jsonify("Not Found"), 404
-    return jsonify(detail), 200
+    return jsonify(detail[0]), 200
 
 
 # endregion
@@ -194,9 +194,5 @@ req_authorisation.register_blueprint(chess, url_prefix="/chess")
 app.register_blueprint(req_authorisation)
 app.register_blueprint(authorisation)
 
-app.run(
-    ssl_context=(
-        "./certificate.pem",
-        "./key.pem",
-    )
-)
+if __name__ == "__main__":
+    app.run()
