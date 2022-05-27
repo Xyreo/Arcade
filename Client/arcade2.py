@@ -1,4 +1,5 @@
 import json
+import os
 import threading
 import time
 import tkinter as tk
@@ -14,7 +15,7 @@ from monopoly import Monopoly
 
 # TODO Confirmation Popups
 
-ASSET = "./Assets"
+ASSET = "./Assets/Home_Assets"
 HTTP = Http("http://167.71.231.52:5000")
 
 
@@ -189,12 +190,35 @@ class Arcade(tk.Toplevel):
         print("Sent:", msg)
         self.cobj.send(msg)
 
+    def show_message(self, title, message, type="info", timeout=0):
+        mbwin = tk.Tk()
+        mbwin.withdraw()
+        try:
+            if timeout:
+                mbwin.after(timeout, mbwin.destroy)
+            if type == "info":
+                msgb.showinfo(title, message, master=mbwin)
+            elif type == "warning":
+                msgb.showwarning(title, message, master=mbwin)
+            elif type == "error":
+                msgb.showerror(title, message, master=mbwin)
+            elif type == "okcancel":
+                okcancel = msgb.askokcancel(title, message, master=mbwin)
+                return okcancel
+            elif type == "yesno":
+                yesno = msgb.askyesno(title, message, master=mbwin)
+                return yesno
+        except:
+            print("Error")
+
     def start_arcade(self):
         root.withdraw()
 
         # TODO: Add Logo, Terms of Use, Credits, date, time, (Greeting)
-
-        self.login = Login(self, HTTP, self.initialize)
+        if os.path.exists(ASSET + "/remember_login.txt"):
+            self.login = Login(self, HTTP, self.initialize, remember_login=True)
+        else:
+            self.login = Login(self, HTTP, self.initialize)
         self.login.place(relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n")
 
     def join_create(self, game):
@@ -444,8 +468,31 @@ class Arcade(tk.Toplevel):
 
 
 class Login(tk.Frame):
-    def __init__(self, master, http, complete):
+    def __init__(self, master, http, complete, remember_login=False):
         super().__init__(master)
+        self.notif = None
+        self.notifc = 0
+        self.http = http
+        self.complete = complete
+
+        if remember_login:
+            master.withdraw()
+            with open(ASSET + "/remember_login.txt", "r") as f:
+                uname, pwd = eval(f.readlines()[-1])
+                # TODO: Change to Frame
+                if Arcade.show_message(
+                    self,
+                    "Login to Arcade?",
+                    f"Do you wish to login as '{uname}'?",
+                    type="yesno",
+                ):
+                    if self.http.login(uname, pwd, remember_login=True):
+                        master.deiconify()
+                        self.complete(uname, self.http.TOKEN)
+                    else:
+                        print("File has been corrupted")
+                        
+        master.deiconify()
         tk.Label(
             self, text="Welcome to the Arcade!\nPlease Enter your Credentials to Login:"
         ).place(relx=0.5, rely=0.1, anchor="center")
@@ -463,18 +510,18 @@ class Login(tk.Frame):
         self.uentry.bind("<Return>", lambda a: self.pwdentry.focus_set())
 
         button_style = ttk.Style()
-        button_style.configure("my.TButton", font=("times", 15))
+        button_style.configure("small.TButton", font=("times", 15))
 
         self.login_button = ttk.Button(
             self,
             text="LOGIN",
-            style="my.TButton",
+            style="small.TButton",
             command=self.login,
         )
         self.login_button.place(relx=0.5, rely=0.8, anchor="center")
 
         def forget_reg():
-            self.reg.place_forget()
+            self.reg.destroy()
 
         def register():
             self.reg = Register(self, HTTP, forget_reg)
@@ -514,6 +561,15 @@ class Login(tk.Frame):
             command=lambda: toggle_hide_password(),
         )
         self.show_hide_pass.place(relx=0.66, rely=0.4, anchor="w")
+        self.remember_me = tk.BooleanVar()
+        remember_me_button = ttk.Checkbutton(
+            self,
+            text="Remember Me",
+            variable=self.remember_me,
+            offvalue=False,
+            onvalue=True,
+        )
+        remember_me_button.place(relx=0.45, rely=0.5, anchor="w")
 
         def toggle_hide_password():
             if self.pass_hidden:
@@ -527,11 +583,6 @@ class Login(tk.Frame):
 
         self.pwdentry.bind("<Return>", lambda a: self.login())
 
-        self.notif = None
-        self.notifc = 0
-        self.http = http
-        self.complete = complete
-
     def login(self):
         uname = self.uentry.get().strip()
         pwd = self.pwd.get().strip()
@@ -544,13 +595,30 @@ class Login(tk.Frame):
             msg = "Enter your Credentials"
             pwd = ""
             self.prompt(msg)
-        elif self.http.login(uname.strip(), pwd.strip()):
-            msg = "Logging in..."
-            self.prompt(msg)
-            self.after(1000, lambda: self.complete(uname, self.http.TOKEN))
         else:
-            msg = "Incorrect Username or Password"
-            self.prompt(msg)
+            self.hashed_pass = self.http.login(
+                uname.strip(), pwd.strip(), remember_me=self.remember_me.get()
+            )
+            if self.hashed_pass:
+                msg = "Logging in..."
+                self.prompt(msg)
+                if isinstance(self.hashed_pass, str):
+                    self.store_password(uname.strip(), self.hashed_pass)
+                else:
+                    self.delete_stored_login()
+                self.after(1000, lambda: self.complete(uname, self.http.TOKEN))
+            else:
+                msg = "Incorrect Username or Password"
+                self.prompt(msg)
+
+    def delete_stored_login(self):
+        pass
+
+    def store_password(self, uname, pwd):
+        with open(ASSET + "/remember_login.txt", "w") as f:
+            f.write(
+                f"WARNING!\nDo NOT Alter, Rename or Delete the contents of this file!\nThis File is required to remember Your Login Details\n\n{(uname,pwd)}"
+            )
 
     def prompt(self, msg):
         try:
@@ -590,9 +658,9 @@ class Register(tk.Frame):
             font=("times", 11),
             highlightthickness=0,
             border=0,
-            command=self.place_forget,
+            command=self.destroy,
         ).place(relx=0.01, rely=0.01, anchor="nw")
-        self.bind("<Escape>", lambda a: self.place_forget())
+        self.bind("<Escape>", lambda a: self.destroy())
         tk.Label(self, text="Create Username: ").place(relx=0.24, rely=0.3, anchor="e")
         self.uentry = tk.Entry(self, textvariable=self.uname)
         self.uentry.place(relx=0.25, rely=0.3, relwidth=0.2, anchor="w")
@@ -654,7 +722,7 @@ class Register(tk.Frame):
         self.show_hide_conf_pass.place(relx=0.46, rely=0.5, anchor="w")
 
         for i in self.winfo_children():
-            i.bind("<Escape>", lambda a: self.place_forget())
+            i.bind("<Escape>", lambda a: self.destroy())
 
         def toggle_hide_password(conf):
             if conf:
