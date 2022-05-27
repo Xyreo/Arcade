@@ -1,11 +1,20 @@
-from flask import Flask, request, jsonify, Blueprint
-from datetime import date
-from authenticator import Auth
-import mysql.connector as msc
-import bcrypt, threading, json, pickle, os, sys, datetime, time
+import datetime
 import hashlib
+import json
+import os
+import pickle
+import sys
+import threading
+import time
+from datetime import date
+
+import bcrypt
+import mysql.connector as msc
 import redis
-from dotenv import load_dotenv, find_dotenv
+from dotenv import find_dotenv, load_dotenv
+from flask import Blueprint, Flask, jsonify, request
+
+from authenticator import Auth
 
 sys.stdout = open("log.txt", "w")
 
