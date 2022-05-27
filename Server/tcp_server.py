@@ -141,6 +141,14 @@ class Room(Channels):
         }
         return room
 
+    def msg(self, m, ex):
+        if self.game == "CHESS":
+            self.broadcast_to_members(m, ex)
+        elif self.game == "MNPLY":
+            a, b = m
+            m = (a, (ex,) + b)
+            self.broadcast_to_members(m, ex)
+
 
 class Client(threading.Thread):
     # Class that gets threaded for every new client object
@@ -228,7 +236,7 @@ class Client(threading.Thread):
         elif action == "LEAVE":
             rooms[room].leave(self)
         elif action == "MSG":
-            rooms[room].broadcast_to_members(("MSG", msg[1]), self.uuid)
+            rooms[room].msg(("MSG", msg[1]), self.uuid)
 
     def send_instruction(self, instruction):
         try:
