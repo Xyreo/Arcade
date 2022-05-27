@@ -83,28 +83,20 @@ class Monopoly(tk.Toplevel):
         self.initialise()
         self.create_image_obj()
         self.dice_tokens()
-        self.delete_property_frame()
         self.action_frame_popup("Default")
         self.player_frame_popup()
         for i in self.player_details:
             self.move(i, 0)
 
     def initialise(self):
-        self.property_frame = None
+        self.property_frame = tk.Frame()
+        self.property_frame.destroy()
         self.property_pos_displayed = None
-        self.player_frame = None
         self.current_txt = "Default"
         self.board_canvas.bind("<Button-1>", self.click_to_position)
         self.uuids = list(self.player_details.keys())
         self.turn = self.uuids[0]
         self.doubles_counter = 0
-
-        self.radio_dict = {}
-        self.extrahouse_label = None
-        self.final_build_txt_label = None
-        self.final_build_button = None
-        self.clear_build_button = None
-
         self.properties = {}
         details = self.hobj.mply_details()
         for i in range(40):
@@ -114,6 +106,9 @@ class Monopoly(tk.Toplevel):
             self.player_details[i].update(
                 {"Money": 1500, "Injail": False, "Position": 0, "Properties": []}
             )  # Properties will store obj from properties dict
+
+        cli_thread = threading.Thread(target=self.CLI)
+        cli_thread.start()
 
     def updater(self, msg):
         if msg[1] == "ROLL":
@@ -140,7 +135,7 @@ class Monopoly(tk.Toplevel):
         self.resizable(False, False)
         self.geometry(f"{screen_width}x{screen_height}+{x_coord}+{y_coord}")
         self.config(bg="white")
-        # self.protocol("WM_DELETE_WINDOW", root.destroy)
+        # self.protocol("WM_DELETE_WINDOW", self.winfo_parent.destroy)
 
     def create_gui_divisions(self):
         self.board_canvas = tk.Canvas(
@@ -294,6 +289,23 @@ class Monopoly(tk.Toplevel):
                 )
             )
         )
+        self.mr_monopoly_frame = tk.Frame(
+            self.main_frame,
+            width=(self.board_side - 2) // 2.05,
+            height=(self.board_side - 2) // 1.75,
+            bg="#F9FBFF",
+            highlightthickness=0,
+            highlightbackground="#F9FBFF",
+        )
+
+        self.mr_monopoly_frame.place(relx=1, rely=1, anchor="se")
+        tk.Label(
+            self.mr_monopoly_frame,
+            image=self.mr_monopoly,
+            border=0,
+            highlightthickness=0,
+            bg="#FFFFFF",
+        ).pack()
 
         self.house_images = []
 
@@ -386,16 +398,15 @@ class Monopoly(tk.Toplevel):
         return self.player_details[self.properties[propertypos].owner][s]
 
     def update_game(self, action_frame_text=None):
-        if self.property_frame:
-            self.delete_property_frame()
+        if self.property_frame.winfo_exists():
+            self.property_frame.destroy()
             self.property_frame_popup(self.property_pos_displayed)
-        if self.player_frame:
-            l = []
-            for i in self.player_details:
-                if self.player_tree.item(i, "open"):
-                    l.append(i)
-            self.delete_player_frame()
-            self.player_frame_popup(l)
+        l = []
+        for i in self.player_details:
+            if self.player_tree.item(i, "open"):
+                l.append(i)
+        self.player_tree.destroy()
+        self.player_frame_popup(l)
         self.house_images = []
         self.place_houses()
         if action_frame_text:
@@ -430,7 +441,7 @@ class Monopoly(tk.Toplevel):
             highlightthickness=0,
             border=0,
             activebackground="#F9FBFF",
-            command=self.delete_property_frame,
+            command=self.property_frame.destroy,
         ).place(relx=0.95, rely=0.05, anchor="ne")
 
         canvas = tk.Canvas(
@@ -596,7 +607,7 @@ class Monopoly(tk.Toplevel):
             highlightthickness=0,
             border=0,
             activebackground="#F9FBFF",
-            command=self.delete_property_frame,
+            command=self.property_frame.destroy,
         ).place(relx=0.95, rely=0.05, anchor="ne")
 
         canvas = tk.Canvas(
@@ -790,7 +801,7 @@ class Monopoly(tk.Toplevel):
             highlightthickness=0,
             border=0,
             activebackground=self.properties[position].hex,
-            command=self.delete_property_frame,
+            command=self.property_frame.destroy,
         ).place(relx=1, rely=0, anchor="ne")
 
         canvas = tk.Canvas(
@@ -1054,8 +1065,8 @@ class Monopoly(tk.Toplevel):
 
     def property_frame_popup(self, position):
         position %= 40
-        if self.property_frame:
-            self.delete_property_frame()
+        if self.property_frame.winfo_exists():
+            self.property_frame.destroy()
         self.property_pos_displayed = position
         self.property_frame = tk.Frame(
             self.main_frame,
@@ -1075,29 +1086,6 @@ class Monopoly(tk.Toplevel):
         else:
             self.colour_property_frame(position)
 
-    def delete_property_frame(self):
-        if self.property_frame:
-            self.property_frame.place_forget()
-            self.property_frame = None
-        else:
-            self.mr_monopoly_frame = tk.Frame(
-                self.main_frame,
-                width=(self.board_side - 2) // 2.05,
-                height=(self.board_side - 2) // 1.75,
-                bg="#F9FBFF",
-                highlightthickness=0,
-                highlightbackground="#F9FBFF",
-            )
-
-            self.mr_monopoly_frame.place(relx=1, rely=1, anchor="se")
-            tk.Label(
-                self.mr_monopoly_frame,
-                image=self.mr_monopoly,
-                border=0,
-                highlightthickness=0,
-                bg="#FFFFFF",
-            ).pack()
-
     # endregion
 
     # region # Player Frame
@@ -1114,7 +1102,7 @@ class Monopoly(tk.Toplevel):
         self.player_frame.place(relx=0, rely=1, anchor="sw")
 
         scroll = ttk.Scrollbar(self.player_frame, orient="vertical")
-        scroll.place(relx=1, rely=0, anchor="ne", relheight=1)
+        scroll.place(relx=1, rely=0, relwidth=0.05, anchor="ne", relheight=1)
 
         self.player_tree = ttk.Treeview(
             self.player_frame, columns=("Player", "Value"), yscrollcommand=scroll.set
@@ -1169,16 +1157,24 @@ class Monopoly(tk.Toplevel):
             count = 0
             for k in j["Properties"]:
                 self.player_tree.insert(
-                    parent=i, index="end", text="", values=(k.name, k.value())
+                    parent=i,
+                    index="end",
+                    iid=k.position,
+                    text="",
+                    values=(k.name, k.value()),
                 )
                 count += 1
 
-        self.player_tree.place(relx=0, rely=0.5, anchor="w", relheight=1)
+        self.player_tree.place(relx=0, rely=0.5, anchor="w", relheight=1, relwidth=0.95)
+        self.player_tree.bind(
+            "<<TreeviewSelect>>", lambda event: self.treeview_click(event)
+        )
 
-    def delete_player_frame(self):
-        if self.player_frame:
-            self.player_frame.place_forget()
-            self.player_frame = None
+    def treeview_click(self, event):
+        try:
+            self.property_frame_popup(int(self.player_tree.focus()))
+        except:
+            pass
 
     def open_children(self, colour):
         for i in self.player_tree.selection():
@@ -1340,10 +1336,10 @@ class Monopoly(tk.Toplevel):
             font=("times", (self.board_side - 2) // 60),
             highlightthickness=0,
             border=0,
-            command=self.build_frame.place_forget,
+            command=self.build_frame.destroy,
         ).place(relx=0.1, rely=0.05, anchor="ne")
 
-        self.bind("<Escape>", lambda a: self.build_frame.place_forget())
+        self.bind("<Escape>", lambda a: self.build_frame.destroy())
 
         my_sets = []
         for i in self.player_details[self.turn]["Properties"]:
@@ -1363,11 +1359,13 @@ class Monopoly(tk.Toplevel):
         self.select_set.place(relx=0.5, rely=0.2, anchor="nw")
 
         def distribute_build(event, set_properties):
-            if self.radio_dict:
+            try:
                 for i, j in self.radio_dict.items():
-                    j.place_forget()
-                if self.extrahouse_label:
-                    self.extrahouse_label.place_forget()
+                    j.destroy()
+            except:
+                pass
+            if self.extrahouse_label.winfo_exists():
+                self.extrahouse_label.destroy()
 
             total_houses = int(self.select_houses.get())
             no_of_properties = len(set_properties.values())
@@ -1398,10 +1396,8 @@ class Monopoly(tk.Toplevel):
                 for i in range(len(self.new_building[:-2])):
                     finaltxt += f"\n→{d[old_houses[i]+self.new_building[i]]} on {list(set_properties.keys())[i].name}"
                 finaltxt += f"\n on paying {list(set_properties.keys())[0].build * total_houses}"
-                try:
-                    self.final_build_txt_label.place_forget()
-                except:
-                    pass
+                if self.final_build_txt_label.winfo_exists():
+                    self.final_build_txt_label.destroy()
                 self.final_build_txt_label = tk.Label(
                     self.build_frame,
                     text=finaltxt,
@@ -1487,22 +1483,23 @@ class Monopoly(tk.Toplevel):
             self.clear_build_button.place(relx=0.9, rely=0.9, anchor="nw")
 
         def clear_all(all):
-            if self.radio_dict:
-                for i, j in self.radio_dict.items():
-                    j.place_forget()
-                if self.extrahouse_label:
-                    self.extrahouse_label.place_forget()
             try:
-                self.final_build_txt_label.place_forget()
-                self.clear_build_button.place_forget()
-                self.final_build_button.place_forget()
+                for i, j in self.radio_dict.items():
+                    j.destroy()
+            except:
+                pass
+            try:
+                self.extrahouse_label.destroy()
+                self.final_build_txt_label.destroy()
+                self.clear_build_button.destroy()
+                self.final_build_button.destroy()
             except:
                 pass
             if all:
                 self.select_set.set("")
                 try:
-                    self.select_houses.place_forget()
-                    self.select_houses_label.place_forget()
+                    self.select_houses.destroy()
+                    self.select_houses_label.destroy()
                 except:
                     pass
 
@@ -1594,7 +1591,10 @@ class Monopoly(tk.Toplevel):
             self.send_msg(("BUILD", property, number))
 
     def roll_dice(self, roll=None, received=False, cli=False):
-        music(ASSET + "/Die/diceroll.mp3")
+        try:
+            music(ASSET + "/Die/diceroll.mp3")
+        except:
+            pass
         dice_roll = roll if received else (random.randint(1, 6), random.randint(1, 6))
         dice_roll = roll if cli else dice_roll
         if not received:
@@ -1611,27 +1611,18 @@ class Monopoly(tk.Toplevel):
         self.dice_spot1.update()
         self.dice_spot2.update()
         self.current_move = sum(dice_roll)
-        self.update_game()
-        self.move(self.turn, self.current_move)
         if dice_roll[0] == dice_roll[1]:
             if self.turn == self.me:
-                self.roll_button.configure(state="normal")
-                self.end_button.configure(state="disabled")
+                self.move(self.turn, self.current_move, endturn=False)
             self.doubles_counter += 1
         else:
             self.doubles_counter = 0
-            try:
-                self.end_button.configure(state="normal")
-            except:
-                pass
+            self.move(self.turn, self.current_move, endturn=True)
         if self.doubles_counter == 3:
-            self.roll_button.configure(state="disabled")
-            try:
-                self.end_button.configure(state="normal")
-            except:
-                pass
+            self.move(self.turn, self.current_move, endturn=True)
             # TODO GO TO JAIL #END TURN AUTOMATICALLY
             self.action_frame_popup("Jail")
+        self.update_game()
 
     def show_message(self, title, message, type="info", timeout=0):
         mbwin = tk.Tk()
@@ -1827,7 +1818,7 @@ class Monopoly(tk.Toplevel):
         self.player_details[player]["Money"] += 200
         self.update_game("You received 200 as salary!")
 
-    def move(self, player, move, showmove=True):
+    def move(self, player, move, endturn=False, showmove=True):
         colour = self.player_details[player]["Colour"]
         self.colour_token_dict = {
             "red": self.red_token,
@@ -1855,6 +1846,16 @@ class Monopoly(tk.Toplevel):
             self.colour_token_dict[colour].place(x=x1, y=y1, anchor="center")
 
         pos = self.player_details[player]["Position"] % 40
+
+        if endturn:
+            self.roll_button.configure(state="disabled")
+            if self.end_button.winfo_exists():
+                self.end_button.configure(state="normal")
+        else:
+            self.roll_button.configure(state="normal")
+            if self.end_button.winfo_exists():
+                self.end_button.configure(state="disabled")
+
         if pos in [10, 30]:
             self.update_game("Jail")
         elif pos in [0, 4, 20, 38]:
@@ -1910,13 +1911,38 @@ class Monopoly(tk.Toplevel):
 
         self.update_game("It's your turn now! Click 'Roll Dice'")
 
+    def CLI(self):
+        while True:
+            t = tuple(i for i in input().split())
+            if t:
+                if t[0] == "roll":
+                    try:
+                        self.roll_dice(roll=(int(t[1]), int(t[2])), cli=True)
+                    except:
+                        pass
+                elif t[0] == "buy":
+                    for i in t[1:]:
+                        self.buy_property(int(i), self.me)
 
-# TODO Rent for station, utility
+                elif t[0] == "build":
+                    try:
+                        self.build(int(t[1]), int(t[2]))
+                    except:
+                        pass
+                else:
+                    print("Die")
+            else:
+                print("Closed CLI Thread")
+                break
+
+
+# TODO Rent for station, utility, Disable Buy, End, Etc when clicked, but enable if 'cancel' is clicked
 # TODO: Mortgage, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
 
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
 # In player properties box, add colour highlight based on property
 
+# ! Fix running monopoly separately
 if __name__ == "__main__":
     mono = None
     root = tk.Tk()
@@ -1932,32 +1958,5 @@ if __name__ == "__main__":
     cobj = Client(("localhost", 6778), updater)
     hobj = Http("http://167.71.231.52:5000")
     hobj.login(input("Username: "), input("Password: "))
-
-    def CLI():
-        while True:
-            t = tuple(i for i in input().split())
-            if t:
-                if t[0] == "roll":
-                    try:
-                        mono.roll_dice(roll=(int(t[1]), int(t[2])), cli=True)
-                    except:
-                        pass
-                elif t[0] == "buy":
-                    for i in t[1:]:
-                        mono.buy_property(int(i), mono.me)
-
-                elif t[0] == "build":
-                    try:
-                        mono.build(int(t[1]), int(t[2]))
-                    except:
-                        pass
-                else:
-                    print("Die")
-            else:
-                print("Closed CLI Thread")
-                break
-
-    t = threading.Thread(target=CLI)
-    t.start()
 
     root.mainloop()
