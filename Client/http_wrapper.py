@@ -100,8 +100,13 @@ class Response:
 
 
 if __name__ == "__main__":
-    app = Http("https://localhost:5000")
-    print(app.register("test", "test"))
-    print(app.login("test", "test"))
+    app = Http("http://localhost:5000")
+    print(
+        app.login(
+            "test",
+            "test",
+            remember_me=True,
+        )
+    )
     print(app.mply_details(1))
     # print(app.del_user())
