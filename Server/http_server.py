@@ -122,6 +122,21 @@ def login():
     if len(storedpw):
         if bcrypt.checkpw(password, storedpw[0][0].encode("utf-8")):
             session = auth.add(username)
+            return jsonify({"Token": session, "Password": storedpw[0][0]}), 200
+
+    return jsonify("Either username or password is incorrect"), 400
+
+
+@authorisation.route("/remember_login", methods=["POST"])
+def remember_login():
+    data = json.loads(request.data)
+    username = data["username"]
+    password = data["password"].encode("utf-8")
+
+    storedpw = cursor.execute(f"SELECT password FROM user where name='{username}'")
+    if len(storedpw):
+        if password == storedpw[0][0].encode("utf-8"):
+            session = auth.add(username)
             return jsonify({"Token": session}), 200
 
     return jsonify("Either username or password is incorrect"), 400

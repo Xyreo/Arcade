@@ -14,18 +14,26 @@ class Http:
         self.address = address
         self.TOKEN = None
 
-    def login_signup(self, method, username, password):
+    def login_signup(self, method, username, password, remember_me):
         data = {"username": username, "password": password}
         r = self.send(Http.POST, method, data=data)
         if r.status_code == 200:
             if method == "login":
                 self.TOKEN = r.json()["Token"]
+                if remember_me:
+                    return r.json()["Password"]
             return True
-        else:
-            return False
+        return False
 
-    def login(self, username, password):
-        return self.login_signup("login", username, password)
+    def login(self, username, password, remember_me=False, remember_login=False):
+        if remember_login:
+            data = {"username": username, "password": password}
+            r = self.send(Http.POST, "remember_login", data=data)
+            if r.status_code == 200:
+                self.TOKEN = r.json()["Token"]
+                return True
+            return False
+        return self.login_signup("login", username, password, remember_me=remember_me)
 
     def register(self, username, password):
         return self.login_signup("register", username, password)
