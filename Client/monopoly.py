@@ -1174,8 +1174,14 @@ class Monopoly(tk.Toplevel):
                     iid=k.position,
                     text="",
                     values=(k.name, k.value()),
+                    tag=k.hex,
                 )
                 count += 1
+        for i, j in self.properties.items():
+            try:
+                self.player_tree.tag_configure(j.hex, background=k.hex)
+            except:
+                pass
 
         self.player_tree.place(relx=0, rely=0.5, anchor="w", relheight=1, relwidth=0.95)
         self.player_tree.bind(
@@ -2016,7 +2022,7 @@ if __name__ == "__main__":
         if msg[0] == "START":
             mono = Monopoly(msg[1], msg[2], cobj, hobj)
             cobj.updater = mono.updater
-            mono.start_monopoly()
+            root.withdraw()
 
     cobj = Client(("localhost", 6778), updater)
     hobj = Http("http://167.71.231.52:5000")
