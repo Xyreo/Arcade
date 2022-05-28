@@ -1162,24 +1162,33 @@ class Monopoly(tk.Toplevel):
                     values=(j["Name"], j["Money"]),
                 )
             self.player_tree.tag_configure(
-                "me", foreground=self.player_details[self.me]["Colour"]
+                "me", background=self.player_details[self.me]["Colour"]
             )
             if i in list_of_open:
                 self.player_tree.item(i, open=True)
             count = 0
             for k in j["Properties"]:
-                self.player_tree.insert(
-                    parent=i,
-                    index="end",
-                    iid=k.position,
-                    text="",
-                    values=(k.name, k.value()),
-                    tag=k.hex,
-                )
+                try:
+                    self.player_tree.insert(
+                        parent=i,
+                        index="end",
+                        iid=k.position,
+                        text="",
+                        values=(k.name, k.value()),
+                        tag=k.hex,
+                    )
+                except:
+                    self.player_tree.insert(
+                        parent=i,
+                        index="end",
+                        iid=k.position,
+                        text="",
+                        values=(k.name, k.value()),
+                    )
                 count += 1
         for i, j in self.properties.items():
             try:
-                self.player_tree.tag_configure(j.hex, background=k.hex)
+                self.player_tree.tag_configure(j.hex, background=j.hex)
             except:
                 pass
 
@@ -2009,7 +2018,6 @@ class Monopoly(tk.Toplevel):
 # TODO: Mortgage, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
 
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
-# In player properties box, add colour highlight based on property
 
 # ! Fix running monopoly separately
 if __name__ == "__main__":
