@@ -2018,7 +2018,7 @@ if __name__ == "__main__":
             cobj.updater = mono.updater
             mono.start_monopoly()
 
-    cobj = Client(("localhost", 6778), updater)
+    cobj = Client(("localhost", 6788), updater)
     hobj = Http("http://167.71.231.52:5000")
     hobj.login(input("Username: "), input("Password: "))
 

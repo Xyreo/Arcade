@@ -262,7 +262,7 @@ class Driver:
     auth: Auth = Auth()
 
     def __init__(self):
-        PORT = 6778
+        PORT = 6779
         SERVER = "localhost"
         ADDRESS = (SERVER, PORT)
 

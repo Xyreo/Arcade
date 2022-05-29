@@ -491,7 +491,7 @@ class Login(tk.Frame):
                         self.complete(uname, self.http.TOKEN)
                     else:
                         print("File has been corrupted")
-                        
+
         master.deiconify()
         tk.Label(
             self, text="Welcome to the Arcade!\nPlease Enter your Credentials to Login:"
