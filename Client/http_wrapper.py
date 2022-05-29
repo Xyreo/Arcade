@@ -100,7 +100,7 @@ class Response:
 
 
 if __name__ == "__main__":
-    app = Http("http://localhost:5000")
+    app = Http("http://167.71.231.52:5000")
     print(
         app.login(
             "test",

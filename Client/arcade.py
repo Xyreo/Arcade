@@ -15,7 +15,8 @@ from monopoly import Monopoly
 
 # TODO Confirmation Popups
 
-ASSET = "./Assets/Home_Assets"
+ASSET = "Assets/Home_Assets"
+ASSET = ASSET if os.path.exists(ASSET) else "Client/" + ASSET
 HTTP = Http("http://167.71.231.52:5000")
 
 
@@ -84,7 +85,7 @@ class Arcade(tk.Toplevel):
 
         self.current_room = None
 
-        self.cobj = Client(("localhost", 6778), self.event_handler)
+        self.cobj = Client(("167.71.231.52", 6969), self.event_handler)
         self.cobj.send((self.name))
 
         self.main_notebook = ttk.Notebook(

@@ -15,11 +15,10 @@ from flask import Blueprint, Flask, jsonify, request
 
 from authenticator import Auth
 
-sys.stdout = open("log.txt", "w")
 
+app = Flask(__name__)
 load_dotenv(find_dotenv())
 password = os.getenv("password")
-app = Flask(__name__)
 db = msc.connect(
     host="167.71.231.52",
     username="project-work",
@@ -33,20 +32,6 @@ class Database:
         cache.flushdb()
 
     def execute(self, query):
-        if "select" in query.lower() and "user" not in query.lower():
-            hash = hashlib.sha224(query.encode("utf-8")).hexdigest()
-            key = "sql_cache" + hash
-            key = key.encode("utf-8")
-            if cache.get(key):
-                return pickle.loads(cache.get(key))
-            else:
-                response = self.exec(query)
-                cache.set(key, pickle.dumps(response))
-                return response
-        else:
-            return self.exec(query)
-
-    def exec(self, query):
         try:
             cursor = db.cursor()
             cursor.execute(query)
