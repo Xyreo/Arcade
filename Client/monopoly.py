@@ -16,7 +16,7 @@ try:
 except:
     print("No Output Devices Found")
 
-ASSET = "/Assets/Mnply_Assets"
+ASSET = "./Assets/Mnply_Assets"
 ASSET = ASSET if os.path.exists(ASSET) else "Client/" + ASSET
 
 
@@ -1442,8 +1442,10 @@ class Monopoly(tk.Toplevel):
                     j.destroy()
             except:
                 pass
-            if self.extrahouse_label.winfo_exists():
+            try:
                 self.extrahouse_label.destroy()
+            except:
+                pass
 
             total_houses = int(self.select_houses.get())
             no_of_properties = len(set_properties.values())
@@ -1474,8 +1476,10 @@ class Monopoly(tk.Toplevel):
                 for i in range(len(self.new_building[:-2])):
                     finaltxt += f"\n→{d[old_houses[i]+self.new_building[i]]} on {list(set_properties.keys())[i].name}"
                 finaltxt += f"\n on paying {list(set_properties.keys())[0].build * total_houses}"
-                if self.final_build_txt_label.winfo_exists():
+                try:
                     self.final_build_txt_label.destroy()
+                except:
+                    pass
                 self.final_build_txt_label = tk.Label(
                     self.build_frame,
                     text=finaltxt,
