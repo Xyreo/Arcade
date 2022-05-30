@@ -1334,7 +1334,7 @@ class Monopoly(tk.Toplevel):
                             and j.colour not in my_sets
                             and j.colour not in ["Station", "Utility"]
                         ):
-                            my_sets.append(i.colour)
+                            my_sets.append(j.colour)
                     if not my_sets:
                         d[i].configure(state="disabled")
                 if i == "buy":
@@ -1947,7 +1947,10 @@ class Monopoly(tk.Toplevel):
         elif pos:
             self.property_frame_popup(pos)
             if self.properties[pos].owner:
-                self.pay_rent(self.turn, pos)
+                if self.properties[pos].owner != self.me:
+                    self.pay_rent(self.turn, pos)
+                else:
+                    self.update_game("You own this property!")
             else:
                 self.update_game("Buy")
                 if self.turn == self.me:
@@ -2020,6 +2023,7 @@ class Monopoly(tk.Toplevel):
 
 
 # TODO Rent for station, utility
+# TODO Dont pay yourself
 # TODO: Mortgage, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
 
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
