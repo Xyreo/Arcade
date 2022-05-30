@@ -21,7 +21,7 @@ def assign_uuid(l):
 class Channels:
     def __init__(self, uuid):
         self.uuid = uuid
-        self.members: list[Client] = []
+        self.members = []
 
     def broadcast_to_members(self, msg, exclude=None):
         for member in self.members:
@@ -41,7 +41,7 @@ class Lobby(Channels):
     def __init__(self, uuid):
         super().__init__(uuid)
         lobbies[uuid] = self
-        self.rooms: list[Room] = []
+        self.rooms = []
         self.game = uuid
 
     def create_room(self, host, settings):
@@ -70,7 +70,7 @@ class Room(Channels):
     def __init__(self, host, settings, game):
         super().__init__(assign_uuid(rooms))
         rooms[self.uuid] = self
-        self.host: Client = host
+        self.host = host
         self.settings = settings
         self.status = self.settings["INITAL_STATUS"]
         self.game = game
@@ -83,6 +83,7 @@ class Room(Channels):
         del rooms[self.uuid]
 
     def start(self, player):
+        print("ROOM STARTED")
         if self.host.uuid != player.uuid:
             return
         self.status = "INGAME"
@@ -141,13 +142,13 @@ class Room(Channels):
         }
         return room
 
-    def msg(self, m, ex):
-        if self.game == "CHESS":
-            self.broadcast_to_members(m, ex)
-        elif self.game == "MNPLY":
-            a, b = m
-            m = (a, (ex,) + b)
-            self.broadcast_to_members(m, ex)
+
+PORT = 6789
+SERVER = "0.0.0.0"  # TODO Option for local host/server
+ADDRESS = (SERVER, PORT)
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind(ADDRESS)
 
 
 class Client(threading.Thread):
@@ -167,7 +168,7 @@ class Client(threading.Thread):
         players[self.uuid] = self
 
         self.connected = True
-        self.channels: list = []
+        self.channels = []
         self.send_instruction(("NAME", self.uuid))
 
     def run(self):
@@ -236,9 +237,10 @@ class Client(threading.Thread):
         elif action == "LEAVE":
             rooms[room].leave(self)
         elif action == "MSG":
-            rooms[room].msg(("MSG", msg[1]), self.uuid)
+            rooms[room].broadcast_to_members(("MSG", msg[1]), self.uuid)
 
     def send_instruction(self, instruction):
+        print("Sent:", instruction)
         try:
             self.conn.send(pickle.dumps(instruction))
             print(instruction, "SENT.")
@@ -259,11 +261,11 @@ class Client(threading.Thread):
 
 
 class Driver:
-    auth: Auth = Auth()
+    auth = Auth()
 
     def __init__(self):
-        PORT = 6779
-        SERVER = "localhost"
+        PORT = 6960
+        SERVER = "0.0.0.0"
         ADDRESS = (SERVER, PORT)
 
         l, c = Lobby("MNPLY"), Lobby("CHESS")
@@ -281,11 +283,6 @@ class Driver:
             print(f"active connections {threading.active_count()-1}")
             client_thread = Client(conn, addr, False)
             client_thread.start()
-
-
-players: dict[str, Client]
-lobbies: dict[str, Lobby]
-rooms: dict[str, Room]
 
 
 if __name__ == "__main__":

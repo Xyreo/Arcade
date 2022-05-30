@@ -14,6 +14,7 @@ pid = None
 rid = None
 r = None
 g = None
+p = None
 
 
 def send(*msg):
@@ -42,6 +43,7 @@ def queue_send(msg, t):
 
 
 def event_handler(msg):
+    global p
     print("Recv:", msg)
     global pid, rid, r, game, g
     if msg[0] == "NAME":
@@ -51,9 +53,11 @@ def event_handler(msg):
         if msg[1] == "INIT":
             send("0", "LEAVE", game)
             if len(msg[2]) == 0:
-                send(game, "CREATE", {"INITAL_STATUS": "OPEN", "MAX_PLAYERS": 2})
+                p = 1
+                send(game, "CREATE", {"INITAL_STATUS": "OPEN", "MAX_PLAYERS": 4})
             else:
                 send(game, "JOIN", msg[2][0]["id"])
+                p = 2
     elif msg[0] == "ROOM":
         r = msg[2]
         rid = msg[2]["id"]
@@ -65,7 +69,11 @@ def event_handler(msg):
                 send(rid, "START")
         elif msg[1] == "ROOM":
             if msg[2] == "START":
-                g = Chess(msg[3], lambda move: send(rid, "MSG", move))
+                h = Http("http://167.71.231.52:5000")
+                h.login("user" + str(p), "pass" + str(p))
+                g = Monopoly(
+                    msg[3][0], msg[3][1], lambda move: send(rid, "MSG", move), h
+                )
                 print("NANI")
 
         elif msg[1] == "MSG":
@@ -73,7 +81,7 @@ def event_handler(msg):
 
 
 root = tk.Tk()
-c = Client(("167.71.231.52", 6969), event_handler)
+c = Client(("localhost", 6960), event_handler)
 send("Gay")
 send("0", "JOIN", game)
 root.mainloop()
