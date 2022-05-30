@@ -1,12 +1,11 @@
-from chess import Chess
-from client_framework import Client
-from http_wrapper import Http
-from monopoly import Monopoly
-import json
-import os
+import random
 import threading
 import time
 import tkinter as tk
+
+from client_framework import Client
+from http_wrapper import Http
+from monopoly import Monopoly
 
 game = "MNPLY"
 sent_time = time.perf_counter()
@@ -70,18 +69,24 @@ def event_handler(msg):
         elif msg[1] == "ROOM":
             if msg[2] == "START":
                 h = Http("http://167.71.231.52:5000")
-                h.login("user" + str(p), "pass" + str(p))
+                print(msg)
+                if p == 1:
+                    time.sleep(0.1)
+                print(h.login("user" + str(p), "pass" + str(p)))
+                print(p)
+                root.withdraw()
                 g = Monopoly(
                     msg[3][0], msg[3][1], lambda move: send(rid, "MSG", move), h
                 )
                 print("NANI")
 
         elif msg[1] == "MSG":
-            g.opp_move(msg[2])
+            g.updater(msg[2])
 
 
 root = tk.Tk()
 c = Client(("localhost", 6960), event_handler)
-send("Gay")
+
+send(str(random.randint(0, 1000000)))
 send("0", "JOIN", game)
 root.mainloop()
