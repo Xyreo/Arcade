@@ -14,7 +14,7 @@ class Http:
         self.address = address
         self.TOKEN = None
 
-    def login_signup(self, method, username, password, remember_me):
+    def login_signup(self, method, username, password, remember_me=False):
         data = {"username": username, "password": password}
         r = self.send(Http.POST, method, data=data)
         if r.status_code == 200:
