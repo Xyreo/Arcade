@@ -1,11 +1,12 @@
 import copy
+import os
 import random
 import threading
 import tkinter as tk
 import tkinter.ttk as ttk
 from time import sleep
 from tkinter import messagebox as msgb
-import os
+
 from PIL import Image, ImageOps, ImageTk
 
 from client_framework import Client
@@ -54,14 +55,7 @@ class Property:
         """
 
     def rent(self):
-        if self.rent_values[self.houses + 1]:
-            return self.rent_values[self.houses + 1]
-        elif self.colour == "Station":
-            return
-        elif self.colour == "Utility":
-            return
-        else:
-            print("Rent Error")
+        return self.rent_values[self.houses + 1]
 
     def value(self):
         val = self.price
@@ -1958,6 +1952,12 @@ class Monopoly(tk.Toplevel):
 
     def pay_rent(self, payer, propertypos):
         rent_amt = self.properties[propertypos].rent()
+        if self.properties[propertypos].colour == "Station":
+            rent_amt = 25 * (2 ** (self.count_colour(propertypos) - 1))
+        elif self.properties[propertypos].colour == "Utility":
+            rent_amt = self.current_move * (
+                self.count_colour(propertypos) * (self.count_colour(propertypos) + 3)
+            )
         while self.player_details[payer]["Money"] < rent_amt:
             # self.end_button.configure(state='disabled')
             # Mortgage pop up
@@ -1968,7 +1968,7 @@ class Monopoly(tk.Toplevel):
         self.player_details[payer]["Money"] -= rent_amt
         self.player_details[self.properties[propertypos].owner]["Money"] += rent_amt
         self.update_game(
-            f"{self.player_details[payer]['Name']} paid {rent_amt} to {self.player_details[self.properties[propertypos].owner]['Name']}"
+            f"{self.player_details[payer]['Name']} paid {rent_amt} to {self.owner_detail(propertypos)}"
         )
 
     def end_turn(self, received=False):
@@ -2022,7 +2022,6 @@ class Monopoly(tk.Toplevel):
                 break
 
 
-# TODO Rent for station, utility
 # TODO: Mortgage, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
 
 # ? Voice Chat, Auctions, Select Colour, Custom Actions

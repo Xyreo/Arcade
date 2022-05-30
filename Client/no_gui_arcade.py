@@ -78,7 +78,6 @@ def event_handler(msg):
                 g = Monopoly(
                     msg[3][0], msg[3][1], lambda move: send(rid, "MSG", move), h
                 )
-                print("NANI")
 
         elif msg[1] == "MSG":
             g.updater(msg[2])
