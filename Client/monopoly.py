@@ -2023,12 +2023,10 @@ class Monopoly(tk.Toplevel):
 
 
 # TODO Rent for station, utility
-# TODO Dont pay yourself
 # TODO: Mortgage, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
 
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
 
-# ! Fix running monopoly separately
 if __name__ == "__main__":
     mono = None
     root = tk.Tk()
