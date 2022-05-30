@@ -5,7 +5,8 @@ import tkinter as tk
 
 from PIL import Image, ImageOps, ImageTk
 
-ASSET_PATH = "./Assets"
+ASSET_PATH = "Assets"
+ASSET_PATH = ASSET_PATH if os.path.exists(ASSET_PATH) else "Client/" + ASSET_PATH
 
 
 class Chess(tk.Toplevel):

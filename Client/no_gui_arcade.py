@@ -8,7 +8,7 @@ import threading
 import time
 import tkinter as tk
 
-game = "CHESS"
+game = "MNPLY"
 sent_time = time.perf_counter()
 pid = None
 rid = None
@@ -73,7 +73,7 @@ def event_handler(msg):
 
 
 root = tk.Tk()
-c = Client(("localhost", 6779), event_handler)
+c = Client(("167.71.231.52", 6969), event_handler)
 send("Gay")
 send("0", "JOIN", game)
 root.mainloop()

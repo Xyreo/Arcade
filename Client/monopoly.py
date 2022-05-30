@@ -5,7 +5,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from time import sleep
 from tkinter import messagebox as msgb
-
+import os
 from PIL import Image, ImageOps, ImageTk
 
 from client_framework import Client
@@ -16,7 +16,8 @@ try:
 except:
     print("No Output Devices Found")
 
-ASSET = "./Assets/Mnply_Assets"
+ASSET = "/Assets/Mnply_Assets"
+ASSET = ASSET if os.path.exists(ASSET) else "Client/" + ASSET
 
 
 class Property:
