@@ -5,7 +5,7 @@ import time
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox as msgb
-
+from plyer import notification as noti
 from PIL import Image, ImageOps, ImageTk
 
 from chess import Chess
@@ -85,7 +85,7 @@ class Arcade(tk.Toplevel):
 
         self.current_room = None
 
-        self.cobj = Client(("167.71.231.52", 6969), self.event_handler)
+        self.cobj = Client(("localhost", 6969), self.event_handler)
         self.cobj.send((self.name))
 
         self.main_notebook = ttk.Notebook(
@@ -107,6 +107,14 @@ class Arcade(tk.Toplevel):
 
     def pprint(self, d):
         print(json.dumps(d, indent=4))
+
+    def chess_notifier(self, opponent, piece, dest, captured=None):
+        message = f"{opponent} played {piece} to {dest}"
+        if captured:
+            message += f", capturing your {captured}!"
+        noti.notify(
+            title="Your Turn has started", message=message, app_name="Chess", timeout=5
+        )
 
     def event_handler(self, msg):
         dest = msg[0]
@@ -167,6 +175,8 @@ class Arcade(tk.Toplevel):
             elif msg[1] == "MSG":
                 if game == "CHESS":
                     self.game.opp_move(msg[2])
+                    self.chess_notifier("Opp", "Knight", "E4")
+
                 if game == "MNPLY":
                     self.game.updater(msg[2])
 
