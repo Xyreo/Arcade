@@ -5,7 +5,7 @@ import time
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox as msgb
-
+from plyer import notification as noti
 from PIL import Image, ImageOps, ImageTk
 
 from chess import Chess
@@ -85,7 +85,7 @@ class Arcade(tk.Toplevel):
 
         self.current_room = None
 
-        self.cobj = Client(("167.71.231.52", 6969), self.event_handler)
+        self.cobj = Client(("localhost", 6969), self.event_handler)
         self.cobj.send((self.name))
 
         self.main_notebook = ttk.Notebook(
@@ -107,6 +107,14 @@ class Arcade(tk.Toplevel):
 
     def pprint(self, d):
         print(json.dumps(d, indent=4))
+
+    def chess_notifier(self, opponent, piece, dest, captured=None):
+        message = f"{opponent} played {piece} to {dest}"
+        if captured:
+            message += f", capturing your {captured}!"
+        noti.notify(
+            title="Your Turn has started", message=message, app_name="Chess", timeout=5
+        )
 
     def event_handler(self, msg):
         dest = msg[0]
@@ -167,6 +175,8 @@ class Arcade(tk.Toplevel):
             elif msg[1] == "MSG":
                 if game == "CHESS":
                     self.game.opp_move(msg[2])
+                    self.chess_notifier("Opp", "Knight", "E4")
+
                 if game == "MNPLY":
                     self.game.updater(msg[2])
 
@@ -244,7 +254,6 @@ class Arcade(tk.Toplevel):
         create_button.place(relx=0.5, rely=0.6, anchor="center")
 
     def join_lobby(self, game):
-
         parent = self.chess_frame if game == "CHESS" else self.monopoly_frame
         self.lobby_frames[game] = tk.Frame(
             parent,
@@ -276,12 +285,14 @@ class Arcade(tk.Toplevel):
         tree = self.lobby_trees[game]
         tree.place(relx=0, rely=0.05, anchor="nw", relheight=0.9, relwidth=0.96)
 
-        tk.Button(
+        self.join_select_room_button = tk.Button(
             frame,
             text="Join",
             font=("times", 13),
             command=lambda: self.join_selected_room(game, tree.selection()),
-        ).place(relx=0.96, rely=1, anchor="se")
+        )
+        self.join_select_room_button.place(relx=0.96, rely=1, anchor="se")
+
         scroll.configure(command=tree.yview)
         tree.column(
             "#0",
@@ -318,18 +329,21 @@ class Arcade(tk.Toplevel):
     def update_lobby(self, game):
         for item in self.lobby_trees[game].get_children():
             self.lobby_trees[game].delete(item)
-
-        for id, room in self.rooms[game].items():
-            if len(room["members"]) >= room["settings"]["MAX_PLAYERS"]:
-                continue
-            hostname = room["members"][room["host"]]["name"]
-            self.lobby_trees[game].insert(
-                parent="",
-                index="end",
-                iid=id,
-                text="",
-                values=(id, hostname, len(room["members"])),
-            )
+        if self.rooms[game]:
+            self.join_select_room_button.configure(state="normal")
+            for id, room in self.rooms[game].items():
+                if len(room["members"]) >= room["settings"]["MAX_PLAYERS"]:
+                    continue
+                hostname = room["members"][room["host"]]["name"]
+                self.lobby_trees[game].insert(
+                    parent="",
+                    index="end",
+                    iid=id,
+                    text="",
+                    values=(id, hostname, len(room["members"])),
+                )
+        else:
+            self.join_select_room_button.configure(state="disabled")
 
     def leave_lobby(self, game, frame_preserve=False):
         if not frame_preserve:
