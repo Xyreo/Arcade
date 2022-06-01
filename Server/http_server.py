@@ -1,9 +1,6 @@
 import datetime
-import hashlib
 import json
 import os
-import pickle
-import sys
 import time
 from datetime import date
 
@@ -14,7 +11,6 @@ from dotenv import find_dotenv, load_dotenv
 from flask import Blueprint, Flask, jsonify, request
 
 from authenticator import Auth
-
 
 app = Flask(__name__)
 load_dotenv(find_dotenv())
