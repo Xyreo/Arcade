@@ -5,8 +5,12 @@ import time
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox as msgb
-from plyer import notification as noti
+
 from PIL import Image, ImageOps, ImageTk
+from plyer import notification as noti
+
+if os.name == "nt":
+    from win32gui import GetForegroundWindow, GetWindowText
 
 from chess import Chess
 from client_framework import Client
@@ -108,13 +112,22 @@ class Arcade(tk.Toplevel):
     def pprint(self, d):
         print(json.dumps(d, indent=4))
 
+    def get_active_window(self):
+        try:
+            return GetWindowText(GetForegroundWindow())
+        except:
+            return None
+
     def chess_notifier(self, opponent, piece, dest, captured=None):
         message = f"{opponent} played {piece} to {dest}"
         if captured:
             message += f", capturing your {captured}!"
-        noti.notify(
-            title="Your Turn has started", message=message, app_name="Chess", timeout=5
-        )
+        if self.get_active_window() != "Chess":
+            noti.notify(
+                title="Your Turn has started",
+                message=message,
+                timeout=5,
+            )
 
     def event_handler(self, msg):
         dest = msg[0]
@@ -433,12 +446,14 @@ class Arcade(tk.Toplevel):
 
         # print settings here
         if hostname == "You":
-            tk.Button(
+            self.room_start_button = tk.Button(
                 frame,
                 text="START",
                 font=("times", 13),
                 command=lambda: self.start_room(game, room["id"]),
-            ).place(relx=0.5, rely=0.9, anchor="center")
+                state="disabled",
+            )
+            self.room_start_button.place(relx=0.5, rely=0.9, anchor="center")
         else:
             tk.Label(
                 frame,
@@ -460,6 +475,13 @@ class Arcade(tk.Toplevel):
         ).place(relx=0.5, rely=0.1, anchor="center")
         k = 2
         d = sorted(list(room["members"].values()), key=lambda x: x["name"])
+        try:
+            if len(d) > 1:
+                self.room_start_button.configure(state="normal")
+            else:
+                self.room_start_button.configure(state="disabled")
+        except:
+            pass
         for i in d:
             tk.Label(
                 self.room_members[game],
