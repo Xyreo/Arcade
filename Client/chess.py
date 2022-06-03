@@ -3,6 +3,11 @@ import threading
 import time
 import tkinter as tk
 
+from plyer import notification as noti
+
+if os.name == "nt":
+    from win32gui import GetForegroundWindow, GetWindowText
+
 from PIL import Image, ImageOps, ImageTk
 
 ASSET_PATH = "Assets"
@@ -557,9 +562,33 @@ class Chess(tk.Toplevel):
 
     def opp_move(self, msg):
         start, end, pawn = msg
+        self.chess_notifier(
+            "Opponent",
+            self.board[start].piece,
+            Chess.grid_to_square(end),
+            captured=self.board[end],
+        )
         if pawn:
             self.pawn_promotion = pawn
         self.start_move(start, end, multi=True)
+
+    def get_active_window(self):
+        try:
+            return GetWindowText(GetForegroundWindow())
+        except:
+            return None
+
+    def chess_notifier(self, opponent, piece, dest, captured=None):
+        message = f"{opponent} played {piece.title()} to {dest.upper()}"
+        if captured:
+            message += f", capturing your {captured.piece.title()}"
+        if self.get_active_window() != "Chess":
+            noti.notify(
+                title="Your Turn has started",
+                app_name="Chess",
+                message=message,
+                timeout=5,
+            )
 
     @staticmethod
     def grid_to_square(k):

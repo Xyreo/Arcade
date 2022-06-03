@@ -7,10 +7,6 @@ import tkinter.ttk as ttk
 from tkinter import messagebox as msgb
 
 from PIL import Image, ImageOps, ImageTk
-from plyer import notification as noti
-
-if os.name == "nt":
-    from win32gui import GetForegroundWindow, GetWindowText
 
 from chess import Chess
 from client_framework import Client
@@ -112,23 +108,6 @@ class Arcade(tk.Toplevel):
     def pprint(self, d):
         print(json.dumps(d, indent=4))
 
-    def get_active_window(self):
-        try:
-            return GetWindowText(GetForegroundWindow())
-        except:
-            return None
-
-    def chess_notifier(self, opponent, piece, dest, captured=None):
-        message = f"{opponent} played {piece} to {dest}"
-        if captured:
-            message += f", capturing your {captured}!"
-        if self.get_active_window() != "Chess":
-            noti.notify(
-                title="Your Turn has started",
-                message=message,
-                timeout=5,
-            )
-
     def event_handler(self, msg):
         dest = msg[0]
         print("Recv:", msg)
@@ -188,7 +167,6 @@ class Arcade(tk.Toplevel):
             elif msg[1] == "MSG":
                 if game == "CHESS":
                     self.game.opp_move(msg[2])
-                    self.chess_notifier("Opp", "Knight", "E4")
 
                 if game == "MNPLY":
                     self.game.updater(msg[2])
