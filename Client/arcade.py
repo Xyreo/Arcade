@@ -18,6 +18,7 @@ from monopoly import Monopoly
 ASSET = "Assets/Home_Assets"
 ASSET = ASSET if os.path.exists(ASSET) else "Client/" + ASSET
 HTTP = Http("http://167.71.231.52:5000")
+CLIENT_ADDRESS = "167.71.231.52"
 
 
 class Rooms(dict):
@@ -85,7 +86,7 @@ class Arcade(tk.Toplevel):
 
         self.current_room = None
 
-        self.cobj = Client(("localhost", 6969), self.event_handler)
+        self.cobj = Client((CLIENT_ADDRESS, 6969), self.event_handler)
         self.cobj.send((self.name))
 
         self.main_notebook = ttk.Notebook(
