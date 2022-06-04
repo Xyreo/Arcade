@@ -2219,6 +2219,7 @@ class Monopoly(tk.Toplevel):
                 print("Closed CLI Thread")
                 break
 
+
 # !! SERVER MORTGAGE UNMORTGAGE SELL
 # TODO: Sell Houses, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
 # ! Change build extra house to ttk.checkbutton(<use command>)
