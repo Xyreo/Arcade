@@ -92,6 +92,10 @@ class Monopoly(tk.Toplevel):
         self.buy_button.destroy()
         self.mortgage_button = ttk.Button()
         self.mortgage_button.destroy()
+        self.unmortgage_button = ttk.Button()
+        self.unmortgage_button.destroy()
+        self.sell_button = ttk.Button()
+        self.sell_button.destroy()
         self.trade_button = ttk.Button()
         self.trade_button.destroy()
         self.build_button = ttk.Button()
@@ -112,8 +116,9 @@ class Monopoly(tk.Toplevel):
                 {"Money": 1500, "Injail": False, "Position": 0, "Properties": []}
             )  # Properties will store obj from properties dict
 
-        cli_thread = threading.Thread(target=self.CLI)
-        cli_thread.start()
+        self.cli_thread = threading.Thread(target=self.CLI)
+        self.cli_thread.daemon = True
+        self.cli_thread.start()
 
     def updater(self, msg):
         if msg[1] == "ROLL":
@@ -140,7 +145,6 @@ class Monopoly(tk.Toplevel):
         self.resizable(False, False)
         self.geometry(f"{screen_width}x{screen_height}+{x_coord}+{y_coord}")
         self.config(bg="white")
-        # self.protocol("WM_DELETE_WINDOW", self.winfo_parent.destroy)
 
     def create_gui_divisions(self):
         self.board_canvas = tk.Canvas(
@@ -1236,19 +1240,8 @@ class Monopoly(tk.Toplevel):
                 command=lambda: self.buy_property(
                     self.player_details[self.turn]["Position"] % 40, self.turn
                 ),
-                state="disabled",
             )
-
             self.buy_button.place(relx=0.2, rely=0.1, anchor="center")
-
-            my_sets = []
-            for i in self.player_details[self.turn]["Properties"]:
-                if (
-                    i.houses >= 0
-                    and i.colour not in my_sets
-                    and i.colour not in ["Station", "Utility"]
-                ):
-                    my_sets.append(i.colour)
 
             self.build_button = ttk.Button(
                 self.action_frame,
@@ -1258,52 +1251,37 @@ class Monopoly(tk.Toplevel):
             )
             self.build_button.place(relx=0.2, rely=0.3, anchor="center")
 
-            if not my_sets:
-                self.build_button.configure(state="disabled")
-
             self.trade_button = ttk.Button(
                 self.action_frame,
                 text="TRADE",
                 style="my.TButton",
-            )  # command=lambda: self.trade(),
+                command=self.trade,
+            )
             self.trade_button.place(relx=0.2, rely=0.5, anchor="center")
-
-            if not self.player_details[self.turn]["Properties"]:
-                self.trade_button.configure(state="disabled")
 
             self.mortgage_button = ttk.Button(
                 self.action_frame,
                 text="MORTGAGE",
                 style="my.TButton",
-            )  # command=lambda: self.mortgage(),
+                command=self.mortgage,
+            )
             self.mortgage_button.place(relx=0.8, rely=0.1, anchor="center")
-
-            if not self.player_details[self.turn]["Properties"]:
-                self.mortgage_button.configure(state="disabled")
 
             self.unmortgage_button = ttk.Button(
                 self.action_frame,
                 text="UNMORTGAGE",
                 style="my.TButton",
-            )  # command=lambda: self.mortgage(),
+                command=self.unmortgage,
+            )
             self.unmortgage_button.place(relx=0.8, rely=0.3, anchor="center")
-
-            if not any(
-                i.isMortgaged for i in self.player_details[self.turn]["Properties"]
-            ):
-                self.unmortgage_button.configure(state="disabled")
 
             self.sell_button = ttk.Button(
                 self.action_frame,
                 text="SELL HOUSES",
                 style="my.TButton",
-            )  # command=lambda: self.mortgage(),
+                command=self.sell,
+            )
             self.sell_button.place(relx=0.8, rely=0.5, anchor="center")
-
-            if not any(
-                i.houses > 0 for i in self.player_details[self.turn]["Properties"]
-            ):
-                self.sell_button.configure(state="disabled")
 
             self.end_button = ttk.Button(
                 self.action_frame,
@@ -1312,13 +1290,24 @@ class Monopoly(tk.Toplevel):
                 command=lambda: self.end_turn(),
             )
             self.end_button.place(relx=0.5, rely=0.3, anchor="center")
-            if str(self.roll_button["state"]) == "normal":
-                self.end_button.configure(state="disabled")
 
             self.current_txt = txt
-
             action_label = tk.Label(self.action_frame, text=self.current_txt, font=30)
             action_label.place(relx=0.5, rely=0.75, anchor="center")
+
+            self.toggle_action_buttons(True)
+
+    def trade(self):
+        pass
+
+    def mortgage(self):
+        pass
+
+    def unmortgage(self):
+        pass
+
+    def sell(self):
+        pass
 
     def toggle_action_buttons(self, enable=False):
         if enable:
@@ -1344,17 +1333,14 @@ class Monopoly(tk.Toplevel):
                     if str(self.roll_button["state"]) == "normal":
                         d[i].configure(state="disabled")
                 if i == "mortgage":
-                    if not self.player_details[self.turn]["Properties"]:
+                    if not self.player_details[self.turn]["Properties"] or not any(
+                        i.houses <= 0
+                        for i in self.player_details[self.turn]["Properties"]
+                    ):
                         d[i].configure(state="disabled")
                 if i == "build":
-                    my_sets = []
-                    for j in self.player_details[self.turn]["Properties"]:
-                        if (
-                            j.houses >= 0
-                            and j.colour not in my_sets
-                            and j.colour not in ["Station", "Utility"]
-                        ):
-                            my_sets.append(j.colour)
+                    my_sets = self.find_my_sets()
+
                     if not my_sets:
                         d[i].configure(state="disabled")
                 if i == "buy":
@@ -1432,6 +1418,22 @@ class Monopoly(tk.Toplevel):
         if not received:
             self.send_msg(("BUY", propertypos))
 
+    def find_my_sets(self):
+        my_sets = []
+        for i in self.player_details[self.turn]["Properties"]:
+            if (
+                i.houses >= 0
+                and i.colour not in my_sets
+                and i.colour not in ["Station", "Utility"]
+            ):
+                my_sets.append(i.colour)
+
+        for i in self.player_details[self.turn]["Properties"]:
+            if i.isMortgaged and i.colour in my_sets:
+                my_sets.remove(i.colour)
+
+        return my_sets
+
     def build_action_frame(self):
         self.build_frame = tk.Frame(
             self.action_frame,
@@ -1451,15 +1453,7 @@ class Monopoly(tk.Toplevel):
 
         self.bind("<Escape>", lambda a: self.build_frame.destroy())
 
-        my_sets = []
-        for i in self.player_details[self.turn]["Properties"]:
-            if (
-                i.houses >= 0
-                and i.colour not in my_sets
-                and i.colour not in ["Station", "Utility"]
-            ):
-                my_sets.append(i.colour)
-
+        my_sets = self.find_my_sets()
         tk.Label(
             self.build_frame,
             text="Select the Colour Set: ",
@@ -1470,12 +1464,14 @@ class Monopoly(tk.Toplevel):
 
         def distribute_build(event, set_properties):
             try:
+                self.extrahouse_label.destroy()
                 for i, j in self.radio_dict.items():
                     j.destroy()
             except:
                 pass
             try:
-                self.extrahouse_label.destroy()
+                self.clear_build_button.destroy()
+                self.final_build_button.destroy()
             except:
                 pass
 
@@ -1598,24 +1594,27 @@ class Monopoly(tk.Toplevel):
 
         def clear_all(all):
             try:
-                for i, j in self.radio_dict.items():
-                    j.destroy()
+                self.select_houses.destroy()
+                self.select_houses_label.destroy()
             except:
                 pass
             try:
-                self.extrahouse_label.destroy()
                 self.final_build_txt_label.destroy()
+            except:
+                pass
+            try:
                 self.clear_build_button.destroy()
                 self.final_build_button.destroy()
             except:
                 pass
+            try:
+                self.extrahouse_label.destroy()
+                for i, j in self.radio_dict.items():
+                    j.destroy()
+            except:
+                pass
             if all:
                 self.select_set.set("")
-                try:
-                    self.select_houses.destroy()
-                    self.select_houses_label.destroy()
-                except:
-                    pass
 
         def selected(event):
             clear_all(False)
@@ -2080,4 +2079,5 @@ if __name__ == "__main__":
         print,
         hobj,
     )
+    mono.protocol("WM_DELETE_WINDOW", root.destroy)
     root.mainloop()
