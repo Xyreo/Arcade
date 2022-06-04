@@ -86,11 +86,7 @@ class Arcade(tk.Toplevel):
 
         self.current_room = None
 
-<<<<<<< HEAD
         self.cobj = Client((CLIENT_ADDRESS, 6969), self.event_handler)
-=======
-        self.cobj = Client(("167.71.231.52", 6969), self.event_handler)
->>>>>>> 88f8d0cfd334960bd71093df9ee48a7e3a78a118
         self.cobj.send((self.name))
 
         self.main_notebook = ttk.Notebook(
