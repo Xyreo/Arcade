@@ -84,7 +84,7 @@ def event_handler(msg):
 
 
 root = tk.Tk()
-c = Client(("localhost", 6779), event_handler)
+c = Client(("localhost", 6969), event_handler)
 
 c.send(str(random.randint(0, 1000000)))
 send("0", "JOIN", game)

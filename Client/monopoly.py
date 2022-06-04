@@ -113,7 +113,12 @@ class Monopoly(tk.Toplevel):
 
         for i in self.player_details:
             self.player_details[i].update(
-                {"Money": 1500, "Injail": False, "Position": 0, "Properties": []}
+                {
+                    "Money": 1500,
+                    "Injail": False,
+                    "Position": 0,
+                    "Properties": [],
+                }
             )  # Properties will store obj from properties dict
 
         self.cli_thread = threading.Thread(target=self.CLI)
@@ -1097,6 +1102,23 @@ class Monopoly(tk.Toplevel):
         else:
             self.colour_property_frame(position)
 
+        if self.properties[position].isMortgaged:
+            lbl = tk.Label(
+                self.property_frame,
+                text="MORTGAGED\nPROPERTY",
+                bg="#F9FBFF",
+                fg="red",
+                font=("times", (self.board_side - 2) // 30),
+            )
+            if position in [5, 15, 25, 35, 12, 28]:
+                lbl.place(
+                    relx=0.5, rely=0.7, relheight=0.35, relwidth=1, anchor="center"
+                )
+            else:
+                lbl.place(
+                    relx=0.5, rely=0.53, relheight=0.48, relwidth=1, anchor="center"
+                )
+
     # endregion
 
     # region # Player Frame
@@ -1113,7 +1135,7 @@ class Monopoly(tk.Toplevel):
         self.player_frame.place(relx=0, rely=1, anchor="sw")
 
         scroll = ttk.Scrollbar(self.player_frame, orient="vertical")
-        scroll.place(relx=1, rely=0, relwidth=0.05, anchor="ne", relheight=1)
+        scroll.place(relx=1, rely=0, relwidth=0.06, anchor="ne", relheight=1)
 
         self.player_tree = ttk.Treeview(
             self.player_frame, columns=("Player", "Value"), yscrollcommand=scroll.set
@@ -1191,7 +1213,7 @@ class Monopoly(tk.Toplevel):
             except:
                 pass
 
-        self.player_tree.place(relx=0, rely=0.5, anchor="w", relheight=1, relwidth=0.95)
+        self.player_tree.place(relx=0, rely=0.5, anchor="w", relheight=1, relwidth=0.94)
         self.player_tree.bind(
             "<<TreeviewSelect>>", lambda event: self.treeview_click(event)
         )
@@ -1263,7 +1285,7 @@ class Monopoly(tk.Toplevel):
                 self.action_frame,
                 text="MORTGAGE",
                 style="my.TButton",
-                command=self.mortgage,
+                command=lambda: self.mortgage_unmortgage(True),
             )
             self.mortgage_button.place(relx=0.8, rely=0.1, anchor="center")
 
@@ -1271,7 +1293,7 @@ class Monopoly(tk.Toplevel):
                 self.action_frame,
                 text="UNMORTGAGE",
                 style="my.TButton",
-                command=self.unmortgage,
+                command=lambda: self.mortgage_unmortgage(False),
             )
             self.unmortgage_button.place(relx=0.8, rely=0.3, anchor="center")
 
@@ -1300,11 +1322,135 @@ class Monopoly(tk.Toplevel):
     def trade(self):
         pass
 
-    def mortgage(self):
-        pass
+    def mortgage_unmortgage(self, mortgage):
+        self.mortgage_frame = tk.Frame(
+            self.action_frame,
+        )
+        self.mortgage_frame.place(
+            relx=0.5, rely=0.5, relwidth=1, relheight=1, anchor="center"
+        )
 
-    def unmortgage(self):
-        pass
+        tk.Button(
+            self.mortgage_frame,
+            text="← BACK",
+            font=("times", (self.board_side - 2) // 60),
+            highlightthickness=0,
+            border=0,
+            command=self.mortgage_frame.destroy,
+        ).place(relx=0.1, rely=0.05, anchor="ne")
+
+        self.bind("<Escape>", lambda a: self.mortgage_frame.destroy())
+
+        tk.Label(
+            self.mortgage_frame,
+            text=f"Select the properties that you wish to {'Mortgage' if mortgage else 'Unmortgage'}:",
+            font=("times", (self.board_side - 2) // 50),
+        ).place(relx=0.5, rely=0.05, anchor="n")
+
+        self.list_frame = tk.Frame(self.mortgage_frame)
+        self.list_frame.place(
+            relx=0.5, rely=0.15, relwidth=1, relheight=0.6, anchor="n"
+        )
+
+        def update_mortgage():
+            try:
+                self.mortgage_label.destroy()
+            except:
+                pass
+            self.mortvalue = 0
+            if mortgage:
+                for i, j in self.mortgage_var.items():
+                    if j.get():
+                        self.mortvalue += i.mortgage
+
+                txt = f"Total Mortgage Value: {self.mortvalue}"
+
+            else:
+                for i, j in self.mortgage_var.items():
+                    if j.get():
+                        self.mortvalue += int(1.1 * i.mortgage)
+
+                txt = f"Total Cost to Unmortgage: {self.mortvalue}"
+            self.mortgage_label = tk.Label(
+                self.mortgage_frame,
+                text=txt,
+                font=("times", (self.board_side - 2) // 50),
+            )
+            self.mortgage_label.place(relx=0.3, rely=0.85, anchor="center")
+
+        l = []
+        for i in self.player_details[self.turn]["Properties"]:
+            if mortgage:
+                if not i.isMortgaged and i.houses <= 0:
+                    l.append(i)
+            else:
+                if i.isMortgaged:
+                    l.append(i)
+
+        self.mortgage_var = {}
+        self.mortgage_checkboxes = {}
+        for i in l:
+            self.mortgage_var[i] = tk.BooleanVar()
+            self.mortgage_checkboxes[i] = tk.Checkbutton(
+                self.list_frame,
+                text=i.name,
+                variable=self.mortgage_var[i],
+                offvalue=False,
+                onvalue=True,
+                command=update_mortgage,
+                selectcolor=i.hex if i.hex else "",
+            )
+        x = y = 0
+        k = 1
+        for i, j in self.mortgage_checkboxes.items():
+            j.place(relx=x, rely=y, anchor="nw")
+            if k % 4:
+                x += 0.25
+            else:
+                y += 1 / 7.25
+                x = 0
+            k += 1
+
+        def final_mortgage():
+            if self.show_message(
+                "Mortgage Properties?" if mortgage else "Unmortgage Properties",
+                f"Are you sure you wish to mortgage the selected properties for {self.mortvalue}?"
+                if mortgage
+                else f"Are you sure you wish to unmortgage the selected properties for {self.mortvalue}?",
+                type="okcancel",
+            ):
+                for i, j in self.mortgage_var.items():
+                    if j.get():
+                        i.isMortgaged = mortgage
+
+                self.player_details[self.turn]["Money"] += (
+                    self.mortvalue if mortgage else -self.mortvalue
+                )
+                self.update_game()
+
+        def clear_mort():
+            for i, j in self.mortgage_checkboxes.items():
+                j.deselect()
+            try:
+                self.mortgage_label.destroy()
+            except:
+                pass
+
+        self.final_mortgage_button = tk.Button(
+            self.mortgage_frame,
+            text="MORTGAGE" if mortgage else "UNMORTGAGE",
+            font=("times", (self.board_side - 2) // 60),
+            command=final_mortgage,
+        )
+        self.final_mortgage_button.place(relx=0.75, rely=0.85, anchor="nw")
+
+        self.clear_mort_button = tk.Button(
+            self.mortgage_frame,
+            text="CLEAR",
+            font=("times", (self.board_side - 2) // 60),
+            command=clear_mort,
+        )
+        self.clear_mort_button.place(relx=0.9, rely=0.85, anchor="nw")
 
     def sell(self):
         pass
@@ -1333,9 +1479,16 @@ class Monopoly(tk.Toplevel):
                     if str(self.roll_button["state"]) == "normal":
                         d[i].configure(state="disabled")
                 if i == "mortgage":
-                    if not self.player_details[self.turn]["Properties"] or not any(
-                        i.houses <= 0
-                        for i in self.player_details[self.turn]["Properties"]
+                    if (
+                        not self.player_details[self.turn]["Properties"]
+                        or not any(
+                            i.houses <= 0
+                            for i in self.player_details[self.turn]["Properties"]
+                        )
+                        or not any(
+                            not i.isMortgaged
+                            for i in self.player_details[self.turn]["Properties"]
+                        )
                     ):
                         d[i].configure(state="disabled")
                 if i == "build":
@@ -1979,9 +2132,17 @@ class Monopoly(tk.Toplevel):
             self.property_frame_popup(pos)
             if self.properties[pos].owner:
                 if self.properties[pos].owner != self.me:
-                    self.pay_rent(self.turn, pos)
+                    if self.properties[pos].isMortgaged:
+                        self.update_game("This property is Mortgaged!")
+                    else:
+                        self.pay_rent(self.turn, pos)
                 else:
-                    self.update_game("You own this property!")
+                    if self.properties[pos].isMortgaged:
+                        self.update_game(
+                            "You own this mortgaged property! Unmortgage to start receiving rent when others land here."
+                        )
+                    else:
+                        self.update_game("You own this property!")
             else:
                 self.update_game("Buy")
                 if self.turn == self.me:
@@ -2058,9 +2219,9 @@ class Monopoly(tk.Toplevel):
                 print("Closed CLI Thread")
                 break
 
-
-# TODO: Mortgage, Unmortgage, Sell Houses, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
-
+# !! SERVER MORTGAGE UNMORTGAGE SELL
+# TODO: Sell Houses, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
+# ! Change build extra house to ttk.checkbutton(<use command>)
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
 
 if __name__ == "__main__":
