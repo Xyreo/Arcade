@@ -12,7 +12,6 @@ from flask import Blueprint, Flask, jsonify, request
 
 from authenticator import Auth
 
-
 app = Flask(__name__)
 load_dotenv(find_dotenv())
 password = os.getenv("password")

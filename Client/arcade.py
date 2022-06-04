@@ -5,7 +5,7 @@ import time
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox as msgb
-from plyer import notification as noti
+
 from PIL import Image, ImageOps, ImageTk
 
 from chess import Chess
@@ -86,7 +86,11 @@ class Arcade(tk.Toplevel):
 
         self.current_room = None
 
+<<<<<<< HEAD
         self.cobj = Client((CLIENT_ADDRESS, 6969), self.event_handler)
+=======
+        self.cobj = Client(("167.71.231.52", 6969), self.event_handler)
+>>>>>>> 88f8d0cfd334960bd71093df9ee48a7e3a78a118
         self.cobj.send((self.name))
 
         self.main_notebook = ttk.Notebook(
@@ -108,14 +112,6 @@ class Arcade(tk.Toplevel):
 
     def pprint(self, d):
         print(json.dumps(d, indent=4))
-
-    def chess_notifier(self, opponent, piece, dest, captured=None):
-        message = f"{opponent} played {piece} to {dest}"
-        if captured:
-            message += f", capturing your {captured}!"
-        noti.notify(
-            title="Your Turn has started", message=message, app_name="Chess", timeout=5
-        )
 
     def event_handler(self, msg):
         dest = msg[0]
@@ -176,7 +172,6 @@ class Arcade(tk.Toplevel):
             elif msg[1] == "MSG":
                 if game == "CHESS":
                     self.game.opp_move(msg[2])
-                    self.chess_notifier("Opp", "Knight", "E4")
 
                 if game == "MNPLY":
                     self.game.updater(msg[2])
@@ -434,12 +429,14 @@ class Arcade(tk.Toplevel):
 
         # print settings here
         if hostname == "You":
-            tk.Button(
+            self.room_start_button = tk.Button(
                 frame,
                 text="START",
                 font=("times", 13),
                 command=lambda: self.start_room(game, room["id"]),
-            ).place(relx=0.5, rely=0.9, anchor="center")
+                state="disabled",
+            )
+            self.room_start_button.place(relx=0.5, rely=0.9, anchor="center")
         else:
             tk.Label(
                 frame,
@@ -461,6 +458,13 @@ class Arcade(tk.Toplevel):
         ).place(relx=0.5, rely=0.1, anchor="center")
         k = 2
         d = sorted(list(room["members"].values()), key=lambda x: x["name"])
+        try:
+            if len(d) > 1:
+                self.room_start_button.configure(state="normal")
+            else:
+                self.room_start_button.configure(state="disabled")
+        except:
+            pass
         for i in d:
             tk.Label(
                 self.room_members[game],
