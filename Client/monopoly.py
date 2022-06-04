@@ -1256,10 +1256,20 @@ class Monopoly(tk.Toplevel):
                 style="my.TButton",
                 command=self.build_action_frame,
             )
-            self.build_button.place(relx=0.2, rely=0.4, anchor="center")
+            self.build_button.place(relx=0.2, rely=0.3, anchor="center")
 
             if not my_sets:
                 self.build_button.configure(state="disabled")
+
+            self.trade_button = ttk.Button(
+                self.action_frame,
+                text="TRADE",
+                style="my.TButton",
+            )  # command=lambda: self.trade(),
+            self.trade_button.place(relx=0.2, rely=0.5, anchor="center")
+
+            if not self.player_details[self.turn]["Properties"]:
+                self.trade_button.configure(state="disabled")
 
             self.mortgage_button = ttk.Button(
                 self.action_frame,
@@ -1271,15 +1281,29 @@ class Monopoly(tk.Toplevel):
             if not self.player_details[self.turn]["Properties"]:
                 self.mortgage_button.configure(state="disabled")
 
-            self.trade_button = ttk.Button(
+            self.unmortgage_button = ttk.Button(
                 self.action_frame,
-                text="TRADE",
+                text="UNMORTGAGE",
                 style="my.TButton",
-            )  # command=lambda: self.trade(),
-            self.trade_button.place(relx=0.8, rely=0.4, anchor="center")
+            )  # command=lambda: self.mortgage(),
+            self.unmortgage_button.place(relx=0.8, rely=0.3, anchor="center")
 
-            if not self.player_details[self.turn]["Properties"]:
-                self.trade_button.configure(state="disabled")
+            if not any(
+                i.isMortgaged for i in self.player_details[self.turn]["Properties"]
+            ):
+                self.unmortgage_button.configure(state="disabled")
+
+            self.sell_button = ttk.Button(
+                self.action_frame,
+                text="SELL HOUSES",
+                style="my.TButton",
+            )  # command=lambda: self.mortgage(),
+            self.sell_button.place(relx=0.8, rely=0.5, anchor="center")
+
+            if not any(
+                i.houses > 0 for i in self.player_details[self.turn]["Properties"]
+            ):
+                self.sell_button.configure(state="disabled")
 
             self.end_button = ttk.Button(
                 self.action_frame,
@@ -1287,7 +1311,7 @@ class Monopoly(tk.Toplevel):
                 style="my.TButton",
                 command=lambda: self.end_turn(),
             )
-            self.end_button.place(relx=0.5, rely=0.25, anchor="center")
+            self.end_button.place(relx=0.5, rely=0.3, anchor="center")
             if str(self.roll_button["state"]) == "normal":
                 self.end_button.configure(state="disabled")
 
@@ -1307,6 +1331,8 @@ class Monopoly(tk.Toplevel):
             "build": self.build_button,
             "mortgage": self.mortgage_button,
             "trade": self.trade_button,
+            "unmortgage": self.unmortgage_button,
+            "sell": self.sell_button,
         }
         for i in d:
             if d[i].winfo_exists():
@@ -1342,6 +1368,18 @@ class Monopoly(tk.Toplevel):
                         ].owner
                     ):
                         d[i].configure(state="disabled")
+                if i == "sell":
+                    if not any(
+                        i.houses > 0
+                        for i in self.player_details[self.turn]["Properties"]
+                    ):
+                        self.sell_button.configure(state="disabled")
+                if i == "unmortgage":
+                    if not any(
+                        i.isMortgaged
+                        for i in self.player_details[self.turn]["Properties"]
+                    ):
+                        self.unmortgage_button.configure(state="disabled")
 
     def buy_property(self, propertypos, buyer, received=False):
         self.toggle_action_buttons()
@@ -2022,24 +2060,24 @@ class Monopoly(tk.Toplevel):
                 break
 
 
-# TODO: Mortgage, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
+# TODO: Mortgage, Unmortgage, Sell Houses, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
 
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
 
 if __name__ == "__main__":
-    mono = None
     root = tk.Tk()
-    tk.Button(root, text="START", command=lambda: cobj.send(("START",))).pack()
-
-    def updater(msg):
-        global mono
-        if msg[0] == "START":
-            mono = Monopoly(msg[1], msg[2], cobj, hobj)
-            cobj.updater = mono.updater
-            root.withdraw()
-
-    cobj = Client(("localhost", 6788), updater)
+    root.withdraw()
     hobj = Http("http://167.71.231.52:5000")
-    hobj.login(input("Username: "), input("Password: "))
-
+    hobj.login("test", "test")
+    mono = Monopoly(
+        {
+            "QWERTY": {
+                "Name": "test",
+                "Colour": "red",
+            }
+        },
+        "QWERTY",
+        print,
+        hobj,
+    )
     root.mainloop()
