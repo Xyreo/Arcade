@@ -9,7 +9,6 @@ from tkinter import messagebox as msgb
 
 from PIL import Image, ImageOps, ImageTk
 
-from client_framework import Client
 from http_wrapper import Http
 
 try:
