@@ -2239,7 +2239,96 @@ class Monopoly(tk.Toplevel):
         self.mbwin.destroy()
 
 
-# !! SERVER SELL
+class Chance:
+    def __init__(self, game, order):
+        options = [
+            lambda: self.advance_to("GO"),
+            lambda: self.advance_to("TS"),
+            lambda: self.advance_to("PM"),
+            lambda: self.advance_to("UT"),
+            lambda: self.advance_to("RR"),
+            lambda: self.advance_to("GB"),
+            lambda: self.advance_to("KC"),
+            lambda: self.advance_to("MF"),
+            lambda: self.bank_transaction(50),
+            lambda: self.bank_transaction(150),
+            lambda: self.bank_transaction(100),
+            lambda: self.bank_transaction(150),
+            lambda: self.bank_transaction(-15),
+            self.general_repairs,
+            self.go_to_jail,
+            self.get_out_of_jail_free,
+            self.pay_to_players,
+        ]
+        new = [options[i] for i in order]
+        self.options = new
+        self.game = game
+
+    def advance_to(self):
+        pass
+
+    def go_to_jail(self):
+        pass
+
+    def get_out_of_jail_free(self):
+        pass
+
+    def bank_transaction(self, amt):
+        pass
+
+    def general_repairs(self):
+        pass
+
+    def pay_to_players(self):
+        pass
+
+
+class Community:
+    def __init__(self, game, order):
+        options = [
+            lambda: self.advance_to("GO"),
+            lambda: self.bank_transaction(200),
+            lambda: self.bank_transaction(50),
+            lambda: self.bank_transaction(100),
+            lambda: self.bank_transaction(100),
+            lambda: self.bank_transaction(100),
+            lambda: self.bank_transaction(10),
+            lambda: self.bank_transaction(20),
+            lambda: self.bank_transaction(25),
+            lambda: self.bank_transaction(-50),
+            lambda: self.bank_transaction(-50),
+            lambda: self.bank_transaction(-50),
+            lambda: self.pay_to_players(-50),
+            lambda: self.pay_to_players(-10),
+            self.go_to_jail,
+            self.get_out_of_jail_free,
+            self.street_repairs,
+        ]
+        new = [options[i] for i in order]
+        self.options = new
+        self.game = game
+
+    def advance_to(self):
+        pass
+
+    def go_to_jail(self):
+        pass
+
+    def get_out_of_jail_free(self):
+        pass
+
+    def bank_transaction(self, amt):
+        pass
+
+    def pay_to_players(self, amt):
+        pass
+
+    def street_repairs(self):
+        pass
+
+
+# !! SERVER MORTGAGE UNMORTGAGE SELL
+# TODO: Sell Houses, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
 # ! Change build extra house to ttk.checkbutton(<use command>)
 # TODO: Chaitanya: Sell Houses, Bankruptcy, Jail, Tax, Trading
 # TODO: Pramit: Chance, Community Chest

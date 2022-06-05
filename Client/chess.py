@@ -574,7 +574,7 @@ class Chess(tk.Toplevel):
 
     def get_active_window(self):
         try:
-            return GetWindowText(GetForegroundWindow())
+            return GetWindowText(GetForegroundWindow())  # type: ignore
         except:
             return None
 
