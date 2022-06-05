@@ -1457,7 +1457,11 @@ class Monopoly(tk.Toplevel):
         self.mortvalue = 0
         for i in l:
             self.properties[i].isMortgaged = mortgage
-            self.mortvalue += i.mortgage if mortgage else int(1.1 * i.mortgage)
+            self.mortvalue += (
+                self.properties[i].mortgage
+                if mortgage
+                else int(1.1 * self.properties[i].mortgage)
+            )
 
         self.player_details[self.turn]["Money"] += (
             self.mortvalue if mortgage else -self.mortvalue
