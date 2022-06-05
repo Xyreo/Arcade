@@ -125,7 +125,7 @@ class Monopoly(tk.Toplevel):
         self.cli_thread.daemon = True
         self.cli_thread.start()
 
-    def updater(self, msg):
+    def event_handler(self, msg):
         if msg[1] == "ROLL":
             self.roll_dice(msg[2], True)
         elif msg[1] == "BUY":
@@ -134,6 +134,8 @@ class Monopoly(tk.Toplevel):
             self.build(msg[2], msg[3], True)
         elif msg[1] == "END":
             self.end_turn(True)
+        elif msg[1] == "MORTGAGE":
+            self.final_mortgage(msg[2], msg[3], True)
 
     def create_window(self):
         screen_width = int(0.9 * self.winfo_screenwidth())
@@ -1377,6 +1379,10 @@ class Monopoly(tk.Toplevel):
                 font=("times", (self.board_side - 2) // 50),
             )
             self.mortgage_label.place(relx=0.3, rely=0.85, anchor="center")
+            self.mortgage_list = []
+            for i, j in self.mortgage_var.items():
+                if j.get():
+                    self.mortgage_list.append(i.position)
 
         l = []
         for i in self.player_details[self.turn]["Properties"]:
@@ -1411,23 +1417,6 @@ class Monopoly(tk.Toplevel):
                 x = 0
             k += 1
 
-        def final_mortgage():
-            if self.show_message(
-                "Mortgage Properties?" if mortgage else "Unmortgage Properties",
-                f"Are you sure you wish to mortgage the selected properties for {self.mortvalue}?"
-                if mortgage
-                else f"Are you sure you wish to unmortgage the selected properties for {self.mortvalue}?",
-                type="okcancel",
-            ):
-                for i, j in self.mortgage_var.items():
-                    if j.get():
-                        i.isMortgaged = mortgage
-
-                self.player_details[self.turn]["Money"] += (
-                    self.mortvalue if mortgage else -self.mortvalue
-                )
-                self.update_game()
-
         def clear_mort():
             for i, j in self.mortgage_checkboxes.items():
                 j.deselect()
@@ -1440,7 +1429,7 @@ class Monopoly(tk.Toplevel):
             self.mortgage_frame,
             text="MORTGAGE" if mortgage else "UNMORTGAGE",
             font=("times", (self.board_side - 2) // 60),
-            command=final_mortgage,
+            command=lambda: self.final_mortgage(mortgage, self.mortgage_list),
         )
         self.final_mortgage_button.place(relx=0.75, rely=0.85, anchor="nw")
 
@@ -1451,6 +1440,32 @@ class Monopoly(tk.Toplevel):
             command=clear_mort,
         )
         self.clear_mort_button.place(relx=0.9, rely=0.85, anchor="nw")
+
+    def final_mortgage(self, mortgage, l, received=False):
+        if not received:
+            if self.show_message(
+                "Mortgage Properties?" if mortgage else "Unmortgage Properties",
+                f"Are you sure you wish to mortgage the selected properties for {self.mortvalue}?"
+                if mortgage
+                else f"Are you sure you wish to unmortgage the selected properties for {self.mortvalue}?",
+                type="okcancel",
+            ):
+                pass
+            else:
+                self.update_game()
+                return
+        self.mortvalue = 0
+        for i in l:
+            self.properties[i].isMortgaged = mortgage
+            self.mortvalue += i.mortgage if mortgage else int(1.1 * i.mortgage)
+
+        self.player_details[self.turn]["Money"] += (
+            self.mortvalue if mortgage else -self.mortvalue
+        )
+
+        self.update_game()
+        if not received:
+            self.send_msg(("MORTGAGE", mortgage, l))
 
     def sell(self):
         pass
@@ -1889,22 +1904,22 @@ class Monopoly(tk.Toplevel):
             self.action_frame_popup("Jail")
 
     def show_message(self, title, message, type="info", timeout=0):
-        mbwin = tk.Tk()
-        mbwin.withdraw()
+        self.mbwin = tk.Tk()
+        self.mbwin.withdraw()
         try:
             if timeout:
-                mbwin.after(timeout, mbwin.destroy)
+                self.mbwin.after(timeout, self.mbwin.destroy)
             if type == "info":
-                msgb.showinfo(title, message, master=mbwin)
+                msgb.showinfo(title, message, master=self.mbwin)
             elif type == "warning":
-                msgb.showwarning(title, message, master=mbwin)
+                msgb.showwarning(title, message, master=self.mbwin)
             elif type == "error":
-                msgb.showerror(title, message, master=mbwin)
+                msgb.showerror(title, message, master=self.mbwin)
             elif type == "okcancel":
-                okcancel = msgb.askokcancel(title, message, master=mbwin)
+                okcancel = msgb.askokcancel(title, message, master=self.mbwin)
                 return okcancel
             elif type == "yesno":
-                yesno = msgb.askyesno(title, message, master=mbwin)
+                yesno = msgb.askyesno(title, message, master=self.mbwin)
                 return yesno
         except:
             print("Error")
@@ -2219,10 +2234,16 @@ class Monopoly(tk.Toplevel):
                 print("Closed CLI Thread")
                 break
 
+    def yeet(self):
+        root.destroy()
+        self.mbwin.destroy()
 
-# !! SERVER MORTGAGE UNMORTGAGE SELL
-# TODO: Sell Houses, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
+
+# !! SERVER SELL
 # ! Change build extra house to ttk.checkbutton(<use command>)
+# TODO: Chaitanya: Sell Houses, Bankruptcy, Jail, Tax, Trading
+# TODO: Pramit: Chance, Community Chest
+# TODO: idk: All Rules & Texts, Update GUI
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
 
 if __name__ == "__main__":
@@ -2241,5 +2262,5 @@ if __name__ == "__main__":
         print,
         hobj,
     )
-    mono.protocol("WM_DELETE_WINDOW", root.destroy)
+    mono.protocol("WM_DELETE_WINDOW", mono.yeet)
     root.mainloop()

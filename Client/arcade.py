@@ -170,7 +170,7 @@ class Arcade(tk.Toplevel):
                     self.game.opp_move(msg[2])
 
                 if game == "MNPLY":
-                    self.game.updater(msg[2])
+                    self.game.event_handler(msg[2])
 
     def send(self, msg):
         time_gap = 0.1
