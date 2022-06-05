@@ -2327,8 +2327,7 @@ class Community:
         pass
 
 
-# !! SERVER MORTGAGE UNMORTGAGE SELL
-# TODO: Sell Houses, Bankruptcy, Jail, Tax, Trading, Chance, Community Chest, All Rules & Texts, Update GUI
+# !! SERVER SELL
 # ! Change build extra house to ttk.checkbutton(<use command>)
 # TODO: Chaitanya: Sell Houses, Bankruptcy, Jail, Tax, Trading
 # TODO: Pramit: Chance, Community Chest
