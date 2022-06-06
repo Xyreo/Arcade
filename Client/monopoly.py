@@ -136,6 +136,8 @@ class Monopoly(tk.Toplevel):
         elif msg[1] == "MORTGAGE":
             self.final_mortgage(msg[2], msg[3], True)
 
+    # region # Create
+
     def create_window(self):
         screen_width = int(0.9 * self.winfo_screenwidth())
         screen_height = int(screen_width / 1.9)
@@ -397,6 +399,31 @@ class Monopoly(tk.Toplevel):
             command=lambda: self.open_children("gold"),
         )
 
+    # endregion
+
+    # region # Util
+
+    def show_message(self, title, message, type="info", timeout=0):
+        self.mbwin = tk.Tk()
+        self.mbwin.withdraw()
+        try:
+            if timeout:
+                self.mbwin.after(timeout, self.mbwin.destroy)
+            if type == "info":
+                msgb.showinfo(title, message, master=self.mbwin)
+            elif type == "warning":
+                msgb.showwarning(title, message, master=self.mbwin)
+            elif type == "error":
+                msgb.showerror(title, message, master=self.mbwin)
+            elif type == "okcancel":
+                okcancel = msgb.askokcancel(title, message, master=self.mbwin)
+                return okcancel
+            elif type == "yesno":
+                yesno = msgb.askyesno(title, message, master=self.mbwin)
+                return yesno
+        except:
+            print("Error")
+
     def count_colour(self, propertypos):
         owner = self.properties[propertypos].owner
         if owner:
@@ -411,6 +438,10 @@ class Monopoly(tk.Toplevel):
 
     def owner_detail(self, propertypos, s="Name"):
         return self.player_details[self.properties[propertypos].owner][s]
+
+    # endregion
+
+    # region # Update Game
 
     def update_game(self, action_frame_text=None):
         if self.property_frame.winfo_exists():
@@ -431,6 +462,324 @@ class Monopoly(tk.Toplevel):
             self.action_frame_popup(self.current_txt)
         if self.turn != self.me:
             self.roll_button.configure(state="disabled")
+
+    def toggle_action_buttons(self, enable=False):
+
+        if enable:
+            state = "normal"
+        else:
+            state = "disabled"
+        d = {
+            "end": self.end_button,
+            "buy": self.buy_button,
+            "build": self.build_button,
+            "mortgage": self.mortgage_button,
+            "trade": self.trade_button,
+            "unmortgage": self.unmortgage_button,
+            "sell": self.sell_button,
+        }
+        for i in d:
+            if d[i].winfo_exists():
+                d[i].configure(state=state)
+                if i == "trade":
+                    if not self.player_details[self.turn]["Properties"]:
+                        d[i].configure(state="disabled")
+                if i == "end":
+                    if str(self.roll_button["state"]) == "normal":
+                        d[i].configure(state="disabled")
+                if i == "mortgage":
+                    if (
+                        not self.player_details[self.turn]["Properties"]
+                        or not any(
+                            i.houses <= 0
+                            for i in self.player_details[self.turn]["Properties"]
+                        )
+                        or not any(
+                            not i.isMortgaged
+                            for i in self.player_details[self.turn]["Properties"]
+                        )
+                    ):
+                        d[i].configure(state="disabled")
+                if i == "build":
+                    my_sets = self.find_my_sets()
+
+                    if not my_sets:
+                        d[i].configure(state="disabled")
+                if i == "buy":
+                    if not bool(
+                        self.properties[
+                            self.player_details[self.turn]["Position"] % 40
+                        ].colour
+                    ) or (
+                        self.properties[
+                            self.player_details[self.turn]["Position"] % 40
+                        ].owner
+                    ):
+                        d[i].configure(state="disabled")
+                if i == "sell":
+                    if not any(
+                        i.houses > 0
+                        for i in self.player_details[self.turn]["Properties"]
+                    ):
+                        self.sell_button.configure(state="disabled")
+                if i == "unmortgage":
+                    if not any(
+                        i.isMortgaged
+                        for i in self.player_details[self.turn]["Properties"]
+                    ):
+                        self.unmortgage_button.configure(state="disabled")
+
+    def end_turn(self, received=False):
+        self.toggle_action_buttons()
+        if not received:
+            if self.show_message(
+                "End Turn?",
+                f"{self.player_details[self.turn]['Name']}, are you sure you want to end your turn?",
+                type="yesno",
+            ):
+                pass
+            else:
+                self.update_game()
+                self.toggle_action_buttons(True)
+                return
+        try:
+            self.turn = self.uuids[self.uuids.index(self.turn) + 1]
+        except:
+            self.turn = self.uuids[0]
+
+        if self.turn == self.me:
+            self.roll_button.configure(state="normal")
+
+        if not received:
+            self.send_msg(("END",))
+
+        self.update_game("It's your turn now! Click 'Roll Dice'")
+
+    # endregion
+
+    # region # Roll, Move
+
+    def roll_dice(self, roll=None, received=False, cli=False):
+        try:
+            music(ASSET + "/Die/diceroll.mp3")
+        except:
+            pass
+        dice_roll = roll if received else (random.randint(1, 6), random.randint(1, 6))
+        dice_roll = roll if cli else dice_roll
+        if not received:
+            self.send_msg(("ROLL", dice_roll))
+        for i in range(18):
+            self.dice_spot1.configure(image=self.die_dict[random.randint(1, 6)])
+            self.dice_spot2.configure(image=self.die_dict[random.randint(1, 6)])
+            self.dice_spot1.update()
+            self.dice_spot2.update()
+            sleep(0.12)
+            self.roll_button.configure(state="disabled")
+        self.dice_spot1.configure(image=self.die_dict[dice_roll[0]])
+        self.dice_spot2.configure(image=self.die_dict[dice_roll[1]])
+        self.dice_spot1.update()
+        self.dice_spot2.update()
+        self.current_move = sum(dice_roll)
+        if dice_roll[0] == dice_roll[1]:
+            self.move(self.turn, self.current_move, endturn=False)
+            self.doubles_counter += 1
+        else:
+            self.doubles_counter = 0
+            self.move(self.turn, self.current_move, endturn=True)
+        if self.doubles_counter == 3:
+            self.move(self.turn, self.current_move, endturn=True)
+            # TODO GO TO JAIL #END TURN AUTOMATICALLY
+            self.action_frame_popup("Jail")
+
+    def click_to_position(self, event):
+        x, y = event.x, event.y
+        l = [1.6, 1.6]
+        l[1:1] = [1] * 9
+        pos = None
+        if x <= self.property_height:
+            for i in range(len(l)):
+                if y > sum(l[i + 1 :]) / sum(l) * self.board_side:
+                    pos = 10 + i
+                    break
+        elif x >= self.board_side - self.property_height:
+            for i in range(len(l)):
+                if y > sum(l[i + 1 :]) / sum(l) * self.board_side:
+                    pos = (40 - i) % 40
+                    break
+        elif y <= self.property_height:
+            for i in range(len(l)):
+                if x > sum(l[i + 1 :]) / sum(l) * self.board_side:
+                    pos = 30 - i
+                    break
+        elif y >= self.board_side - self.property_height:
+            for i in range(len(l)):
+                if x > sum(l[i + 1 :]) / sum(l) * self.board_side:
+                    pos = i
+                    break
+        if pos in [10, 30]:
+            self.show_message("Jail Rules", "Jail Rules", timeout=2000)
+        elif pos == 20:
+            self.show_message("Free Parking", "Do Nothing!", timeout=2000)
+        elif pos == 0:
+            self.show_message("GO!", "Collect 200 Salary as you pass GO!", timeout=2000)
+        elif pos in [2, 17, 33]:
+            self.show_message("Community Chest", "Do as directed on card", timeout=2000)
+        elif pos in [7, 22, 36]:
+            self.show_message("Chance", "Do as directed on card", timeout=2000)
+        elif pos == 4:
+            self.show_message(
+                "Income Tax", "Pay 200 as Tax on landing here", timeout=2000
+            )
+        elif pos == 38:
+            self.show_message(
+                "Super Tax", "Pay 100 as Tax on landing here", timeout=2000
+            )
+        elif pos:
+            self.property_frame_popup(pos)
+
+    def position_to_xy(
+        self, position
+    ):  # +1, +2, because canvas has random error and places image 2,2 up and left, so image is placed at 2,2 and not 0,0
+        l = [1.6, 1.6]
+        l[1:1] = [1] * 9
+        position %= 40
+        if position == 0:
+            x1 = self.board_side + 1
+            y1 = self.board_side - self.property_height + 2
+        elif position <= 10:
+            x1 = sum(l[:-(position)]) * self.property_width + 1
+            y1 = self.board_side - self.property_height + 2
+        elif position <= 20:
+            x1 = self.property_height + 2
+            y1 = sum(l[: -(position - 9)]) * self.property_width + 1
+        elif position <= 30:
+            x1 = sum(l[: (position - 19)]) * self.property_width + 1
+            y1 = 0 + 2
+        elif position < 40:
+            x1 = self.board_side + 2
+            y1 = sum(l[: (position - 30)]) * self.property_width + 1
+        # self.board_canvas.create_rectangle(x1,y1,x1-self.property_height,y1+self.property_height,outline='blue',width=3)
+        return x1, y1
+
+    def position_to_tokenxy(self, player, position):
+        position %= 40
+
+        x1, y1 = self.position_to_xy(position)
+        if position == 10:
+            if self.player_details[player]["Injail"]:
+                x = x1 - (self.property_height * 0.35)
+                y = y1 + (self.property_height * 0.35)
+            else:
+                if self.player_details[player]["Colour"] == "red":
+                    return int(
+                        self.token_width / 2 + self.property_height * 0.075
+                    ), int(y1 + self.property_height * 0.3 - self.token_width / 2)
+                elif self.player_details[player]["Colour"] == "green":
+                    return int(
+                        self.token_width / 2 + self.property_height * 0.075
+                    ), int(y1 + self.property_height * 0.6 - self.token_width / 2)
+                elif self.player_details[player]["Colour"] == "blue":
+                    return int(
+                        x1 - self.property_height * 0.6 + self.token_width / 2 + 3
+                    ), int(y1 + self.property_height * 0.95 - self.token_width / 2)
+                elif self.player_details[player]["Colour"] == "gold":
+                    return int(
+                        x1 - self.property_height * 0.3 + self.token_width / 2 + 3
+                    ), int(y1 + self.property_height * 0.95 - self.token_width / 2)
+                else:
+                    print("You died")
+        elif not position % 10:
+            x = x1 - (self.property_height * 0.5)
+            y = y1 + (self.property_height * 0.5)
+        elif position < 10:
+            x = x1 - (self.property_width * 0.5)
+            y = y1 + (self.property_height * 0.6)
+        elif position < 20:
+            x = x1 - (self.property_height * 0.6)
+            y = y1 + (self.property_width * 0.5)
+        elif position < 30:
+            x = x1 - (self.property_width * 0.5)
+            y = y1 + (self.property_height * 0.4)
+        elif position < 40:
+            x = x1 - (self.property_height * 0.4)
+            y = y1 + (self.property_width * 0.5)
+
+        if self.player_details[player]["Colour"] == "red":
+            return int(x - self.token_width / 2 - 1), int(y - self.token_width / 2)
+        elif self.player_details[player]["Colour"] == "green":
+            return int(x + self.token_width / 2 + 1), int(y - self.token_width / 2)
+        elif self.player_details[player]["Colour"] == "blue":
+            return int(x - self.token_width / 2 - 1), int(y + self.token_width / 2 + 2)
+        elif self.player_details[player]["Colour"] == "gold":
+            return int(x + self.token_width / 2 + 1), int(y + self.token_width / 2 + 2)
+
+    def move(self, player, move, endturn=False, showmove=True):
+        colour = self.player_details[player]["Colour"]
+        self.colour_token_dict = {
+            "red": self.red_token,
+            "green": self.green_token,
+            "blue": self.blue_token,
+            "gold": self.yellow_token,
+        }
+
+        if move and showmove:
+            for i in range(move):
+                self.player_details[player]["Position"] += 1
+                x1, y1 = self.position_to_tokenxy(
+                    player, self.player_details[player]["Position"]
+                )
+                self.colour_token_dict[colour].place(x=x1, y=y1, anchor="center")
+                sleep(0.2)
+                self.colour_token_dict[colour].update()
+                if not self.player_details[player]["Position"] % 40:
+                    self.pass_go(player)
+        else:
+            self.player_details[player]["Position"] += move
+            x1, y1 = self.position_to_tokenxy(
+                player, self.player_details[player]["Position"]
+            )
+            self.colour_token_dict[colour].place(x=x1, y=y1, anchor="center")
+
+        pos = self.player_details[player]["Position"] % 40
+
+        if endturn:
+            self.roll_button.configure(state="disabled")
+            if self.end_button.winfo_exists():
+                self.end_button.configure(state="normal")
+        else:
+            self.roll_button.configure(state="normal")
+            if self.end_button.winfo_exists():
+                self.end_button.configure(state="disabled")
+
+        if pos in [10, 30]:
+            self.update_game("Jail")
+        elif pos in [0, 4, 20, 38]:
+            self.update_game("Default")
+        elif pos in [2, 17, 33]:
+            self.update_game("Community Chest")
+        elif pos in [7, 22, 36]:
+            self.update_game("Chance")
+        elif pos:
+            self.property_frame_popup(pos)
+            if self.properties[pos].owner:
+                if self.properties[pos].owner != self.me:
+                    if self.properties[pos].isMortgaged:
+                        self.update_game("This property is Mortgaged!")
+                    else:
+                        self.pay_rent(self.turn, pos)
+                else:
+                    if self.properties[pos].isMortgaged:
+                        self.update_game(
+                            "You own this mortgaged property! Unmortgage to start receiving rent when others land here."
+                        )
+                    else:
+                        self.update_game("You own this property!")
+            else:
+                self.update_game("Buy")
+                if self.turn == self.me:
+                    self.buy_button.configure(state="normal")
+
+    # endregion
 
     # region # Property Frame
 
@@ -1320,8 +1669,7 @@ class Monopoly(tk.Toplevel):
 
             self.toggle_action_buttons(True)
 
-    def trade(self):
-        pass
+    # region # Mortgage
 
     def mortgage_unmortgage(self, mortgage):
         self.mortgage_frame = tk.Frame(
@@ -1470,124 +1818,9 @@ class Monopoly(tk.Toplevel):
         if not received:
             self.send_msg(("MORTGAGE", mortgage, l))
 
-    def sell(self):
-        pass
+    # endregion
 
-    def toggle_action_buttons(self, enable=False):
-        if enable:
-            state = "normal"
-        else:
-            state = "disabled"
-        d = {
-            "end": self.end_button,
-            "buy": self.buy_button,
-            "build": self.build_button,
-            "mortgage": self.mortgage_button,
-            "trade": self.trade_button,
-            "unmortgage": self.unmortgage_button,
-            "sell": self.sell_button,
-        }
-        for i in d:
-            if d[i].winfo_exists():
-                d[i].configure(state=state)
-                if i == "trade":
-                    if not self.player_details[self.turn]["Properties"]:
-                        d[i].configure(state="disabled")
-                if i == "end":
-                    if str(self.roll_button["state"]) == "normal":
-                        d[i].configure(state="disabled")
-                if i == "mortgage":
-                    if (
-                        not self.player_details[self.turn]["Properties"]
-                        or not any(
-                            i.houses <= 0
-                            for i in self.player_details[self.turn]["Properties"]
-                        )
-                        or not any(
-                            not i.isMortgaged
-                            for i in self.player_details[self.turn]["Properties"]
-                        )
-                    ):
-                        d[i].configure(state="disabled")
-                if i == "build":
-                    my_sets = self.find_my_sets()
-
-                    if not my_sets:
-                        d[i].configure(state="disabled")
-                if i == "buy":
-                    if not bool(
-                        self.properties[
-                            self.player_details[self.turn]["Position"] % 40
-                        ].colour
-                    ) or (
-                        self.properties[
-                            self.player_details[self.turn]["Position"] % 40
-                        ].owner
-                    ):
-                        d[i].configure(state="disabled")
-                if i == "sell":
-                    if not any(
-                        i.houses > 0
-                        for i in self.player_details[self.turn]["Properties"]
-                    ):
-                        self.sell_button.configure(state="disabled")
-                if i == "unmortgage":
-                    if not any(
-                        i.isMortgaged
-                        for i in self.player_details[self.turn]["Properties"]
-                    ):
-                        self.unmortgage_button.configure(state="disabled")
-
-    def buy_property(self, propertypos, buyer, received=False):
-        self.toggle_action_buttons()
-        if not received:
-            if self.show_message(
-                f"Buy {self.properties[propertypos].name}?",
-                f"You'll be buying {self.properties[propertypos].name} for {self.properties[propertypos].price}, leaving {(self.player_details[buyer]['Money'])-self.properties[propertypos].price} cash with you",
-                type="okcancel",
-            ):
-                pass
-            else:
-                self.update_game("Buy")
-                self.toggle_action_buttons(True)
-                return
-        if self.properties[propertypos].colour:
-            if not self.properties[propertypos].owner:
-                self.properties[propertypos].owner = buyer
-                l = self.player_details[buyer]["Properties"]
-                l.append(self.properties[propertypos])
-                self.player_details[buyer]["Money"] -= self.properties[
-                    propertypos
-                ].price
-                # Inserting Properties in Sorted order
-                l.sort(key=lambda i: i.position)
-                for i in range(len(l)):
-                    if l[i].colour == "Station":
-                        l.append(l.pop(i))
-                for i in range(len(l)):
-                    if l[i].colour == "Utility":
-                        l.append(l.pop(i))
-
-                self.player_details[buyer].update({"Properties": l})
-                if self.properties[propertypos].colour in [
-                    "Brown",
-                    "Dark Blue",
-                ]:
-                    colour_set = 2
-                else:
-                    colour_set = 3
-
-                if self.count_colour(propertypos) == colour_set:
-                    for i in self.properties.values():
-                        if i.colour == self.properties[propertypos].colour:
-                            i.houses = 0
-            else:
-                print("Owned")
-        else:
-            print("Can't Buy")
-        self.update_game("Default")
-        if not received:
-            self.send_msg(("BUY", propertypos))
+    # region # Build
 
     def find_my_sets(self):
         my_sets = []
@@ -1874,181 +2107,6 @@ class Monopoly(tk.Toplevel):
         if not received:
             self.send_msg(("BUILD", property, number))
 
-    def roll_dice(self, roll=None, received=False, cli=False):
-        try:
-            music(ASSET + "/Die/diceroll.mp3")
-        except:
-            pass
-        dice_roll = roll if received else (random.randint(1, 6), random.randint(1, 6))
-        dice_roll = roll if cli else dice_roll
-        if not received:
-            self.send_msg(("ROLL", dice_roll))
-        for i in range(18):
-            self.dice_spot1.configure(image=self.die_dict[random.randint(1, 6)])
-            self.dice_spot2.configure(image=self.die_dict[random.randint(1, 6)])
-            self.dice_spot1.update()
-            self.dice_spot2.update()
-            sleep(0.12)
-            self.roll_button.configure(state="disabled")
-        self.dice_spot1.configure(image=self.die_dict[dice_roll[0]])
-        self.dice_spot2.configure(image=self.die_dict[dice_roll[1]])
-        self.dice_spot1.update()
-        self.dice_spot2.update()
-        self.current_move = sum(dice_roll)
-        if dice_roll[0] == dice_roll[1]:
-            self.move(self.turn, self.current_move, endturn=False)
-            self.doubles_counter += 1
-        else:
-            self.doubles_counter = 0
-            self.move(self.turn, self.current_move, endturn=True)
-        if self.doubles_counter == 3:
-            self.move(self.turn, self.current_move, endturn=True)
-            # TODO GO TO JAIL #END TURN AUTOMATICALLY
-            self.action_frame_popup("Jail")
-
-    def show_message(self, title, message, type="info", timeout=0):
-        self.mbwin = tk.Tk()
-        self.mbwin.withdraw()
-        try:
-            if timeout:
-                self.mbwin.after(timeout, self.mbwin.destroy)
-            if type == "info":
-                msgb.showinfo(title, message, master=self.mbwin)
-            elif type == "warning":
-                msgb.showwarning(title, message, master=self.mbwin)
-            elif type == "error":
-                msgb.showerror(title, message, master=self.mbwin)
-            elif type == "okcancel":
-                okcancel = msgb.askokcancel(title, message, master=self.mbwin)
-                return okcancel
-            elif type == "yesno":
-                yesno = msgb.askyesno(title, message, master=self.mbwin)
-                return yesno
-        except:
-            print("Error")
-
-    def click_to_position(self, event):
-        x, y = event.x, event.y
-        l = [1.6, 1.6]
-        l[1:1] = [1] * 9
-        pos = None
-        if x <= self.property_height:
-            for i in range(len(l)):
-                if y > sum(l[i + 1 :]) / sum(l) * self.board_side:
-                    pos = 10 + i
-                    break
-        elif x >= self.board_side - self.property_height:
-            for i in range(len(l)):
-                if y > sum(l[i + 1 :]) / sum(l) * self.board_side:
-                    pos = (40 - i) % 40
-                    break
-        elif y <= self.property_height:
-            for i in range(len(l)):
-                if x > sum(l[i + 1 :]) / sum(l) * self.board_side:
-                    pos = 30 - i
-                    break
-        elif y >= self.board_side - self.property_height:
-            for i in range(len(l)):
-                if x > sum(l[i + 1 :]) / sum(l) * self.board_side:
-                    pos = i
-                    break
-        if pos in [10, 30]:
-            self.show_message("Jail Rules", "Jail Rules", timeout=2000)
-        elif pos == 20:
-            self.show_message("Free Parking", "Do Nothing!", timeout=2000)
-        elif pos == 0:
-            self.show_message("GO!", "Collect 200 Salary as you pass GO!", timeout=2000)
-        elif pos in [2, 17, 33]:
-            self.show_message("Community Chest", "Do as directed on card", timeout=2000)
-        elif pos in [7, 22, 36]:
-            self.show_message("Chance", "Do as directed on card", timeout=2000)
-        elif pos == 4:
-            self.show_message(
-                "Income Tax", "Pay 200 as Tax on landing here", timeout=2000
-            )
-        elif pos == 38:
-            self.show_message(
-                "Super Tax", "Pay 100 as Tax on landing here", timeout=2000
-            )
-        elif pos:
-            self.property_frame_popup(pos)
-
-    def position_to_xy(
-        self, position
-    ):  # +1, +2, because canvas has random error and places image 2,2 up and left, so image is placed at 2,2 and not 0,0
-        l = [1.6, 1.6]
-        l[1:1] = [1] * 9
-        position %= 40
-        if position == 0:
-            x1 = self.board_side + 1
-            y1 = self.board_side - self.property_height + 2
-        elif position <= 10:
-            x1 = sum(l[:-(position)]) * self.property_width + 1
-            y1 = self.board_side - self.property_height + 2
-        elif position <= 20:
-            x1 = self.property_height + 2
-            y1 = sum(l[: -(position - 9)]) * self.property_width + 1
-        elif position <= 30:
-            x1 = sum(l[: (position - 19)]) * self.property_width + 1
-            y1 = 0 + 2
-        elif position < 40:
-            x1 = self.board_side + 2
-            y1 = sum(l[: (position - 30)]) * self.property_width + 1
-        # self.board_canvas.create_rectangle(x1,y1,x1-self.property_height,y1+self.property_height,outline='blue',width=3)
-        return x1, y1
-
-    def position_to_tokenxy(self, player, position):
-        position %= 40
-
-        x1, y1 = self.position_to_xy(position)
-        if position == 10:
-            if self.player_details[player]["Injail"]:
-                x = x1 - (self.property_height * 0.35)
-                y = y1 + (self.property_height * 0.35)
-            else:
-                if self.player_details[player]["Colour"] == "red":
-                    return int(
-                        self.token_width / 2 + self.property_height * 0.075
-                    ), int(y1 + self.property_height * 0.3 - self.token_width / 2)
-                elif self.player_details[player]["Colour"] == "green":
-                    return int(
-                        self.token_width / 2 + self.property_height * 0.075
-                    ), int(y1 + self.property_height * 0.6 - self.token_width / 2)
-                elif self.player_details[player]["Colour"] == "blue":
-                    return int(
-                        x1 - self.property_height * 0.6 + self.token_width / 2 + 3
-                    ), int(y1 + self.property_height * 0.95 - self.token_width / 2)
-                elif self.player_details[player]["Colour"] == "gold":
-                    return int(
-                        x1 - self.property_height * 0.3 + self.token_width / 2 + 3
-                    ), int(y1 + self.property_height * 0.95 - self.token_width / 2)
-                else:
-                    print("You died")
-        elif not position % 10:
-            x = x1 - (self.property_height * 0.5)
-            y = y1 + (self.property_height * 0.5)
-        elif position < 10:
-            x = x1 - (self.property_width * 0.5)
-            y = y1 + (self.property_height * 0.6)
-        elif position < 20:
-            x = x1 - (self.property_height * 0.6)
-            y = y1 + (self.property_width * 0.5)
-        elif position < 30:
-            x = x1 - (self.property_width * 0.5)
-            y = y1 + (self.property_height * 0.4)
-        elif position < 40:
-            x = x1 - (self.property_height * 0.4)
-            y = y1 + (self.property_width * 0.5)
-
-        if self.player_details[player]["Colour"] == "red":
-            return int(x - self.token_width / 2 - 1), int(y - self.token_width / 2)
-        elif self.player_details[player]["Colour"] == "green":
-            return int(x + self.token_width / 2 + 1), int(y - self.token_width / 2)
-        elif self.player_details[player]["Colour"] == "blue":
-            return int(x - self.token_width / 2 - 1), int(y + self.token_width / 2 + 2)
-        elif self.player_details[player]["Colour"] == "gold":
-            return int(x + self.token_width / 2 + 1), int(y + self.token_width / 2 + 2)
-
     def place_houses(self):
         HOUSES = ASSET + "/Houses"
         d = {
@@ -2096,75 +2154,68 @@ class Monopoly(tk.Toplevel):
                     self.house_images.append(house_image)
                     self.board_canvas.create_image(x, y, image=self.house_images[-1])
 
+    # endregion
+
+    def buy_property(self, propertypos, buyer, received=False):
+        self.toggle_action_buttons()
+        if not received:
+            if self.show_message(
+                f"Buy {self.properties[propertypos].name}?",
+                f"You'll be buying {self.properties[propertypos].name} for {self.properties[propertypos].price}, leaving {(self.player_details[buyer]['Money'])-self.properties[propertypos].price} cash with you",
+                type="okcancel",
+            ):
+                pass
+            else:
+                self.update_game("Buy")
+                self.toggle_action_buttons(True)
+                return
+        if self.properties[propertypos].colour:
+            if not self.properties[propertypos].owner:
+                self.properties[propertypos].owner = buyer
+                l = self.player_details[buyer]["Properties"]
+                l.append(self.properties[propertypos])
+                self.player_details[buyer]["Money"] -= self.properties[
+                    propertypos
+                ].price
+                # Inserting Properties in Sorted order
+                l.sort(key=lambda i: i.position)
+                for i in range(len(l)):
+                    if l[i].colour == "Station":
+                        l.append(l.pop(i))
+                for i in range(len(l)):
+                    if l[i].colour == "Utility":
+                        l.append(l.pop(i))
+
+                self.player_details[buyer].update({"Properties": l})
+                if self.properties[propertypos].colour in [
+                    "Brown",
+                    "Dark Blue",
+                ]:
+                    colour_set = 2
+                else:
+                    colour_set = 3
+
+                if self.count_colour(propertypos) == colour_set:
+                    for i in self.properties.values():
+                        if i.colour == self.properties[propertypos].colour:
+                            i.houses = 0
+            else:
+                print("Owned")
+        else:
+            print("Can't Buy")
+        self.update_game("Default")
+        if not received:
+            self.send_msg(("BUY", propertypos))
+
+    def trade(self):
+        pass
+
+    def sell(self):
+        pass
+
     def pass_go(self, player):
         self.player_details[player]["Money"] += 200
         self.update_game("You received 200 as salary!")
-
-    def move(self, player, move, endturn=False, showmove=True):
-        colour = self.player_details[player]["Colour"]
-        self.colour_token_dict = {
-            "red": self.red_token,
-            "green": self.green_token,
-            "blue": self.blue_token,
-            "gold": self.yellow_token,
-        }
-
-        if move and showmove:
-            for i in range(move):
-                self.player_details[player]["Position"] += 1
-                x1, y1 = self.position_to_tokenxy(
-                    player, self.player_details[player]["Position"]
-                )
-                self.colour_token_dict[colour].place(x=x1, y=y1, anchor="center")
-                sleep(0.2)
-                self.colour_token_dict[colour].update()
-                if not self.player_details[player]["Position"] % 40:
-                    self.pass_go(player)
-        else:
-            self.player_details[player]["Position"] += move
-            x1, y1 = self.position_to_tokenxy(
-                player, self.player_details[player]["Position"]
-            )
-            self.colour_token_dict[colour].place(x=x1, y=y1, anchor="center")
-
-        pos = self.player_details[player]["Position"] % 40
-
-        if endturn:
-            self.roll_button.configure(state="disabled")
-            if self.end_button.winfo_exists():
-                self.end_button.configure(state="normal")
-        else:
-            self.roll_button.configure(state="normal")
-            if self.end_button.winfo_exists():
-                self.end_button.configure(state="disabled")
-
-        if pos in [10, 30]:
-            self.update_game("Jail")
-        elif pos in [0, 4, 20, 38]:
-            self.update_game("Default")
-        elif pos in [2, 17, 33]:
-            self.update_game("Community Chest")
-        elif pos in [7, 22, 36]:
-            self.update_game("Chance")
-        elif pos:
-            self.property_frame_popup(pos)
-            if self.properties[pos].owner:
-                if self.properties[pos].owner != self.me:
-                    if self.properties[pos].isMortgaged:
-                        self.update_game("This property is Mortgaged!")
-                    else:
-                        self.pay_rent(self.turn, pos)
-                else:
-                    if self.properties[pos].isMortgaged:
-                        self.update_game(
-                            "You own this mortgaged property! Unmortgage to start receiving rent when others land here."
-                        )
-                    else:
-                        self.update_game("You own this property!")
-            else:
-                self.update_game("Buy")
-                if self.turn == self.me:
-                    self.buy_button.configure(state="normal")
 
     def pay_rent(self, payer, propertypos):
         rent_amt = self.properties[propertypos].rent()
@@ -2186,32 +2237,6 @@ class Monopoly(tk.Toplevel):
         self.update_game(
             f"{self.player_details[payer]['Name']} paid {rent_amt} to {self.owner_detail(propertypos)}"
         )
-
-    def end_turn(self, received=False):
-        self.toggle_action_buttons()
-        if not received:
-            if self.show_message(
-                "End Turn?",
-                f"{self.player_details[self.turn]['Name']}, are you sure you want to end your turn?",
-                type="yesno",
-            ):
-                pass
-            else:
-                self.update_game()
-                self.toggle_action_buttons(True)
-                return
-        try:
-            self.turn = self.uuids[self.uuids.index(self.turn) + 1]
-        except:
-            self.turn = self.uuids[0]
-
-        if self.turn == self.me:
-            self.roll_button.configure(state="normal")
-
-        if not received:
-            self.send_msg(("END",))
-
-        self.update_game("It's your turn now! Click 'Roll Dice'")
 
     def CLI(self):
         while True:
