@@ -80,7 +80,7 @@ def event_handler(msg):
                 )
 
         elif msg[1] == "MSG":
-            g.updater(msg[2])
+            g.event_handler(msg[2])
 
 
 root = tk.Tk()

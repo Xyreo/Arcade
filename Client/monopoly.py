@@ -83,6 +83,44 @@ class Monopoly(tk.Toplevel):
             self.move(i, 0)
 
     def initialise(self):
+        self.init_objects()
+        self.board_canvas.bind("<Button-1>", self.click_to_position)
+
+        self.properties = {}
+        details = self.hobj.mply_details()
+        for i in range(40):
+            self.properties[i] = Property(details[i])
+
+        for i in self.player_details:
+            self.player_details[i].update(
+                {
+                    "Money": 1500,
+                    "Injail": False,
+                    "Position": 0,
+                    "Properties": [],
+                    "GOJF": False,
+                }
+            )  # Properties will store obj from properties dict
+
+        self.cli_thread = threading.Thread(target=self.CLI)
+        self.cli_thread.daemon = True
+        self.cli_thread.start()
+
+    def event_handler(self, msg):
+        if msg[1] == "ROLL":
+            self.roll_dice(msg[2], True)
+        elif msg[1] == "BUY":
+            self.buy_property(msg[2], msg[0], True)
+        elif msg[1] == "BUILD":
+            self.build_sell(msg[2], msg[3], msg[4], True)
+        elif msg[1] == "END":
+            self.end_turn(True)
+        elif msg[1] == "MORTGAGE":
+            self.final_mortgage(msg[2], msg[3], True)
+
+    # region # Create
+
+    def init_objects(self):
         self.property_frame = tk.Frame()
         self.property_frame.destroy()
         self.end_button = ttk.Button()
@@ -99,44 +137,14 @@ class Monopoly(tk.Toplevel):
         self.trade_button.destroy()
         self.build_button = ttk.Button()
         self.build_button.destroy()
+        self.final_build_button = tk.Button()
+
         self.property_pos_displayed = None
         self.current_txt = "Default"
-        self.board_canvas.bind("<Button-1>", self.click_to_position)
+
         self.uuids = list(self.player_details.keys())
         self.turn = self.uuids[0]
         self.doubles_counter = 0
-        self.properties = {}
-        details = self.hobj.mply_details()
-        for i in range(40):
-            self.properties[i] = Property(details[i])
-
-        for i in self.player_details:
-            self.player_details[i].update(
-                {
-                    "Money": 1500,
-                    "Injail": False,
-                    "Position": 0,
-                    "Properties": [],
-                }
-            )  # Properties will store obj from properties dict
-
-        self.cli_thread = threading.Thread(target=self.CLI)
-        self.cli_thread.daemon = True
-        self.cli_thread.start()
-
-    def event_handler(self, msg):
-        if msg[1] == "ROLL":
-            self.roll_dice(msg[2], True)
-        elif msg[1] == "BUY":
-            self.buy_property(msg[2], msg[0], True)
-        elif msg[1] == "BUILD":
-            self.build(msg[2], msg[3], True)
-        elif msg[1] == "END":
-            self.end_turn(True)
-        elif msg[1] == "MORTGAGE":
-            self.final_mortgage(msg[2], msg[3], True)
-
-    # region # Create
 
     def create_window(self):
         screen_width = int(0.9 * self.winfo_screenwidth())
@@ -488,21 +496,18 @@ class Monopoly(tk.Toplevel):
                     if str(self.roll_button["state"]) == "normal":
                         d[i].configure(state="disabled")
                 if i == "mortgage":
-                    if (
-                        not self.player_details[self.turn]["Properties"]
-                        or not any(
-                            i.houses <= 0
-                            for i in self.player_details[self.turn]["Properties"]
-                        )
-                        or not any(
-                            not i.isMortgaged
-                            for i in self.player_details[self.turn]["Properties"]
-                        )
-                    ):
+                    if not self.player_details[self.turn]["Properties"]:
                         d[i].configure(state="disabled")
+                    else:
+                        l = [
+                            i
+                            for i in self.player_details[self.turn]["Properties"]
+                            if i.houses <= 0 and not i.isMortgaged
+                        ]
+                        if not l:
+                            d[i].configure(state="disabled")
                 if i == "build":
                     my_sets = self.find_my_sets()
-
                     if not my_sets:
                         d[i].configure(state="disabled")
                 if i == "buy":
@@ -1619,7 +1624,7 @@ class Monopoly(tk.Toplevel):
                 self.action_frame,
                 text="BUILD",
                 style="my.TButton",
-                command=self.build_action_frame,
+                command=self.build_sell_action_frame,
             )
             self.build_button.place(relx=0.2, rely=0.3, anchor="center")
 
@@ -1651,7 +1656,7 @@ class Monopoly(tk.Toplevel):
                 self.action_frame,
                 text="SELL HOUSES",
                 style="my.TButton",
-                command=self.sell,
+                command=lambda: self.build_sell_action_frame(sell=True),
             )
             self.sell_button.place(relx=0.8, rely=0.5, anchor="center")
 
@@ -1669,7 +1674,7 @@ class Monopoly(tk.Toplevel):
 
             self.toggle_action_buttons(True)
 
-    # region # Mortgage
+    # region # Mortgage, Unmortgage
 
     def mortgage_unmortgage(self, mortgage):
         self.mortgage_frame = tk.Frame(
@@ -1820,7 +1825,7 @@ class Monopoly(tk.Toplevel):
 
     # endregion
 
-    # region # Build
+    # region # Build, Sell
 
     def find_my_sets(self):
         my_sets = []
@@ -1831,14 +1836,16 @@ class Monopoly(tk.Toplevel):
                 and i.colour not in ["Station", "Utility"]
             ):
                 my_sets.append(i.colour)
-
+        # TODO #8
+        # ! While selling, if a property is mortgaged in set, can't sell houses of other 2 properties (1,1, because of buying/selling constraint)
+        # ! Basically, still a buying/selling constraint but not too ideal,
         for i in self.player_details[self.turn]["Properties"]:
             if i.isMortgaged and i.colour in my_sets:
                 my_sets.remove(i.colour)
 
         return my_sets
 
-    def build_action_frame(self):
+    def build_sell_action_frame(self, sell=False):
         self.build_frame = tk.Frame(
             self.action_frame,
             width=(self.board_side - 2) // 1,
@@ -1874,6 +1881,12 @@ class Monopoly(tk.Toplevel):
             except:
                 pass
             try:
+                self.extrahouse_label.destroy()
+                for i, j in self.checkbuttons_dict.items():
+                    j.destroy()
+            except:
+                pass
+            try:
                 self.clear_build_button.destroy()
                 self.final_build_button.destroy()
             except:
@@ -1883,14 +1896,25 @@ class Monopoly(tk.Toplevel):
             no_of_properties = len(set_properties.values())
             old_houses = list(set_properties.values())
             plot = [(i, old_houses[i]) for i in range(len(old_houses))]
-            if no_of_properties == 3 and sum(old_houses) % 3 == 1 and total_houses == 1:
+            if (
+                no_of_properties == 3
+                and sum(old_houses) % 3 == (2 if sell else 1)
+                and total_houses == 1
+            ):
                 plot = sorted(plot, key=lambda x: x[-1])
-                self.new_building = [0, 0, 0, 1, (plot[0][0], plot[1][0])]
+                a = 1 if sell else 0
+                b = a + 1
+                self.new_building = [0, 0, 0, 1, (plot[a][0], plot[b][0])]
             else:
-                base = (sum(old_houses) + total_houses) // no_of_properties
+                base = (
+                    sum(old_houses) + total_houses * (-1 if sell else 1)
+                ) // no_of_properties
                 self.new_building = (
                     [base - i for i in old_houses]
-                    + [(sum(old_houses) + total_houses) % no_of_properties]
+                    + [
+                        (sum(old_houses) + total_houses * (-1 if sell else 1))
+                        % no_of_properties
+                    ]
                     + [tuple(range(0, len(old_houses)))]
                 )
             new_before_extra = copy.deepcopy(self.new_building)
@@ -1904,10 +1928,10 @@ class Monopoly(tk.Toplevel):
                     4: "4 Houses",
                     5: "A Hotel",
                 }
-                finaltxt = f"You will have"
+                finaltxt = f"After {'Selling' if sell else 'Buying'}, You will have"
                 for i in range(len(self.new_building[:-2])):
                     finaltxt += f"\n→{d[old_houses[i]+self.new_building[i]]} on {list(set_properties.keys())[i].name}"
-                finaltxt += f"\n on paying {list(set_properties.keys())[0].build * total_houses}"
+                finaltxt += f"\n {'receiving' if sell else 'on paying'} {int(list(set_properties.keys())[0].build * total_houses * (0.5 if sell else 1))}"
                 try:
                     self.final_build_txt_label.destroy()
                 except:
@@ -1920,8 +1944,12 @@ class Monopoly(tk.Toplevel):
                 self.final_build_txt_label.place(relx=0.5, rely=0.5, anchor="nw")
 
             def extrahouse_clicked(val, opposite):
-                if sum(self.new_building[:-2]) >= total_houses:
-                    self.new_building = copy.deepcopy(new_before_extra)
+                if sell:
+                    if sum(self.new_building[:-2]) <= total_houses:
+                        self.new_building = copy.deepcopy(new_before_extra)
+                else:
+                    if sum(self.new_building[:-2]) >= total_houses:
+                        self.new_building = copy.deepcopy(new_before_extra)
                 if opposite:
                     for i in range(len(self.new_building[:-2])):
                         if i != val:
@@ -1931,15 +1959,53 @@ class Monopoly(tk.Toplevel):
 
                 final_text_func()
 
+            l = []
+
+            def check(prop):
+                if prop in l:
+                    l.remove(prop)
+                else:
+                    l.append(prop)
+                if len(l) == 3:
+                    self.checkbuttons_vals[l[0]].set(True)
+                    self.checkbuttons_dict[l[0]].deselect()
+                    l.remove(l[0])
+                    try:
+                        self.final_build_button.configure(state="normal")
+                    except:
+                        pass
+                    for i in list(self.checkbuttons_vals.keys()):
+                        if i not in l:
+                            self.extrahouse.set(
+                                list(self.checkbuttons_vals.keys()).index(i)
+                            )
+                    extrahouse_clicked(self.extrahouse.get(), opp)
+                elif len(l) == 1:
+                    try:
+                        self.final_build_button.configure(state="disabled")
+                    except:
+                        pass
+                elif len(l) == 2:
+                    try:
+                        self.final_build_button.configure(state="normal")
+                    except:
+                        pass
+                    for i in list(self.checkbuttons_vals.keys()):
+                        if i not in l:
+                            self.extrahouse.set(
+                                list(self.checkbuttons_vals.keys()).index(i)
+                            )
+                    extrahouse_clicked(self.extrahouse.get(), opp)
+
             if self.new_building[-2]:
-                extrahouse = tk.IntVar()
-                extrahouse_txt = "Build Extra House on?"
+                self.extrahouse = tk.IntVar()
+                extrahouse_txt = f"{'Keep' if sell else 'Build'} Extra House on?"
                 if self.new_building[-2] == 1:
-                    extrahouse.set(len(self.new_building) - 3)
+                    self.extrahouse.set(len(self.new_building) - 3)
                     opp = False
 
                 elif self.new_building[-2] == 2:
-                    extrahouse_txt = "DONT " + extrahouse_txt
+                    extrahouse_txt = f"{'Keep' if sell else 'Build'} Extra Houses on?"
                     opp = True
                 self.extrahouse_label = tk.Label(
                     self.build_frame,
@@ -1948,41 +2014,72 @@ class Monopoly(tk.Toplevel):
                 )
                 self.extrahouse_label.place(relx=0.1, rely=0.5, anchor="nw")
 
-                extrahouse_clicked(extrahouse.get(), opp)
-                k = 0
-                for i in set_properties:
-                    if k in self.new_building[-1]:
-                        self.radio_dict[i.name + " Button"] = ttk.Radiobutton(
+                extrahouse_clicked(self.extrahouse.get(), opp)
+                if opp:
+                    self.checkbuttons_vals = {}
+                    self.checkbuttons_dict = {}
+                    try:
+                        self.final_build_button.configure(state="disabled")
+                    except:
+                        pass
+                    k = 0
+                    for i in set_properties:
+                        self.checkbuttons_vals[i.name] = tk.BooleanVar(value=True)
+                        self.checkbuttons_dict[i.name] = tk.Checkbutton(
                             self.build_frame,
                             text=i.name,
-                            variable=extrahouse,
-                            value=k,
-                            command=lambda: extrahouse_clicked(extrahouse.get(), opp),
+                            variable=self.checkbuttons_vals[i.name],
+                            onvalue=False,
+                            offvalue=True,
+                            selectcolor=i.hex,
+                            command=lambda i=i: check(i.name),
                         )
-                        self.radio_dict[i.name + " Button"].place(
+                        self.checkbuttons_dict[i.name].invoke()
+                        self.checkbuttons_dict[i.name].place(
                             relx=0.1, rely=0.6 + (k / 10), anchor="nw"
                         )
-                    k += 1
+                        k += 1
+                else:
+                    k = 0
+                    for i in set_properties:
+                        if k in self.new_building[-1]:
+                            self.radio_dict[i.name] = ttk.Radiobutton(
+                                self.build_frame,
+                                text=i.name,
+                                variable=self.extrahouse,
+                                value=k,
+                                command=lambda: extrahouse_clicked(
+                                    self.extrahouse.get(), opp
+                                ),
+                            )
+                            self.radio_dict[i.name].place(
+                                relx=0.1, rely=0.6 + (k / 10), anchor="nw"
+                            )
+                        k += 1
             else:
                 final_text_func()
 
             def build_all():
-                conftxt = f"Are you sure you want to pay {list(set_properties.keys())[0].build * total_houses} to build on the {list(set_properties.keys())[0].colour} set, leaving {(self.player_details[self.me]['Money'])-list(set_properties.keys())[0].build * total_houses} cash with you"
+                if sell:
+                    conftxt = f"Are you sure you want to sell {total_houses} houses from the {list(set_properties.keys())[0].colour} set, leaving {(self.player_details[self.me]['Money'])+int(list(set_properties.keys())[0].build * total_houses *0.5)} cash with you"
+                else:
+                    conftxt = f"Are you sure you want to pay {list(set_properties.keys())[0].build * total_houses} to build on the {list(set_properties.keys())[0].colour} set, leaving {(self.player_details[self.me]['Money'])-list(set_properties.keys())[0].build * total_houses} cash with you"
 
                 if self.show_message(
-                    f"Confirm Build",
+                    f"Confirm {'Sell' if sell else 'Build'}",
                     conftxt,
                     type="okcancel",
                 ):
                     for i in range(len(self.new_building[:-2])):
-                        self.build(
+                        self.build_sell(
                             list(set_properties.keys())[i].position,
                             self.new_building[i],
+                            sell,
                         )
 
             self.final_build_button = tk.Button(
                 self.build_frame,
-                text="BUILD",
+                text="SELL" if sell else "BUILD",
                 font=("times", (self.board_side - 2) // 60),
                 command=build_all,
             )
@@ -2017,6 +2114,12 @@ class Monopoly(tk.Toplevel):
                     j.destroy()
             except:
                 pass
+            try:
+                self.extrahouse_label.destroy()
+                for i, j in self.checkbuttons_dict.items():
+                    j.destroy()
+            except:
+                pass
             if all:
                 self.select_set.set("")
 
@@ -2041,6 +2144,9 @@ class Monopoly(tk.Toplevel):
                     self.player_details[self.me]["Money"]
                     // list(set_properties.keys())[0].build
                 )
+
+            if sell:
+                houses_possible = sum(set_properties.values())
 
             self.houses_list = list(range(1, houses_possible + 1))
             self.select_houses_label = tk.Label(
@@ -2090,14 +2196,14 @@ class Monopoly(tk.Toplevel):
                 else:
                     self.select_houses.configure(values=self.houses_list)
 
-    def build(self, property, number, received=False):
+    def build_sell(self, property, number, sell=False, received=False):
         if self.properties[property].owner:
             if self.properties[property].houses + number > 5:
-                print("ERROR! Can't build more than 5")
+                print(f"ERROR! Can't {'sell' if sell else 'build'} more than 5")
             else:
                 self.properties[property].houses += number
-                self.player_details[self.properties[property].owner]["Money"] -= (
-                    self.properties[property].build * number
+                self.player_details[self.properties[property].owner]["Money"] -= int(
+                    self.properties[property].build * number * (0.5 if sell else 1)
                 )
             self.place_houses()
             self.update_game()
@@ -2105,7 +2211,7 @@ class Monopoly(tk.Toplevel):
             print("Bruh Die")
 
         if not received:
-            self.send_msg(("BUILD", property, number))
+            self.send_msg(("BUILD", property, number, sell))
 
     def place_houses(self):
         HOUSES = ASSET + "/Houses"
@@ -2210,9 +2316,6 @@ class Monopoly(tk.Toplevel):
     def trade(self):
         pass
 
-    def sell(self):
-        pass
-
     def pass_go(self, player):
         self.player_details[player]["Money"] += 200
         self.update_game("You received 200 as salary!")
@@ -2253,7 +2356,7 @@ class Monopoly(tk.Toplevel):
 
                 elif t[0] == "build":
                     try:
-                        self.build(int(t[1]), int(t[2]))
+                        self.build_sell(int(t[1]), int(t[2]))
                     except:
                         pass
                 else:
@@ -2264,7 +2367,10 @@ class Monopoly(tk.Toplevel):
 
     def yeet(self):
         root.destroy()
-        self.mbwin.destroy()
+        try:
+            self.mbwin.destroy()
+        except:
+            pass
 
 
 class Chance:
@@ -2355,9 +2461,7 @@ class Community:
         pass
 
 
-# !! SERVER SELL
-# ! Change build extra house to ttk.checkbutton(<use command>)
-# TODO: Chaitanya: Sell Houses, Bankruptcy, Jail, Tax, Trading
+# TODO: Chaitanya: Bankruptcy, Jail, Tax, Trading
 # TODO: Pramit: Chance, Community Chest
 # TODO: idk: All Rules & Texts, Update GUI
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
