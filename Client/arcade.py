@@ -27,7 +27,7 @@ from client_framework import Client
 from http_wrapper import Http
 from monopoly import Monopoly
 
-# TODO Confirmation Popups
+# TODO: Confirmation Popups, Notifier
 
 HTTP = Http("http://167.71.231.52:5000")
 CLIENT_ADDRESS = "167.71.231.52"
