@@ -6,6 +6,20 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox as msgb
 
+ASSET = "Assets/Home_Assets"
+ASSET = ASSET if os.path.exists(ASSET) else "Client/" + ASSET
+
+
+def load():
+    os.system(f"pip install -r {ASSET}/requirements.txt")
+    loading.destroy()
+
+
+loading = tk.Tk()
+tk.Label(loading, text="Checking and Installing Required Modules...").pack()
+loading.after(100, load)
+loading.mainloop()
+
 from PIL import Image, ImageOps, ImageTk
 
 from chess import Chess
@@ -15,8 +29,6 @@ from monopoly import Monopoly
 
 # TODO Confirmation Popups
 
-ASSET = "Assets/Home_Assets"
-ASSET = ASSET if os.path.exists(ASSET) else "Client/" + ASSET
 HTTP = Http("http://167.71.231.52:5000")
 CLIENT_ADDRESS = "167.71.231.52"
 
