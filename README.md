@@ -1,6 +1,5 @@
 # Gr12-CompProject
-!!! IN PROGRESS !!!
 
-Arcade (Monopoly, Chess, Scrabble hopefully)
+Arcade (Monopoly, Chess <& Scrabble>)
 
-Run 'Client/Arcade.py' to play.
+Run 'The Arcade' to play.
