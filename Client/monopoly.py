@@ -1827,7 +1827,7 @@ class Monopoly(tk.Toplevel):
 
     # region # Build, Sell
 
-    def find_my_sets(self):
+    def find_my_sets(self, sell=False):
         my_sets = []
         for i in self.player_details[self.turn]["Properties"]:
             if (
@@ -1836,12 +1836,10 @@ class Monopoly(tk.Toplevel):
                 and i.colour not in ["Station", "Utility"]
             ):
                 my_sets.append(i.colour)
-        # TODO #8
-        # ! While selling, if a property is mortgaged in set, can't sell houses of other 2 properties (1,1, because of buying/selling constraint)
-        # ! Basically, still a buying/selling constraint but not too ideal,
-        for i in self.player_details[self.turn]["Properties"]:
-            if i.isMortgaged and i.colour in my_sets:
-                my_sets.remove(i.colour)
+        if not sell:
+            for i in self.player_details[self.turn]["Properties"]:
+                if i.isMortgaged and i.colour in my_sets:
+                    my_sets.remove(i.colour)
 
         return my_sets
 
@@ -1864,7 +1862,7 @@ class Monopoly(tk.Toplevel):
 
         self.bind("<Escape>", lambda a: self.build_frame.destroy())
 
-        my_sets = self.find_my_sets()
+        my_sets = self.find_my_sets(sell)
         tk.Label(
             self.build_frame,
             text="Select the Colour Set: ",
@@ -1904,7 +1902,13 @@ class Monopoly(tk.Toplevel):
                 plot = sorted(plot, key=lambda x: x[-1])
                 a = 1 if sell else 0
                 b = a + 1
-                self.new_building = [0, 0, 0, 1, (plot[a][0], plot[b][0])]
+                self.new_building = [
+                    0,
+                    0,
+                    0,
+                    (-1 if sell else 1),
+                    (plot[a][0], plot[b][0]),
+                ]
             else:
                 base = (
                     sum(old_houses) + total_houses * (-1 if sell else 1)
@@ -1953,9 +1957,9 @@ class Monopoly(tk.Toplevel):
                 if opposite:
                     for i in range(len(self.new_building[:-2])):
                         if i != val:
-                            self.new_building[i] += 1
+                            self.new_building[i] += self.new_building[-2] // 2
                 else:
-                    self.new_building[val] += 1
+                    self.new_building[val] += self.new_building[-2]
 
                 final_text_func()
 
@@ -2001,10 +2005,13 @@ class Monopoly(tk.Toplevel):
                 self.extrahouse = tk.IntVar()
                 extrahouse_txt = f"{'Keep' if sell else 'Build'} Extra House on?"
                 if self.new_building[-2] == 1:
-                    self.extrahouse.set(len(self.new_building) - 3)
+                    self.extrahouse.set(self.new_building[-1][-1])
                     opp = False
-
-                elif self.new_building[-2] == 2:
+                elif self.new_building[-2] == -1:
+                    self.extrahouse.set(self.new_building[-1][0])
+                    extrahouse_txt = f"Sell House From?"
+                    opp = False
+                elif self.new_building[-2] in [2, -2]:
                     extrahouse_txt = f"{'Keep' if sell else 'Build'} Extra Houses on?"
                     opp = True
                 self.extrahouse_label = tk.Label(
