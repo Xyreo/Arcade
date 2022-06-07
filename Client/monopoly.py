@@ -760,7 +760,7 @@ class Monopoly(tk.Toplevel):
         if pos in [10, 30]:
             self.update_game("Jail")
         elif pos in [0, 4, 20, 38]:
-            self.update_game("Default")
+            self.update_game()
         elif pos in [2, 17, 33]:
             self.update_game("Community Chest")
         elif pos in [7, 22, 36]:
@@ -768,7 +768,7 @@ class Monopoly(tk.Toplevel):
         elif pos:
             self.property_frame_popup(pos)
             if self.properties[pos].owner:
-                if self.properties[pos].owner != self.me:
+                if self.properties[pos].owner != self.turn:
                     if self.properties[pos].isMortgaged:
                         self.update_game("This property is Mortgaged!")
                     else:
@@ -2469,7 +2469,7 @@ class Community:
         pass
 
 
-# TODO: Chaitanya: Bankruptcy, Jail, Tax, Trading
+# TODO: Chaitanya: Bankruptcy, Jail, Tax, Trading, Notifier
 # TODO: Pramit: Chance, Community Chest
 # TODO: idk: All Rules & Texts, Update GUI
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
