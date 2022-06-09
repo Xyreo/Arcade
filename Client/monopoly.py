@@ -53,8 +53,16 @@ class Property:
         5: Rent with hotel
         """
 
-    def rent(self):
-        return self.rent_values[self.houses + 1]
+    def rent(self, roll):
+        if self.colour == "Station":
+            return 25 * (2 ** (Property.game.count_colour(self.position) - 1))
+        elif self.colour == "Utility":
+            return roll * (
+                Property.game.count_colour(self.position)
+                * (Property.game.count_colour(self.position) + 3)
+            )
+        else:
+            return self.rent_values[self.houses + 1]
 
     def value(self):
         val = self.price
@@ -90,6 +98,7 @@ class Monopoly(tk.Toplevel):
         details = self.hobj.mply_details()
         for i in range(40):
             self.properties[i] = Property(details[i])
+        Property.game = self
 
         for i in self.player_details:
             self.player_details[i].update(
@@ -139,6 +148,11 @@ class Monopoly(tk.Toplevel):
         self.build_button = ttk.Button()
         self.build_button.destroy()
         self.final_build_button = tk.Button()
+        self.final_build_button.destroy()
+        self.mortgage_frame = tk.Frame()
+        self.mortgage_frame.destroy()
+        self.build_frame = tk.Frame()
+        self.build_frame.destroy()
 
         self.property_pos_displayed = None
         self.current_txt = "Default"
@@ -146,6 +160,9 @@ class Monopoly(tk.Toplevel):
         self.uuids = list(self.player_details.keys())
         self.turn = self.uuids[0]
         self.doubles_counter = 0
+
+        self.isInDebt = False
+        self.debt_details = []
 
     def create_window(self):
         screen_width = int(0.9 * self.winfo_screenwidth())
@@ -448,6 +465,19 @@ class Monopoly(tk.Toplevel):
     def owner_detail(self, propertypos, s="Name"):
         return self.player_details[self.properties[propertypos].owner][s]
 
+    def isBankrupt(self, amt_to_pay, payer):
+        check = 0
+        for i in self.player_details[payer]["Properties"]:
+            if not i.isMortgaged:
+                if i.houses > 0:
+                    check += i.houses
+                check += i.mortgage
+
+        if amt_to_pay < check:
+            return False
+        else:
+            return True
+
     # endregion
 
     # region # Update Game
@@ -512,14 +542,23 @@ class Monopoly(tk.Toplevel):
                     if not my_sets:
                         d[i].configure(state="disabled")
                 if i == "buy":
-                    if not bool(
-                        self.properties[
-                            self.player_details[self.turn]["Position"] % 40
-                        ].colour
-                    ) or (
-                        self.properties[
-                            self.player_details[self.turn]["Position"] % 40
-                        ].owner
+                    if (
+                        not bool(
+                            self.properties[
+                                self.player_details[self.turn]["Position"] % 40
+                            ].colour
+                        )
+                        or (
+                            self.properties[
+                                self.player_details[self.turn]["Position"] % 40
+                            ].owner
+                        )
+                        or self.isBankrupt(
+                            self.properties[
+                                self.player_details[self.turn]["Position"] % 40
+                            ].price,
+                            self.turn,
+                        )
                     ):
                         d[i].configure(state="disabled")
                 if i == "sell":
@@ -759,7 +798,11 @@ class Monopoly(tk.Toplevel):
 
         if pos in [10, 30]:
             self.update_game("Jail")
-        elif pos in [0, 4, 20, 38]:
+        elif pos == 4:
+            self.pay(self.turn, 200)
+        elif pos == 38:
+            self.pay(self.turn, 100)
+        elif pos in [0, 20]:
             self.update_game()
         elif pos in [2, 17, 33]:
             self.update_game("Community Chest")
@@ -772,7 +815,11 @@ class Monopoly(tk.Toplevel):
                     if self.properties[pos].isMortgaged:
                         self.update_game("This property is Mortgaged!")
                     else:
-                        self.pay_rent(self.turn, pos)
+                        self.pay(
+                            self.turn,
+                            self.properties[pos].rent(self.current_move),
+                            self.properties[pos].owner,
+                        )
                 else:
                     if self.properties[pos].isMortgaged:
                         self.update_game(
@@ -1798,14 +1845,20 @@ class Monopoly(tk.Toplevel):
         if not received:
             if self.show_message(
                 "Mortgage Properties?" if mortgage else "Unmortgage Properties",
-                f"Are you sure you wish to mortgage the selected properties for {self.mortvalue}?"
+                f"Are you sure you wish to mortgage the selected properties to receive {self.mortvalue}?"
                 if mortgage
-                else f"Are you sure you wish to unmortgage the selected properties for {self.mortvalue}?",
+                else f"Are you sure you wish to unmortgage the selected properties for {self.mortvalue}?"
+                + (
+                    "\n*This will leave you in debt to the bank, forcing you to Mortgage or Sell Houses! Proceed with Caution!"
+                    if self.player_details[self.turn]["Money"] - self.mortvalue < 0
+                    else ""
+                ),
                 type="okcancel",
             ):
                 pass
             else:
-                self.update_game()
+                if not self.isInDebt:
+                    self.update_game()
                 return
         self.mortvalue = 0
         for i in l:
@@ -1815,14 +1868,13 @@ class Monopoly(tk.Toplevel):
                 if mortgage
                 else int(1.1 * self.properties[i].mortgage)
             )
-
-        self.player_details[self.turn]["Money"] += (
-            self.mortvalue if mortgage else -self.mortvalue
-        )
-
         self.update_game()
+        self.pay(self.turn, -self.mortvalue if mortgage else self.mortvalue)
         if not received:
             self.send_msg(("MORTGAGE", mortgage, l))
+        if self.isInDebt:
+            payer, amt, receiver = self.debt_details
+            self.pay(payer, amt, receiver)
 
     # endregion
 
@@ -2220,6 +2272,9 @@ class Monopoly(tk.Toplevel):
 
         if not received:
             self.send_msg(("BUILD", property, number, sell))
+        if self.isInDebt:
+            payer, amt, receiver = self.debt_details
+            self.pay(payer, amt, receiver)
 
     def place_houses(self):
         HOUSES = ASSET + "/Houses"
@@ -2275,7 +2330,14 @@ class Monopoly(tk.Toplevel):
         if not received:
             if self.show_message(
                 f"Buy {self.properties[propertypos].name}?",
-                f"You'll be buying {self.properties[propertypos].name} for {self.properties[propertypos].price}, leaving {(self.player_details[buyer]['Money'])-self.properties[propertypos].price} cash with you",
+                f"Are you sure you wish to buy {self.properties[propertypos].name} for {self.properties[propertypos].price}?"
+                + (
+                    "\n*This will leave you in debt to the bank, forcing you to Mortgage or Sell Houses! Proceed with Caution!"
+                    if (self.player_details[buyer]["Money"])
+                    - self.properties[propertypos].price
+                    < 0
+                    else ""
+                ),
                 type="okcancel",
             ):
                 pass
@@ -2288,9 +2350,7 @@ class Monopoly(tk.Toplevel):
                 self.properties[propertypos].owner = buyer
                 l = self.player_details[buyer]["Properties"]
                 l.append(self.properties[propertypos])
-                self.player_details[buyer]["Money"] -= self.properties[
-                    propertypos
-                ].price
+                self.pay(buyer, self.properties[propertypos].price)
                 # Inserting Properties in Sorted order
                 l.sort(key=lambda i: i.position)
                 for i in range(len(l)):
@@ -2317,7 +2377,8 @@ class Monopoly(tk.Toplevel):
                 print("Owned")
         else:
             print("Can't Buy")
-        self.update_game("Default")
+        if not self.isInDebt:
+            self.update_game("Default")
         if not received:
             self.send_msg(("BUY", propertypos))
 
@@ -2328,26 +2389,60 @@ class Monopoly(tk.Toplevel):
         self.player_details[player]["Money"] += 200
         self.update_game("You received 200 as salary!")
 
-    def pay_rent(self, payer, propertypos):
-        rent_amt = self.properties[propertypos].rent()
-        if self.properties[propertypos].colour == "Station":
-            rent_amt = 25 * (2 ** (self.count_colour(propertypos) - 1))
-        elif self.properties[propertypos].colour == "Utility":
-            rent_amt = self.current_move * (
-                self.count_colour(propertypos) * (self.count_colour(propertypos) + 3)
-            )
-        while self.player_details[payer]["Money"] < rent_amt:
-            # self.end_button.configure(state='disabled')
-            # Mortgage pop up
-            # Disable everything except mortgage
-            self.update_game(
-                f"You don't have enough money to pay!\nMortgage properties or sell houses worth {rent_amt- self.player_details[payer]['Money']}"
-            )
-        self.player_details[payer]["Money"] -= rent_amt
-        self.player_details[self.properties[propertypos].owner]["Money"] += rent_amt
-        self.update_game(
-            f"{self.player_details[payer]['Name']} paid {rent_amt} to {self.owner_detail(propertypos)}"
-        )
+    def pay(self, payer, amt, receiver=None):
+        if self.player_details[payer]["Money"] < amt:
+            if self.isBankrupt(amt, payer):
+                if receiver:
+                    for i in self.player_details[payer]["Properties"]:
+                        i.owner = receiver
+                    self.player_details[receiver]["Money"] += self.player_details[
+                        payer
+                    ]["Money"]
+                else:
+                    for i in self.player_details[payer]["Properties"]:
+                        i.owner = None
+                        i.houses = -1
+                        i.isMortgaged = False
+                self.player_details[payer][
+                    "Money"
+                ] = -9999  # test #yeet player,send msg
+            else:
+                self.isInDebt = True
+                self.debt_details = (payer, amt, receiver)
+                self.update_game(
+                    f"You don't have enough money to pay!\nMortgage properties or sell houses worth {amt- self.player_details[payer]['Money']}"
+                )
+                d = {
+                    "end": self.end_button,
+                    "buy": self.buy_button,
+                    "build": self.build_button,
+                    "trade": self.trade_button,
+                    "unmortgage": self.unmortgage_button,
+                }
+                for i in d:
+                    if d[i].winfo_exists():
+                        try:
+                            d[i].configure(state="disabled")
+                        except:
+                            pass
+        else:
+            if amt > 0:
+                self.isInDebt = False
+            self.player_details[payer]["Money"] -= amt
+            if receiver:
+                self.player_details[receiver]["Money"] += amt
+            if self.isInDebt:
+                payer, amt, receiver = self.debt_details
+                self.pay(payer, amt, receiver)
+            if amt > 0:
+                self.update_game(
+                    f"{self.player_details[payer]['Name']} paid {amt} to {self.player_details[receiver]['Name'] if receiver else 'The Bank'}"
+                )
+            else:
+                self.update_game(
+                    f"{self.player_details[payer]['Name']} received {-amt} from {self.player_details[receiver]['Name'] if receiver else 'The Bank'}"
+                )
+            self.toggle_action_buttons(True)
 
     def CLI(self):
         while True:
@@ -2469,7 +2564,7 @@ class Community:
         pass
 
 
-# TODO: Chaitanya: Bankruptcy, Jail, Tax, Trading, Notifier
+# TODO: Chaitanya: Jail, Trading, Notifier
 # TODO: Pramit: Chance, Community Chest
 # TODO: idk: All Rules & Texts, Update GUI
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
