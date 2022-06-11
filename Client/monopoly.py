@@ -2509,7 +2509,7 @@ class Chance:
             self.get_out_of_jail_free,
             self.go_back_3,
             self.general_repairs,
-            self.pay_to_players(50),
+            lambda: self.pay_to_players(50),
         ]
         text = [
             "Advance to GO.",
@@ -2611,7 +2611,6 @@ class Community:
             lambda: self.pay_to_players(-50),
             lambda: self.pay_to_players(-10),
             lambda: self.game.go_to_jail(self.game.turn),
-            self.go_to_jail,
             self.get_out_of_jail_free,
             self.go_back,
             self.street_repairs,

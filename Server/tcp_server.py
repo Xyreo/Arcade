@@ -125,7 +125,7 @@ class Room(Channels):
     def mnply_start(self):
         p = {}
         color = ["red", "green", "blue", "gold"]
-        order = (None, None)
+        order = [None, None]
         order[0] = [i for i in range(20)]
         random.shuffle(order[0])
         i = 0
@@ -133,7 +133,9 @@ class Room(Channels):
             p[player.uuid] = {"Name": player.name, "Colour": color[i]}
             i += 1
         for player in self.members:
-            player.send_instruction((self.uuid, "ROOM", "START", (p, player.uuid)))
+            player.send_instruction(
+                (self.uuid, "ROOM", "START", (p, player.uuid, order))
+            )
 
     def broadcast(self, msg, exclude=None):
         self.broadcast_to_members(msg, exclude)

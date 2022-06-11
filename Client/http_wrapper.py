@@ -100,13 +100,11 @@ class Response:
 
 
 if __name__ == "__main__":
-    app = Http("http://167.71.231.52:5000")
+    app = Http("http://localhost:5000")
+    print(app.login("test", "test"))
     print(
-        app.login(
-            "test",
-            "test",
-            remember_me=True,
+        app.monopoly_send(
+            "get", "add_game", {"winner": 1, "results": {"gay": 1}, "players": [1, 29]}
         )
     )
-    print(app.mply_details(1))
     # print(app.del_user())

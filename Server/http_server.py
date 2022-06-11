@@ -131,16 +131,6 @@ def remember_login():
     return jsonify("Either username or password is incorrect"), 400
 
 
-@app.route("/exit")
-def exit_flask():
-    password = request.args.get("password").encode("utf-8")
-    storedpw = cursor.execute(f'SELECT password,name FROM user where name = "root"')
-    if bcrypt.checkpw(password, storedpw[0][0].encode("utf-8")):
-        db.close()
-
-    return jsonify("Wrong Password"), 400
-
-
 @req_authorisation.before_request
 def check_session():
     authorisation = request.headers.get("Authorization")
@@ -188,6 +178,23 @@ def details(pos):
     if len(detail) != 1:
         return jsonify("Not Found"), 404
     return jsonify(detail[0]), 200
+
+
+@monopoly.route("/add_game")
+def monopoly_game_add():
+    try:
+        data = json.loads(request.data)
+        winner = int(data["winner"])
+        result = data["result"]
+        players = data["players"]
+        cursor.data_change(
+            f"insert into game(type,result,winner) values ('MPY','{result}',{winner});"
+        )
+        game = cursor.execute("SELECT uuid FROM game ORDER BY uuid DESC LIMIT 1")[0]
+        for i in players:
+            cursor.data_change(f"insert into game_user(user,game) values ({i},{game});")
+    except:
+        return jsonify("Bad Request"), 400
 
 
 # endregion
