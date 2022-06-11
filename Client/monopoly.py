@@ -809,11 +809,9 @@ class Monopoly(tk.Toplevel):
         elif pos in [0, 20]:
             self.update_game()
         elif pos in [2, 17, 33]:
-            # Community Chest
-            self.after(200, lambda: self.update_game(self.community()))
+            self.update_game(self.community())
         elif pos in [7, 22, 36]:
-            # Chance
-            self.after(200, lambda: self.update_game(self.chance()))
+            self.update_game(self.chance())
         elif pos:
             self.property_frame_popup(pos)
             if self.properties[pos].owner:
@@ -2589,7 +2587,7 @@ class Chance:
     def __call__(self):
         self.options[0]()
         self.options.append(self.options.pop(0))
-        self.text.append(self.options.pop(0))
+        self.text.append(self.text.pop(0))
         return self.text[-1]
 
 
@@ -2661,7 +2659,7 @@ class Community:
     def __call__(self):
         self.options[0]()
         self.options.append(self.options.pop(0))
-        self.text.append(self.options.pop(0))
+        self.text.append(self.text.pop(0))
         return self.text[-1]
 
 
