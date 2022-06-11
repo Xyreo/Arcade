@@ -635,7 +635,7 @@ class Monopoly(tk.Toplevel):
             self.move(self.turn, self.current_move, endturn=True)
             # TODO GO TO JAIL #END TURN AUTOMATICALLY
             self.action_frame_popup("Jail")
-            
+
     def click_to_position(self, event):
         x, y = event.x, event.y
         l = [1.6, 1.6]
