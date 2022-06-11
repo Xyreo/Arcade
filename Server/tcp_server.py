@@ -96,6 +96,7 @@ class Room(Channels):
             self.chess_start()
         elif self.game == "MNPLY":
             self.mnply_start()
+        lobbies[self.game].broadcast_to_members(("ROOM", "REMOVE", self.uuid))
 
     def join(self, player):
         super().join(player)
@@ -110,7 +111,7 @@ class Room(Channels):
                 self.broadcast(("PLAYER", "REMOVE", player.uuid))
 
         elif self.status == "INGAME":
-            self.broadcast(("PLAYER", "LEAVE", player.uuid))
+            self.broadcast_to_members(("MSG", "LEAVE", player.uuid))
 
         super().leave(player)
 

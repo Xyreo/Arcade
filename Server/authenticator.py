@@ -32,7 +32,7 @@ class Auth:
 
     def __call__(self, session_id):
         if self.r.exists(session_id):
-            self.r.expire(session_id, timedelta(minutes=30))
+            self.r.expire(session_id, timedelta(minutes=30), xx=True)
             return True
 
         return False
