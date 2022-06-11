@@ -809,9 +809,11 @@ class Monopoly(tk.Toplevel):
         elif pos in [0, 20]:
             self.update_game()
         elif pos in [2, 17, 33]:
-            self.update_game("Community Chest")
+            # Community Chest
+            self.after(200, lambda: self.update_game(self.community()))
         elif pos in [7, 22, 36]:
-            self.update_game("Chance")
+            # Chance
+            self.after(200, lambda: self.update_game(self.chance()))
         elif pos:
             self.property_frame_popup(pos)
             if self.properties[pos].owner:
@@ -2595,7 +2597,7 @@ class Community:
     def __init__(self, game, order):
         self.game: Monopoly = game
         options = [
-            lambda: self.advance_to("GO"),
+            lambda: self.advance_to(0),
             lambda: self.bank_transaction(200),
             lambda: self.bank_transaction(50),
             lambda: self.bank_transaction(100),
@@ -2683,6 +2685,7 @@ if __name__ == "__main__":
         "QWERTY",
         print,
         hobj,
+        order=[[i for i in range(20)], [i for i in range(20)]],
     )
     mono.protocol("WM_DELETE_WINDOW", mono.yeet)
     root.mainloop()
