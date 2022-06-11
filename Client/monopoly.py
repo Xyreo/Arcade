@@ -176,7 +176,7 @@ class Monopoly(tk.Toplevel):
         self.token_width = int(self.property_height * 0.176)
 
         self.title("Monopoly")
-        self.resizable(False, False)
+        self.minsize(screen_width, screen_height)
         self.geometry(f"{screen_width}x{screen_height}+{x_coord}+{y_coord}")
         self.config(bg="white")
 
