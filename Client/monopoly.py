@@ -2479,14 +2479,14 @@ class Monopoly(tk.Toplevel):
 class Chance:
     def __init__(self, game, order):
         options = [
-            lambda: self.advance_to("GO"),
-            lambda: self.advance_to("TS"),
-            lambda: self.advance_to("PM"),
+            lambda: self.advance_to(0),  # GO
+            lambda: self.advance_to(24),  # Trafalgar Square
+            lambda: self.advance_to(11),  # Pall Mall
             lambda: self.advance_to("UT"),
             lambda: self.advance_to("RR"),
             lambda: self.advance_to("GB"),
-            lambda: self.advance_to("KC"),
-            lambda: self.advance_to("MF"),
+            lambda: self.advance_to(5),  # King Cross
+            lambda: self.advance_to(39),  # Mayfair
             lambda: self.bank_transaction(50),
             lambda: self.bank_transaction(150),
             lambda: self.bank_transaction(100),
@@ -2499,10 +2499,15 @@ class Chance:
         ]
         new = [options[i] for i in order]
         self.options = new
-        self.game = game
+        self.game: Monopoly = game
 
-    def advance_to(self):
-        pass
+    def advance_to(self, place):
+        uuid = self.game.turn
+        players = self.game.player_details
+        move = (place - players[uuid]["Position"] % 40) % 40
+        self.game.roll_dice(
+            move,
+        )
 
     def go_to_jail(self):
         pass
@@ -2511,7 +2516,8 @@ class Chance:
         pass
 
     def bank_transaction(self, amt):
-        pass
+        uuid = self.game.turn
+        self.game.pay(uuid, amt)
 
     def general_repairs(self):
         pass
