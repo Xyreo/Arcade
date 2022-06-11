@@ -2508,9 +2508,7 @@ class Chance:
         uuid = self.game.turn
         players = self.game.player_details
         move = (place - players[uuid]["Position"] % 40) % 40
-        self.game.roll_dice(
-            move,
-        )
+        self.game.move(uuid, move)
 
     def go_to_jail(self):
         pass
