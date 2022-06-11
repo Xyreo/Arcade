@@ -2568,7 +2568,7 @@ class Community:
         pass
 
 
-# TODO: Chaitanya: Bankruptcy Update Room, Jail, Trading, Notifier, Automatic End Turns
+# TODO: Chaitanya: Bankruptcy Update Room, Jail, Trading, Notifier, Automatic End Turns, Figure out Resizing
 # TODO: Pramit: Chance, Community Chest
 # TODO: idk: All Rules & Texts, Update GUI
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
