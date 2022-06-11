@@ -1,4 +1,5 @@
 import pickle
+import random
 import secrets
 import socket
 import threading
@@ -10,12 +11,17 @@ rooms = {}
 players = {}  # Stores the socks of all the players connected to the server
 
 
+def log(msg):
+    with open("tcp_log.txt", "a") as f:
+        f.write(msg + "\n")
+
+
 def assign_uuid(l):
     # Function that returns a unique id for passed object
-    i = secrets.token_hex(16)
+    i = secrets.token_hex(3)
     while i in l:
-        i = secrets.token_hex(16)
-    return i
+        i = secrets.token_hex(3)
+    return i.upper()
 
 
 class Channels:
@@ -118,6 +124,9 @@ class Room(Channels):
     def mnply_start(self):
         p = {}
         color = ["red", "green", "blue", "gold"]
+        order = (None, None)
+        order[0] = [i for i in range(20)]
+        random.shuffle(order[0])
         i = 0
         for player in self.members:
             p[player.uuid] = {"Name": player.name, "Colour": color[i]}
@@ -161,7 +170,10 @@ class Client(threading.Thread):
         self.conn = conn
         self.addr = addr
         self.auth = auth
-        self.name = pickle.loads(self.conn.recv(1048))
+        try:
+            self.name = pickle.loads(self.conn.recv(1048))
+        except:
+            print("AAAA")
         print("Name", self.name)
         self.uuid = assign_uuid(list(players.keys()))
         players[self.uuid] = self
@@ -187,6 +199,8 @@ class Client(threading.Thread):
             self.conn.close()
             print("Connection Closed")
             return
+        except Exception as e:
+            log(f"Load Error: {e}")
 
     def authenticate(self, message, auth=False):
         if auth:
@@ -242,8 +256,10 @@ class Client(threading.Thread):
         try:
             self.conn.send(pickle.dumps(instruction))
             print(instruction, "SENT.")
-        except (ConnectionResetError, EOFError):
+        except (ConnectionResetError, EOFError, BrokenPipeError):
             print("Couldnt send the message-", instruction)
+        except Exception as e:
+            log(f"Sending: {e}")
 
     def details(self):
         d = {"name": self.name, "puid": self.uuid}
@@ -263,7 +279,7 @@ class Driver:
 
     def __init__(self):
         PORT = 6969
-        SERVER = "localhost"
+        SERVER = "0.0.0.0"
         ADDRESS = (SERVER, PORT)
 
         l, c = Lobby("MNPLY"), Lobby("CHESS")

@@ -73,10 +73,12 @@ class Property:
 
 
 class Monopoly(tk.Toplevel):
-    def __init__(self, playerdetails, me, send, hobj: Http):
+    def __init__(self, playerdetails, me, send, hobj: Http, order=None):
         super().__init__()
         self.player_details = playerdetails
         self.me = me
+        self.chance = Chance(self, order[0])
+        self.community = Community(self, order[1])
         Monopoly.hobj = hobj
         print(self.player_details[self.me])
         self.send_msg = send
@@ -127,6 +129,8 @@ class Monopoly(tk.Toplevel):
             self.end_turn(True)
         elif msg[1] == "MORTGAGE":
             self.final_mortgage(msg[2], msg[3], True)
+        elif msg[1] == "LEAVE":
+            self.yeet_player(msg[2])
 
     # region # Create
 
@@ -2389,6 +2393,9 @@ class Monopoly(tk.Toplevel):
         self.player_details[player]["Money"] += 200
         self.update_game("You received 200 as salary!")
 
+    def go_to_jail(self, player):
+        pass
+
     def pay(self, payer, amt, receiver=None):
         if self.player_details[payer]["Money"] < amt:
             if self.isBankrupt(amt, payer):
@@ -2475,31 +2482,78 @@ class Monopoly(tk.Toplevel):
         except:
             pass
 
+    def yeet_player(self, player_id):
+        pass
+
 
 class Chance:
     def __init__(self, game, order):
+        self.game: Monopoly = game
         options = [
             lambda: self.advance_to(0),  # GO
             lambda: self.advance_to(24),  # Trafalgar Square
             lambda: self.advance_to(11),  # Pall Mall
-            lambda: self.advance_to("UT"),
-            lambda: self.advance_to("RR"),
-            lambda: self.advance_to("GB"),
+            lambda: self.nearest_prop("UT"),
+            lambda: self.nearest_prop("RR"),
+            lambda: self.nearest_prop("RR"),
             lambda: self.advance_to(5),  # King Cross
             lambda: self.advance_to(39),  # Mayfair
-            lambda: self.bank_transaction(50),
+            lambda: self.bank_transaction(-50),
+            lambda: self.bank_transaction(-150),
+            lambda: self.bank_transaction(-100),
+            lambda: self.bank_transaction(15),
+            lambda: self.bank_transaction(20),
             lambda: self.bank_transaction(150),
-            lambda: self.bank_transaction(100),
-            lambda: self.bank_transaction(150),
-            lambda: self.bank_transaction(-15),
-            self.general_repairs,
-            self.go_to_jail,
+            lambda: self.bank_transaction(-200),
+            lambda: self.game.go_to_jail(self.game.turn),
             self.get_out_of_jail_free,
-            self.pay_to_players,
+            self.go_back_3,
+            self.general_repairs,
+            self.pay_to_players(50),
+        ]
+        text = [
+            "Advance to GO.",
+            "Advance to Trafalgar Square",
+            "Advance to Pall Mall",
+            "Advance token to the nearest Utility. If unowned, you may buy it from the Bank. If owned, throw dice and pay owner a total 10 times the amount thrown.",
+            "Advance to the nearest Railroad. If unowned, you may buy it from the Bank. If owned, pay owner twice the re tal to which they are otherwise entitled. If Railroad is unowned, you may buy it from the Bank.",
+            "Advance to the nearest Railroad. If unowned, you may buy it from the Bank. If owned, pay owner twice the re tal to which they are otherwise entitled. If Railroad is unowned, you may buy it from the Bank.",
+            "Take a ride to King's Cross Station",
+            "Advance to Mayfair",
+            "Bank pays you dividend of 50",
+            "Your building loan matures. Collect 150. ",
+            "You have won a crossword competition. Collect 100.",
+            "Pay speeding fine of 15 ",
+            "Drunk in charge. Pay 20",
+            "Pay school fees of 150",
+            "Bank Error in your favour. Receive 200",
+            "Go to Jail. Go directly to Jail. Do not pass GO, do not collect 200. ",
+            "Get out of Jail Free. This card maybe used once",
+            "Go Back Three Spaces.",
+            "Make general repairs on all your property: For each house pay 25, For each hotel pay 100",
+            "You have been elected Chairman of the Board. Pay each player 50",
         ]
         new = [options[i] for i in order]
+        self.text = [text[i] for i in order]
         self.options = new
-        self.game: Monopoly = game
+
+    def go_back_3(self):
+        self.game.move(self.game.turn, 37, showmove=False)  # ? Maybe move animation
+
+    def nearest_prop(self, stuff):
+        turn = self.game.turn
+        pos = self.game.player_details[turn]["Position"] % 40
+        if stuff == "UT":
+            move = (
+                (12 - pos) % 40
+                if (12 - pos) % 40 < (28 - pos) % 40
+                else (28 - pos) % 40
+            )
+        elif stuff == "RR":
+            c = [5, 15, 25, 35]
+            l = [(i - pos) % 40 for i in c]
+            move = min(l)
+        self.game.move(turn, move)  # TODO Ask for Roll
 
     def advance_to(self, place):
         uuid = self.game.turn
@@ -2507,25 +2561,39 @@ class Chance:
         move = (place - players[uuid]["Position"] % 40) % 40
         self.game.move(uuid, move)
 
-    def go_to_jail(self):
-        pass
-
     def get_out_of_jail_free(self):
-        pass
+        self.game.player_details[self.game.turn]["GOJF"] = True  # TODO Idk what
 
     def bank_transaction(self, amt):
         uuid = self.game.turn
         self.game.pay(uuid, amt)
 
     def general_repairs(self):
-        pass
+        properties = self.game.player_details[self.game.turn]["Properties"]
+        house, hotel = 0, 0
+        for i in properties:
+            if i.houses == 5:
+                hotel += 1
+            elif i.houses > 0:
+                house += i.houses
+        self.game.pay(self.game.turn, house * 25 + hotel * 100)
 
-    def pay_to_players(self):
-        pass
+    def pay_to_players(self, amt):
+        players = self.game.player_details
+        for i in players:
+            if i != self.game.turn:
+                self.game.pay(self.game.turn, amt, i)
+
+    def __call__(self):
+        self.options[0]()
+        self.options.append(self.options.pop(0))
+        self.text.append(self.options.pop(0))
+        return self.text[-1]
 
 
 class Community:
     def __init__(self, game, order):
+        self.game: Monopoly = game
         options = [
             lambda: self.advance_to("GO"),
             lambda: self.bank_transaction(200),
@@ -2536,40 +2604,68 @@ class Community:
             lambda: self.bank_transaction(10),
             lambda: self.bank_transaction(20),
             lambda: self.bank_transaction(25),
+            lambda: self.bank_transaction(25),
             lambda: self.bank_transaction(-50),
             lambda: self.bank_transaction(-50),
             lambda: self.bank_transaction(-50),
             lambda: self.pay_to_players(-50),
             lambda: self.pay_to_players(-10),
+            lambda: self.game.go_to_jail(self.game.turn),
             self.go_to_jail,
             self.get_out_of_jail_free,
+            self.go_back,
             self.street_repairs,
+            self.pick_chance,
         ]
+        text = ["Insert Stuff"]  # TODO stuff
         new = [options[i] for i in order]
+        self.text = [text[i] for i in order]
         self.options = new
-        self.game = game
 
-    def advance_to(self):
-        pass
+    def go_back(self):
+        pass  # TODO lazinness
 
-    def go_to_jail(self):
-        pass
+    def advance_to(self, place):
+        uuid = self.game.turn
+        players = self.game.player_details
+        move = (place - players[uuid]["Position"] % 40) % 40
+        self.game.move(uuid, move)
 
     def get_out_of_jail_free(self):
-        pass
+        self.game.player_details[self.game.turn]["GOJF"] = True  # TODO Idk what
 
     def bank_transaction(self, amt):
-        pass
+        uuid = self.game.turn
+        self.game.pay(uuid, -amt)
 
     def pay_to_players(self, amt):
-        pass
+        players = self.game.player_details
+        for i in players:
+            if i != self.game.turn:
+                self.game.pay(self.game.turn, amt, i)
 
     def street_repairs(self):
-        pass
+        properties = self.game.player_details[self.game.turn]["Properties"]
+        house, hotel = 0, 0
+        for i in properties:
+            if i.houses == 5:
+                hotel += 1
+            elif i.houses > 0:
+                house += i.houses
+        self.game.pay(self.game.turn, house * 40 + hotel * 115)
+
+    def pick_chance(self):
+        pass  # TODO How to take input idk + input needs to be passed to other players so more pain
+
+    def __call__(self):
+        self.options[0]()
+        self.options.append(self.options.pop(0))
+        self.text.append(self.options.pop(0))
+        return self.text[-1]
 
 
 # TODO: Chaitanya: Bankruptcy Update Room, Jail, Trading, Notifier, Automatic End Turns
-# TODO: Pramit: Chance, Community Chest
+# TODO: Pramit: Add Community Shuffling on Server (numbers undecided as of yet thats why)
 # TODO: idk: All Rules & Texts, Update GUI
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
 

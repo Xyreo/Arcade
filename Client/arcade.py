@@ -169,12 +169,13 @@ class Arcade(tk.Toplevel):
                             msg[3], lambda move: self.send((dest, "MSG", move))
                         )
                     elif game == "MNPLY":
-                        det = msg[3]
+                        details = msg[3]
                         self.game = Monopoly(
-                            det[0],
-                            det[1],
+                            details[0],
+                            details[1],
                             lambda msg: self.send((dest, "MSG", msg)),
                             HTTP,
+                            details[2],
                         )
 
             elif msg[1] == "MSG":
