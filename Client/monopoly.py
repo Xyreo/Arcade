@@ -2616,7 +2616,7 @@ class Community:
             self.street_repairs,
             self.pick_chance,
         ]
-        text = ["Insert Stuff"]  # TODO stuff
+        text = ["Insert Stuff"] * 20  # TODO stuff
         new = [options[i] for i in order]
         self.text = [text[i] for i in order]
         self.options = new

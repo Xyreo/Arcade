@@ -12,46 +12,60 @@ from flask import Blueprint, Flask, jsonify, request
 
 from authenticator import Auth
 
+
 app = Flask(__name__)
 load_dotenv(find_dotenv())
 password = os.getenv("password")
-db = msc.connect(
-    host="167.71.231.52",
-    username="project-work",
-    password=password,
-    database="arcade",
-)
 
 
 class Database:
     def __init__(self):
         cache.flushdb()
+        self.db = msc.connect(
+            host="167.71.231.52",
+            username="project-work",
+            password=password,
+            database="arcade",
+        )
 
-    def execute(self, query):
+    def execute(self, query, multi=False):
+        while True:
+            try:
+                cursor = self.db.cursor()
+                response = []
+                if multi:
+                    for result in cursor.execute(query, multi=True):
+                        if result.with_rows:
+                            print(result.fetchall())
+                else:
+                    cursor.execute(query)
+                    response = cursor.fetchall()
+                cursor.close()
+                return response
+
+            except msc.OperationalError:
+                self.db = msc.connect(
+                    host="167.71.231.52",
+                    username="project-work",
+                    password=password,
+                    database="arcade",
+                )
+            except Exception as e:
+                print(f'{time.time()}: {e} Avoided, Query was "{query}"')
+                return None
+
+    def data_change(self, query, multi=True):
         try:
-            cursor = db.cursor()
-            cursor.execute(query)
-            response = cursor.fetchall()
-            cursor.close()
-            return response
-
-        except Exception as e:
-            print(f'{time.time()}: {e} Avoided, Query was "{query}"')
-
-            return None
-
-    def data_change(self, query):
-        try:
-            cursor.execute(query)
+            self.execute(query, multi=multi)
             # self.cursor.fetchall()
-            db.commit()
+            self.db.commit()
 
         except:
-            db.rollback()
+            self.db.rollback()
 
 
 cache = redis.Redis(host="localhost", port=6379, db=0)
-cursor = Database()
+db = Database()
 
 monopoly = Blueprint("monopoly", __name__)
 chess = Blueprint("chess", __name__)
@@ -88,13 +102,13 @@ def register():
     data = json.loads(request.data)
     username = data["username"]
     password = data["password"].encode("utf-8")
-    count = cursor.execute(f"SELECT * FROM user WHERE name = '{username}'")
+    count = db.execute(f"SELECT * FROM user WHERE name = '{username}'")
     if len(count):
         return jsonify("User Already Exists"), 400
     password = bcrypt.hashpw(password, bcrypt.gensalt(12))
     password = str(password)[2:-1]
     doj = str(date.today())
-    cursor.data_change(
+    db.data_change(
         f'INSERT INTO user(name,doj,password) VALUES("{username}","{doj}","{password}")'
     )
 
@@ -107,7 +121,7 @@ def login():
     username = data["username"]
     password = data["password"].encode("utf-8")
 
-    storedpw = cursor.execute(f"SELECT password FROM user where name='{username}'")
+    storedpw = db.execute(f"SELECT password FROM user where name='{username}'")
     if len(storedpw):
         if bcrypt.checkpw(password, storedpw[0][0].encode("utf-8")):
             session = auth.add(username)
@@ -122,13 +136,23 @@ def remember_login():
     username = data["username"]
     password = data["password"].encode("utf-8")
 
-    storedpw = cursor.execute(f"SELECT password FROM user where name='{username}'")
+    storedpw = db.execute(f"SELECT password FROM user where name='{username}'")
     if len(storedpw):
         if password == storedpw[0][0].encode("utf-8"):
             session = auth.add(username)
             return jsonify({"Token": session}), 200
 
     return jsonify("Either username or password is incorrect"), 400
+
+
+@app.route("/exit")
+def exit_flask():
+    password = request.args.get("password").encode("utf-8")
+    storedpw = db.execute(f'SELECT password,name FROM user where name = "root"')
+    if bcrypt.checkpw(password, storedpw[0][0].encode("utf-8")):
+        db.close()
+
+    return jsonify("Wrong Password"), 400
 
 
 @req_authorisation.before_request
@@ -148,7 +172,7 @@ def check_session():
 def delete_user():
     authorisation = request.headers.get("Authorization")
     auth_token = authorisation.split()[1]
-    cursor.data_change(f'DELETE FROM user WHERE name="{auth.get_user(auth_token)}"')
+    db.data_change(f'DELETE FROM user WHERE name="{auth.get_user(auth_token)}"')
     auth.end_session(auth_token)
     return jsonify("Success"), 200
 
@@ -166,35 +190,41 @@ def logout():
 # region Monopoly
 @monopoly.route("/details")
 def list_details():
-    details = cursor.execute("SELECT * FROM monopoly_board_values")
-    print(details)
+    details = db.execute("SELECT * FROM monopoly_board_values")
     l = [i for i in details]
     return jsonify(l), 200
 
 
 @monopoly.route("/details/<string:pos>")
 def details(pos):
-    detail = cursor.execute(f"SELECT * FROM monopoly_board_values where position={pos}")
+    detail = db.execute(f"SELECT * FROM monopoly_board_values where position={pos}")
     if len(detail) != 1:
         return jsonify("Not Found"), 404
     return jsonify(detail[0]), 200
 
 
-@monopoly.route("/add_game")
+@monopoly.route("/add_game", methods=["POST"])
 def monopoly_game_add():
     try:
         data = json.loads(request.data)
         winner = int(data["winner"])
         result = data["result"]
+
         players = data["players"]
-        cursor.data_change(
-            f"insert into game(type,result,winner) values ('MPY','{result}',{winner});"
-        )
-        game = cursor.execute("SELECT uuid FROM game ORDER BY uuid DESC LIMIT 1")[0]
+        result = str(result).replace("'", '"')
+        s = "insert into game_user(user,game) values "
         for i in players:
-            cursor.data_change(f"insert into game_user(user,game) values ({i},{game});")
-    except:
-        return jsonify("Bad Request"), 400
+            s += f"({i},@v1),"
+        s = s[:-1] + ";"
+
+        q = f"""SET @v1 := (SELECT uuid FROM game ORDER BY uuid DESC LIMIT 1)+1;
+        insert into game(type,result,winner,uuid) values ('MPY','{result}',{winner},@v1);
+        {s}"""
+        db.data_change(q, multi=True)
+        return jsonify("Succes"), 200
+    except Exception as e:
+        print(e)
+        return jsonify("Bad Req"), 400
 
 
 # endregion

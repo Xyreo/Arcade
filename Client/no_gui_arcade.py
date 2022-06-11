@@ -76,7 +76,11 @@ def event_handler(msg):
                 print(p)
                 root.withdraw()
                 g = Monopoly(
-                    msg[3][0], msg[3][1], lambda move: send(rid, "MSG", move), h
+                    msg[3][0],
+                    msg[3][1],
+                    lambda move: send(rid, "MSG", move),
+                    h,
+                    [[i for i in range(20)]] * 2,
                 )
 
         elif msg[1] == "MSG":
@@ -87,5 +91,6 @@ root = tk.Tk()
 c = Client(("localhost", 6969), event_handler)
 
 c.send(str(random.randint(0, 1000000)))
+time.sleep(0.1)
 send("0", "JOIN", game)
 root.mainloop()

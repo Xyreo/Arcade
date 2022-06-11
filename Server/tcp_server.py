@@ -125,9 +125,9 @@ class Room(Channels):
     def mnply_start(self):
         p = {}
         color = ["red", "green", "blue", "gold"]
-        order = [None, None]
-        order[0] = [i for i in range(20)]
+        order = [[i for i in range(20)], [i for i in range(20)]]
         random.shuffle(order[0])
+        random.shuffle(order[1])
         i = 0
         for player in self.members:
             p[player.uuid] = {"Name": player.name, "Colour": color[i]}
@@ -216,7 +216,6 @@ class Client(threading.Thread):
 
     def instruction_handler(self, instruction):
         channel = instruction[0]
-        print("Recv:", instruction)
         if channel == "0":
             self.main_handler(instruction[1:])
         elif channel in lobbies:

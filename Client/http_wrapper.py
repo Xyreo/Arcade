@@ -104,7 +104,9 @@ if __name__ == "__main__":
     print(app.login("test", "test"))
     print(
         app.monopoly_send(
-            "get", "add_game", {"winner": 1, "results": {"gay": 1}, "players": [1, 29]}
+            "post",
+            "add_game",
+            {"winner": 1, "result": {"gay": "2"}, "players": [1, 29]},
         )
     )
     # print(app.del_user())
