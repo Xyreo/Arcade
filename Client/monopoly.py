@@ -2667,7 +2667,7 @@ class Community:
 # TODO: Chaitanya: Bankruptcy Update Room, Jail, Trading, Notifier, Automatic End Turns, Figure out Resizing
 # TODO: Pramit: Add Community Shuffling on Server (numbers undecided as of yet thats why)
 # TODO: idk: All Rules & Texts, Update GUI
-# ? Voice Chat, Auctions, Select Colour, Custom Actions
+# ? (Voice) Chat, Select Colour
 
 if __name__ == "__main__":
     root = tk.Tk()
