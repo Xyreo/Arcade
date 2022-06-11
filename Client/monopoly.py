@@ -118,7 +118,7 @@ class Monopoly(tk.Toplevel):
 
     def event_handler(self, msg):
         if msg[1] == "ROLL":
-            self.roll_dice(msg[2], True)
+            self.roll_dice(roll=msg[2], received=True, showroll=msg[3])
         elif msg[1] == "BUY":
             self.buy_property(msg[2], msg[0], True)
         elif msg[1] == "BUILD":
@@ -604,7 +604,7 @@ class Monopoly(tk.Toplevel):
 
     # region # Roll, Move
 
-    def roll_dice(self, roll=None, received=False, cli=False):
+    def roll_dice(self, roll=None, received=False, cli=False, showroll=True):
         try:
             music(ASSET + "/Die/diceroll.mp3")
         except:
@@ -612,29 +612,32 @@ class Monopoly(tk.Toplevel):
         dice_roll = roll if received else (random.randint(1, 6), random.randint(1, 6))
         dice_roll = roll if cli else dice_roll
         if not received:
-            self.send_msg(("ROLL", dice_roll))
-        for i in range(18):
-            self.dice_spot1.configure(image=self.die_dict[random.randint(1, 6)])
-            self.dice_spot2.configure(image=self.die_dict[random.randint(1, 6)])
+            self.send_msg(("ROLL", dice_roll, showroll))
+        if showroll:
+            for i in range(18):
+                self.dice_spot1.configure(image=self.die_dict[random.randint(1, 6)])
+                self.dice_spot2.configure(image=self.die_dict[random.randint(1, 6)])
+                self.dice_spot1.update()
+                self.dice_spot2.update()
+                sleep(0.12)
+                self.roll_button.configure(state="disabled")
+            self.dice_spot1.configure(image=self.die_dict[dice_roll[0]])
+            self.dice_spot2.configure(image=self.die_dict[dice_roll[1]])
             self.dice_spot1.update()
             self.dice_spot2.update()
-            sleep(0.12)
-            self.roll_button.configure(state="disabled")
-        self.dice_spot1.configure(image=self.die_dict[dice_roll[0]])
-        self.dice_spot2.configure(image=self.die_dict[dice_roll[1]])
-        self.dice_spot1.update()
-        self.dice_spot2.update()
-        self.current_move = sum(dice_roll)
-        if dice_roll[0] == dice_roll[1]:
-            self.move(self.turn, self.current_move, endturn=False)
-            self.doubles_counter += 1
+            self.current_move = sum(dice_roll)
+            if dice_roll[0] == dice_roll[1]:
+                self.move(self.turn, self.current_move, endturn=False)
+                self.doubles_counter += 1
+            else:
+                self.doubles_counter = 0
+                self.move(self.turn, self.current_move, endturn=True)
+            if self.doubles_counter == 3:
+                self.move(self.turn, self.current_move, endturn=True)
+                # TODO GO TO JAIL #END TURN AUTOMATICALLY
+                self.action_frame_popup("Jail")
         else:
-            self.doubles_counter = 0
-            self.move(self.turn, self.current_move, endturn=True)
-        if self.doubles_counter == 3:
-            self.move(self.turn, self.current_move, endturn=True)
-            # TODO GO TO JAIL #END TURN AUTOMATICALLY
-            self.action_frame_popup("Jail")
+            self.move(self.turn, roll, showmove=False)
 
     def click_to_position(self, event):
         x, y = event.x, event.y
@@ -828,7 +831,7 @@ class Monopoly(tk.Toplevel):
                     else:
                         self.update_game("You own this property!")
             else:
-                self.update_game("Buy")
+                self.update_game("Click Buy to buy this property!")
                 if self.turn == self.me:
                     self.buy_button.configure(state="normal")
 
@@ -2570,7 +2573,7 @@ class Community:
         pass
 
 
-# TODO: Chaitanya: Jail, Trading, Notifier
+# TODO: Chaitanya: Bankruptcy Update Room, Jail, Trading, Notifier, Automatic End Turns
 # TODO: Pramit: Chance, Community Chest
 # TODO: idk: All Rules & Texts, Update GUI
 # ? Voice Chat, Auctions, Select Colour, Custom Actions
