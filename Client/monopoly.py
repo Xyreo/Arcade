@@ -2664,7 +2664,7 @@ class Community:
 
 
 # TODO: Chaitanya: Bankruptcy Update Room, Jail, Trading, Notifier, Automatic End Turns, Figure out Resizing
-# TODO: Pramit: Add Community Shuffling on Server (numbers undecided as of yet thats why)
+# TODO: Pramit: Fix Chance, Community
 # TODO: idk: All Rules & Texts, Update GUI
 # ? (Voice) Chat, Select Colour
 
