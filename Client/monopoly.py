@@ -2516,27 +2516,26 @@ class Chance:
             "Advance to GO.",
             "Advance to Trafalgar Square",
             "Advance to Pall Mall",
-            "Advance token to the nearest Utility. If unowned, you may buy it from the Bank. If owned, throw dice and pay owner a total 10 times the amount thrown.",
-            "Advance to the nearest Railroad. If unowned, you may buy it from the Bank. If owned, pay owner twice the re tal to which they are otherwise entitled. If Railroad is unowned, you may buy it from the Bank.",
-            "Advance to the nearest Railroad. If unowned, you may buy it from the Bank. If owned, pay owner twice the re tal to which they are otherwise entitled. If Railroad is unowned, you may buy it from the Bank.",
+            "Advance token to the nearest Utility.\nIf unowned, you may buy it from the Bank.\nIf owned, throw dice and pay owner a total 10 times the amount thrown.",
+            "Advance to the nearest Railroad.\nIf unowned, you may buy it from the Bank.\nIf owned, pay owner twice the rent to which they are otherwise entitled.\nIf unowned, you may buy it from the Bank.",  # TODO
+            "Advance to the nearest Railroad.\nIf unowned, you may buy it from the Bank.\nIf owned, pay owner twice the rent to which they are otherwise entitled.\nIf unowned, you may buy it from the Bank.",  # TODO
             "Take a ride to King's Cross Station",
             "Advance to Mayfair",
             "Bank pays you dividend of 50",
-            "Your building loan matures. Collect 150. ",
-            "You have won a crossword competition. Collect 100.",
+            "Your building loan matures.\nCollect 150. ",
+            "You have won a crossword competition.\nCollect 100.",
             "Pay speeding fine of 15 ",
             "Drunk in charge. Pay 20",
             "Pay school fees of 150",
-            "Bank Error in your favour. Receive 200",
-            "Go to Jail. Go directly to Jail. Do not pass GO, do not collect 200. ",
-            "Get out of Jail Free. This card maybe used once",
+            "Bank Error in your favour.\nReceive 200",
+            "Go to Jail. Go directly to Jail.\nDo not pass GO, do not collect 200. ",
+            "Get out of Jail Free.\nThis card maybe used once",
             "Go Back Three Spaces.",
-            "Make general repairs on all your property: For each house pay 25, For each hotel pay 100",
-            "You have been elected Chairman of the Board. Pay each player 50",
+            "Make general repairs on all your property:\nFor each house pay 25, For each hotel pay 100",
+            "You have been elected Chairman of the Board.\nPay each player 50",
         ]
-        new = [options[i] for i in order]
+        self.options = [options[i] for i in order]
         self.text = [text[i] for i in order]
-        self.options = new
 
     def go_back_3(self):
         self.game.move(self.game.turn, 37, showmove=False)  # ? Maybe move animation
@@ -2560,7 +2559,7 @@ class Chance:
         uuid = self.game.turn
         players = self.game.player_details
         move = (place - players[uuid]["Position"] % 40) % 40
-        self.game.move(uuid, move)
+        self.game.move(uuid, move, endturn=not bool(self.game.doubles_counter))
 
     def get_out_of_jail_free(self):
         self.game.player_details[self.game.turn]["GOJF"] = True  # TODO Idk what
@@ -2586,7 +2585,7 @@ class Chance:
                 self.game.pay(self.game.turn, amt, i)
 
     def __call__(self):
-        self.game.after(500, self.options[0])
+        self.game.after(1500, self.options[0])
         self.options.append(self.options.pop(0))
         self.text.append(self.text.pop(0))
         return self.text[-1]
@@ -2618,9 +2617,8 @@ class Community:
             self.pick_chance,
         ]
         text = ["Insert Stuff"] * 20  # TODO stuff
-        new = [options[i] for i in order]
+        self.options = [options[i] for i in order]
         self.text = [text[i] for i in order]
-        self.options = new
 
     def go_back(self):
         pass  # TODO lazinness
@@ -2629,7 +2627,7 @@ class Community:
         uuid = self.game.turn
         players = self.game.player_details
         move = (place - players[uuid]["Position"] % 40) % 40
-        self.game.move(uuid, move)
+        self.game.move(uuid, move, endturn=not bool(self.game.doubles_counter))
 
     def get_out_of_jail_free(self):
         self.game.player_details[self.game.turn]["GOJF"] = True  # TODO Idk what
@@ -2658,15 +2656,14 @@ class Community:
         pass  # TODO How to take input idk + input needs to be passed to other players so more pain
 
     def __call__(self):
-        self.game.after(500, self.options[0])
+        self.game.after(1500, self.options[0])
         self.options.append(self.options.pop(0))
         self.text.append(self.text.pop(0))
         return self.text[-1]
 
 
-# TODO: Chaitanya: Bankruptcy Update Room, Jail, Trading, Notifier, Automatic End Turns, Figure out Resizing
-# TODO: Pramit: Fix Chance, Community
-# TODO: idk: All Rules & Texts, Update GUI
+# TODO: Chaitanya: Bankruptcy Update Room, Chance & Community TODOs, Jail, Trading, Notifier, Automatic End Turns, Figure out Resizing
+# TODO: All Rules & Texts, Update GUI
 # ? (Voice) Chat, Select Colour
 
 if __name__ == "__main__":

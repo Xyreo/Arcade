@@ -80,7 +80,8 @@ def event_handler(msg):
                     msg[3][1],
                     lambda move: send(rid, "MSG", move),
                     h,
-                    [[i for i in range(20)]] * 2,
+                    msg[3][2],
+
                 )
 
         elif msg[1] == "MSG":
