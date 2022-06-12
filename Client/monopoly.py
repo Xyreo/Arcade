@@ -1533,7 +1533,7 @@ class Monopoly(tk.Toplevel):
 
     def player_frame_popup(
         self, list_of_open=[]
-    ):  # TODO: Highlight me, Adjust row height
+    ):  # TODO: Highlight other than me, Adjust row height
         self.player_frame = tk.Frame(
             self.main_frame,
             width=(self.board_side - 2) // 2.05,
@@ -2514,31 +2514,36 @@ class Chance:
         ]
         text = [
             "Advance to GO.",
-            "Advance to Trafalgar Square",
-            "Advance to Pall Mall",
-            "Advance token to the nearest Utility.\nIf unowned, you may buy it from the Bank.\nIf owned, throw dice and pay owner a total 10 times the amount thrown.",
-            "Advance to the nearest Railroad.\nIf unowned, you may buy it from the Bank.\nIf owned, pay owner twice the rent to which they are otherwise entitled.\nIf unowned, you may buy it from the Bank.",  # TODO
-            "Advance to the nearest Railroad.\nIf unowned, you may buy it from the Bank.\nIf owned, pay owner twice the rent to which they are otherwise entitled.\nIf unowned, you may buy it from the Bank.",  # TODO
-            "Take a ride to King's Cross Station",
-            "Advance to Mayfair",
-            "Bank pays you dividend of 50",
-            "Your building loan matures.\nCollect 150. ",
+            "Advance to Trafalgar Square.",
+            "Advance to Pall Mall.",
+            "Advance to the nearest Utility.\nIf unowned, you may buy it from the Bank.\nIf owned, pay owner rent based on previous roll.",
+            "Advance to the nearest Railroad.",
+            "Advance to the nearest Railroad.",
+            "Take a ride to King's Cross Station.",
+            "Advance to Mayfair.",
+            "Bank pays you dividend of 50.",
+            "Your building loan matures.\nCollect 150.",
             "You have won a crossword competition.\nCollect 100.",
-            "Pay speeding fine of 15 ",
-            "Drunk in charge. Pay 20",
-            "Pay school fees of 150",
-            "Bank Error in your favour.\nReceive 200",
-            "Go to Jail. Go directly to Jail.\nDo not pass GO, do not collect 200. ",
-            "Get out of Jail Free.\nThis card maybe used once",
+            "Pay speeding fine of 15.",
+            "Drunk in charge. Pay 20.",
+            "Pay school fees of 150.",
+            "Bank Error in your favour.\nReceive 200.",
+            "Go to Jail. Go directly to Jail.\nDo not pass GO, do not collect 200.",
+            "Get out of Jail Free.\nThis card maybe used only once.",
             "Go Back Three Spaces.",
-            "Make general repairs on all your property:\nFor each house pay 25, For each hotel pay 100",
-            "You have been elected Chairman of the Board.\nPay each player 50",
+            "Make general repairs on all your property:\nFor each house pay 25, For each hotel pay 100.",
+            "You have been elected Chairman of the Board.\nPay each player 50.",
         ]
         self.options = [options[i] for i in order]
         self.text = [text[i] for i in order]
 
     def go_back_3(self):
-        self.game.move(self.game.turn, 37, showmove=False)  # ? Maybe move animation
+        self.game.move(
+            self.game.turn,
+            37,
+            showmove=False,
+            endturn=not bool(self.game.doubles_counter),
+        )  # ? Maybe move animation
 
     def nearest_prop(self, stuff):
         turn = self.game.turn
@@ -2553,7 +2558,7 @@ class Chance:
             c = [5, 15, 25, 35]
             l = [(i - pos) % 40 for i in c]
             move = min(l)
-        self.game.move(turn, move)  # TODO Ask for Roll
+        self.game.move(turn, move, endturn=not bool(self.game.doubles_counter))
 
     def advance_to(self, place):
         uuid = self.game.turn
@@ -2562,7 +2567,7 @@ class Chance:
         self.game.move(uuid, move, endturn=not bool(self.game.doubles_counter))
 
     def get_out_of_jail_free(self):
-        self.game.player_details[self.game.turn]["GOJF"] = True  # TODO Idk what
+        self.game.player_details[self.game.turn]["GOJF"] = True  # TODO GUI
 
     def bank_transaction(self, amt):
         uuid = self.game.turn
@@ -2630,7 +2635,7 @@ class Community:
         self.game.move(uuid, move, endturn=not bool(self.game.doubles_counter))
 
     def get_out_of_jail_free(self):
-        self.game.player_details[self.game.turn]["GOJF"] = True  # TODO Idk what
+        self.game.player_details[self.game.turn]["GOJF"] = True  # TODO GUI
 
     def bank_transaction(self, amt):
         uuid = self.game.turn

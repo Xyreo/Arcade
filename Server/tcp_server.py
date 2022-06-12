@@ -55,7 +55,7 @@ class Lobby(Channels):
         self.rooms.append(room)
         self.broadcast_to_members(
             ("ROOM", "ADD", room.details()), exclude=host.uuid
-        )  # TODO Broadcast Protocol
+        )
 
     def join_room(self, player, id):
         rooms[id].join(player)

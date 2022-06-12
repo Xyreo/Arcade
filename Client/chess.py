@@ -872,13 +872,12 @@ class ChessPiece(Piece):
 
     def createImage(self, canvas: tk.Canvas, key):
         x1, y1, x2, y2 = self.game.grid_to_coords(key)
-        self.i = self.img(self.color, self.piece)  # Tkinter Garbage Collection is weird
+        self.i = self.img(self.color, self.piece)  # Tkinter (Garbage Collection) is weird
         self.img_id = canvas.create_image(
             (x1 + x2) // 2,
             (y1 + y2) // 2,
             anchor=tk.CENTER,
             image=self.i,
-            # state=tk.HIDDEN,  # TODO
         )
         canvas.tag_raise(self.img_id)
 
