@@ -2476,10 +2476,6 @@ class Monopoly(tk.Toplevel):
                 print("Closed CLI Thread")
                 break
 
-    def sleep_func(self, func, t):
-        time.sleep(t)
-        func()
-
     def yeet(self):
         root.destroy()
         try:
@@ -2590,10 +2586,7 @@ class Chance:
                 self.game.pay(self.game.turn, amt, i)
 
     def __call__(self):
-        t = threading.Thread(
-            target=lambda: self.game.sleep_func, args=(self.options[0], 0.5)
-        )
-        t.start()
+        self.game.after(500, self.options[0])
         self.options.append(self.options.pop(0))
         self.text.append(self.text.pop(0))
         return self.text[-1]
@@ -2665,10 +2658,7 @@ class Community:
         pass  # TODO How to take input idk + input needs to be passed to other players so more pain
 
     def __call__(self):
-        t = threading.Thread(
-            target=lambda: self.game.sleep_func, args=(self.options[0], 0.5)
-        )
-        t.start()
+        self.game.after(500, self.options[0])
         self.options.append(self.options.pop(0))
         self.text.append(self.text.pop(0))
         return self.text[-1]
