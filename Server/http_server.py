@@ -227,9 +227,52 @@ def monopoly_game_add():
         return jsonify("Bad Req"), 400
 
 
+@monopoly.route("/stats/<int:uuid>")
+def monopoly_stats(uuid):
+    q = f'select user.uuid,user.name,game.uuid,game.result,game.winner from user inner join game_user  on game_user.user=user.uuid inner join game on  game_user.game = game.uuid where user.uuid={uuid} and game.type="MPY";'
+    details = db.execute(q)
+    if len(details):
+        return jsonify(details), 200
+    return jsonify("Bad Request"), 400
+
+
 # endregion
+@chess.route("/add_game", methods=["POST"])
+def chess_game_add():
+    try:
+        data = json.loads(request.data)
+        winner = int(data["winner"])
+        result = data["result"]
+
+        players = data["players"]
+        result = str(result).replace("'", '"')
+        s = "insert into game_user(user,game) values "
+        for i in players:
+            s += f"({i},@v1),"
+        s = s[:-1] + ";"
+
+        q = f"""SET @v1 := (SELECT uuid FROM game ORDER BY uuid DESC LIMIT 1)+1;
+        insert into game(type,result,winner,uuid) values ('CHS','{result}',{winner},@v1);
+        {s}"""
+        db.data_change(q, multi=True)
+        return jsonify("Succes"), 200
+    except Exception as e:
+        print(e)
+        return jsonify("Bad Req"), 400
 
 
+@chess.route("/stats/<int:uuid>")
+def monopoly_stats(uuid):
+    q = f'select user.uuid,user.name,game.uuid,game.result,game.winner from user inner join game_user  on game_user.user=user.uuid inner join game on game_user.game = game.uuid where user.uuid={uuid} and game.type="CHS";'
+    details = db.execute(q)
+    if len(details):
+        return jsonify(details), 200
+    return jsonify("Bad Request"), 400
+
+
+# region Chess
+
+# endregion
 req_authorisation.register_blueprint(monopoly, url_prefix="/monopoly")
 req_authorisation.register_blueprint(chess, url_prefix="/chess")
 app.register_blueprint(req_authorisation)

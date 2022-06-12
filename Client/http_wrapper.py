@@ -56,7 +56,7 @@ class Http:
         path = "details"
         if pos != None:
             path += "/" + str(pos)
-        r = self.monopoly_send(Http.GET, path)
+        r = self.game_send(Http.GET, "monopoly", path)
         if r.status_code == 404:
             return -1
         elif r.status_code != 200:
@@ -64,8 +64,22 @@ class Http:
         else:
             return r.json()
 
-    def monopoly_send(self, method, path, data=None):
-        path = "monopoly/" + path
+    def addgame(self, game, winner, result, players):
+        res = {str(i): str(result[i]) for i in result}
+        r = self.game_send(
+            "post",
+            game,
+            "add_game",
+            {"winner": winner, "result": res, "players": players},
+        )
+        return r.json()
+
+    def stats(self, game, uuid):
+        r = self.game_send("get", game, f"stats/{uuid}")
+        return r.json()
+
+    def game_send(self, method, game, path, data=None):
+        path = f"{game}/{path}"
         r = self.auth_send(method, path, data)
         return r
 
@@ -102,11 +116,6 @@ class Response:
 if __name__ == "__main__":
     app = Http("http://localhost:5000")
     print(app.login("test", "test"))
-    print(
-        app.monopoly_send(
-            "post",
-            "add_game",
-            {"winner": 1, "result": {"gay": "2"}, "players": [1, 29]},
-        )
-    )
+    # print(app.mply_addgame(30, {1: 1}, [1, 30]))
+    print(app.stats("monopoly", 1))
     # print(app.del_user())
