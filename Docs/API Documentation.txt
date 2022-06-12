@@ -18,3 +18,9 @@ Methods:
 
 5. obj.mply_details(optional: int:position):
     Returns the values requested if valid position, else returns -1. Returns False if authorization error.
+
+6. obj.stats(str:game,int:user_id)
+    Returns the list of games played by user user_id
+
+7. obj.addgame(str:game,int:winner_uuid,dict:results,list[int]:player_uuids)
+    Adds game to the database
