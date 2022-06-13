@@ -1,0 +1,20 @@
+Monopoly Documentation
+
+Format of messages:
+Send: (args*)
+Recv: (Sender's UUID, args*)
+
+Roll:
+    (ROLL, (Dice1Roll,Dice2Roll))
+
+Buy:
+    (BUY, PropertyNumber)
+
+Build/ Sell:
+    (BUILD, PropertyNumber, NumberofHouses, bool: Sell)
+
+Mortgage/ Unmortgage:
+    (MORTGAGE, bool: mortgage, [Property1, Property2, ...])
+
+End Turn:
+    (END)

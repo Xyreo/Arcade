@@ -1,0 +1,61 @@
+TCP Server Documentation
+
+The Server runs on channels.
+
+1. Main Channel (0): Behaves somewhat like a REST API. The client sends requests for listing other channels, joining and creating new channels and so on.
+
+2. Lobby Channels: Capable of receiving messages from all and broadcasting to its members.
+   
+3. Room Channels: Requires a host. Only members can send messages.
+
+
+Format of messages:
+
+msg = (CHANNEL, ACTION, ACTION-SPECFIFIC_DETAILS)
+
+UUID of player:
+    (0,me,<id>) - on join, from server automatically
+
+Join Lobby:
+    (0, JOIN, <Lobby>) - join  lobby
+
+    Response: To only you
+    (<Lobby>, INIT, [{id:,host:,members:,settings:},......])
+
+Leave Lobby:
+    (0, LEAVE, <Lobby>) - Leaves Lobby
+
+Create Room:
+    (<Lobby>, CREATE,<settings>) - Creates Room
+
+    Response:
+    (<Lobby>, ROOM, ADD, {id:,host:,members:,settings:}) - to members in lobby
+    (ROOM, <Game>, <Room details>) - to creator (so they can join)
+   
+Join Room:
+    (<Lobby>, JOIN, <Room ID>) - Joins selected room
+
+    Response:
+    (ROOM, <Game>, <Room details>) - to person joining (so they can join)
+    (<Lobby>, PLAYER, ADD, <Room ID>,<Player Details>) - to members of lobby
+    (<Room ID>,PLAYER,ADD,<Player Details>) - to members of room
+
+Leave Room:
+    (<Room ID>, LEAVE) - Leaves room
+
+    Response:
+    (<Lobby>, PLAYER, REMOVE, <Room ID>, <Player Details>) - to members of lobby
+    (<Room ID>, PLAYER, REMOVE, <Player Details>) - to members of room
+
+Delete Room:
+    (<Lobby>, DELETE, <Room ID>) - Delete room
+
+    Response:
+    (<Lobby>, ROOM, REMOVE, id) - To players in lobby
+    (<Room ID>,ROOM,REMOVE)
+
+Start Room:
+    (<Room ID>, START)
+
+    Response:
+    (<Room ID>,ROOM,START)

@@ -110,7 +110,7 @@ class Monopoly(tk.Toplevel):
                     "Injail": False,
                     "Position": 0,
                     "Properties": [],
-                    "GOJF": False,
+                    "GOJF": [False, False],
                 }
             )  # Properties will store obj from properties dict
 
@@ -2567,7 +2567,7 @@ class Chance:
         self.game.move(uuid, move, endturn=not bool(self.game.doubles_counter))
 
     def get_out_of_jail_free(self):
-        self.game.player_details[self.game.turn]["GOJF"] = True  # TODO GUI
+        self.game.player_details[self.game.turn]["GOJF"][0] = True
 
     def bank_transaction(self, amt):
         uuid = self.game.turn
@@ -2601,18 +2601,18 @@ class Community:
         self.game: Monopoly = game
         options = [
             lambda: self.advance_to(0),
-            lambda: self.bank_transaction(200),
+            lambda: self.bank_transaction(-200),
             lambda: self.bank_transaction(50),
-            lambda: self.bank_transaction(100),
-            lambda: self.bank_transaction(100),
-            lambda: self.bank_transaction(100),
-            lambda: self.bank_transaction(10),
-            lambda: self.bank_transaction(20),
-            lambda: self.bank_transaction(25),
-            lambda: self.bank_transaction(25),
+            lambda: self.bank_transaction(-100),
+            lambda: self.bank_transaction(-100),
+            lambda: self.bank_transaction(-100),
+            lambda: self.bank_transaction(-10),
+            lambda: self.bank_transaction(-20),
+            lambda: self.bank_transaction(-25),
+            lambda: self.bank_transaction(-25),
+            lambda: self.bank_transaction(50),
             lambda: self.bank_transaction(-50),
-            lambda: self.bank_transaction(-50),
-            lambda: self.bank_transaction(-50),
+            lambda: self.bank_transaction(100),
             lambda: self.pay_to_players(-50),
             lambda: self.pay_to_players(-10),
             lambda: self.game.go_to_jail(self.game.turn),
@@ -2621,12 +2621,40 @@ class Community:
             self.street_repairs,
             self.pick_chance,
         ]
-        text = ["Insert Stuff"] * 20  # TODO stuff
+        text = [
+            "Advance to GO.",
+            "Bank Error in your favour.\nReceive 200.",
+            "Doctor's Fees. Pay 50.",
+            "Holiday fund matures. Collect 100.",
+            "Life insurance matures. Collect 100.",
+            "You inherit 100.",
+            "You have won second prize in a beauty contest. Collect 10",
+            "Income tax refund. Collect 20.",
+            "Receive Consultancy fee of 25.",
+            "Receive interest on 7% preference shares: 25",
+            "Pay School fees of 50.",
+            "From sale of stock you get 50.",
+            "Pay Hospital fees of 100.",
+            "Grand Opera Opening. Collect 50 from each player.",
+            "It's your birthday. Collect 10 from each player.",
+            "Go to Jail. Go directly to Jail.\nDo not pass GO, do not collect 200.",
+            "Get out of Jail Free.\nThis card maybe used only once.",
+            "Go back to Old Kent Road.",
+            "You are assessed for street repairs:\nFor each house pay 40, For each hotel pay 115.",
+            "Pay a fine of 10 or take a Chance.",
+        ]
         self.options = [options[i] for i in order]
         self.text = [text[i] for i in order]
 
     def go_back(self):
-        pass  # TODO lazinness
+        uuid = self.game.turn
+        players = self.game.player_details
+        self.game.move(
+            self.game.turn,
+            (1 - players[uuid]["Position"] % 40) % 40,
+            showmove=False,
+            endturn=not bool(self.game.doubles_counter),
+        )  # ? Maybe move animation
 
     def advance_to(self, place):
         uuid = self.game.turn
@@ -2635,11 +2663,11 @@ class Community:
         self.game.move(uuid, move, endturn=not bool(self.game.doubles_counter))
 
     def get_out_of_jail_free(self):
-        self.game.player_details[self.game.turn]["GOJF"] = True  # TODO GUI
+        self.game.player_details[self.game.turn]["GOJF"][1] = True
 
     def bank_transaction(self, amt):
         uuid = self.game.turn
-        self.game.pay(uuid, -amt)
+        self.game.pay(uuid, amt)
 
     def pay_to_players(self, amt):
         players = self.game.player_details
@@ -2658,7 +2686,7 @@ class Community:
         self.game.pay(self.game.turn, house * 40 + hotel * 115)
 
     def pick_chance(self):
-        pass  # TODO How to take input idk + input needs to be passed to other players so more pain
+        pass
 
     def __call__(self):
         self.game.after(1500, self.options[0])
@@ -2667,7 +2695,8 @@ class Community:
         return self.text[-1]
 
 
-# TODO: Chaitanya: Bankruptcy Update Room, Chance & Community TODOs, Jail, Trading, Notifier, Automatic End Turns, Figure out Resizing
+# GOJF GUI, pick chance or 10
+# TODO: Chaitanya: Bankruptcy Update Room, Jail, Trading, Notifier, Automatic End Turns, Figure out Resizing
 # TODO: All Rules & Texts, Update GUI
 # ? (Voice) Chat, Select Colour
 

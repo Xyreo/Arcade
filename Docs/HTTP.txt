@@ -1,14 +1,14 @@
-API DOCUMENTATION
+HTTP API Documentation
 
 Initializing requires base url path passed in.
 
 Methods:
 
-1. obj.login(str:username, str:password) :
+1. obj.login(str:username, str:password):
     Returns True if successful, else returns False. Sets the authorization token automatically if successful.
 
 2. obj.register(str:username, str:password):
-    Returns True if successful, else returns False. False implies that a user with the same name already exists
+    Returns True if successful, else returns False. False implies that a user with the same name already exists.
 
 3. obj.del_user():
     Returns True if successful, else returns False.
@@ -19,8 +19,8 @@ Methods:
 5. obj.mply_details(optional: int:position):
     Returns the values requested if valid position, else returns -1. Returns False if authorization error.
 
-6. obj.stats(str:game,int:user_id)
-    Returns the list of games played by user user_id
+6. obj.stats(str:game, int:user_id):
+    Returns the list of games played by user user_id.
 
-7. obj.addgame(str:game,int:winner_uuid,dict:results,list[int]:player_uuids)
-    Adds game to the database
+7. obj.addgame(str:game, int:winner_uuid, dict:results, list[int]:player_uuids):
+    Adds game to the database.

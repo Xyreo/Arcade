@@ -858,9 +858,9 @@ class ChessPiece(Piece):
         self.game.canvas.tag_raise(self.img_id)
 
     def img(self, color: str, piece: str):
-        path = os.path.join(ASSET_PATH, "Chess_Assets", "128h")
+        path = os.path.join(ASSET_PATH, "Chess_Assets", "Pieces")
         size = int((Chess.size / 8) * 0.75)
-        i = (color[0] + "_" + piece + "_png_128px.png").lower()
+        i = (color[0] + "_" + piece + ".png").lower()
         p = os.path.join(path, i)
 
         return ImageTk.PhotoImage(
@@ -872,7 +872,9 @@ class ChessPiece(Piece):
 
     def createImage(self, canvas: tk.Canvas, key):
         x1, y1, x2, y2 = self.game.grid_to_coords(key)
-        self.i = self.img(self.color, self.piece)  # Tkinter (Garbage Collection) is weird
+        self.i = self.img(
+            self.color, self.piece
+        )  # Tkinter (Garbage Collection) is weird
         self.img_id = canvas.create_image(
             (x1 + x2) // 2,
             (y1 + y2) // 2,
