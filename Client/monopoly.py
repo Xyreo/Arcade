@@ -74,15 +74,21 @@ class Property:
 
 
 class Monopoly(tk.Toplevel):
-    def __init__(self, playerdetails, me, send, hobj: Http, order=None):
+    def __init__(
+        self, playerdetails, me, send, hobj: Http, order=None, original_frame=None
+    ):
         super().__init__()
-        self.player_details = playerdetails
+        self.arcade = original_frame
+        self.player_details = dict(
+            sorted(playerdetails.items(), key=lambda i: i[1]["Name"])
+        )
         self.me = me
         self.chance = Chance(self, order[0])
         self.community = Community(self, order[1])
         Monopoly.hobj = hobj
         print(self.player_details[self.me])
-        self.send_msg = send
+        self.send_msg = lambda msg: send(("MSG", msg))
+        self.leave_room_msg = lambda: send("LEAVE")
         self.create_window()
         self.create_gui_divisions()
         self.initialise()
@@ -131,7 +137,7 @@ class Monopoly(tk.Toplevel):
         elif msg[1] == "MORTGAGE":
             self.final_mortgage(msg[2], msg[3], True)
         elif msg[1] == "LEAVE":
-            self.yeet_player(msg[2])
+            self.player_leave(msg[2])
 
     # region # Create
 
@@ -184,6 +190,9 @@ class Monopoly(tk.Toplevel):
         self.minsize(screen_width, screen_height)
         self.geometry(f"{screen_width}x{screen_height}+{x_coord}+{y_coord}")
         self.config(bg="white")
+        self.protocol(
+            "WM_DELETE_WINDOW", lambda: self.player_leave(self.me, quitting=True)
+        )
 
     def create_gui_divisions(self):
         self.board_canvas = tk.Canvas(
@@ -198,6 +207,16 @@ class Monopoly(tk.Toplevel):
             background="white",
         )
         self.main_frame.place(relx=0.99, rely=0.04, anchor="ne")
+
+        tk.Button(
+            self,
+            text="← QUIT",
+            font=("times", (self.board_side - 2) // 60),
+            highlightthickness=0,
+            border=0,
+            command=lambda: self.player_leave(self.me, quitting=True),
+            bg="white",
+        ).place(relx=0.01, rely=0.0125, anchor="nw")
 
     def create_image_obj(self):
         self.board_image = ImageTk.PhotoImage(
@@ -487,7 +506,7 @@ class Monopoly(tk.Toplevel):
 
     # region # Update Game
 
-    def update_game(self, action_frame_text=None):
+    def update_game(self, action_frame_text=None, playerleft=None):
         if self.property_frame.winfo_exists():
             self.property_frame.destroy()
             self.property_frame_popup(self.property_pos_displayed)
@@ -500,10 +519,13 @@ class Monopoly(tk.Toplevel):
         self.house_images = []
         self.place_houses()
         self.action_frame.destroy()
-        if action_frame_text:
-            self.action_frame_popup(action_frame_text)
+        if playerleft:
+            self.action_frame_popup(f"{playerleft} is bankrupt!")
         else:
-            self.action_frame_popup(self.current_txt)
+            if action_frame_text:
+                self.action_frame_popup(action_frame_text)
+            else:
+                self.action_frame_popup(self.current_txt)
         if self.turn != self.me:
             self.roll_button.configure(state="disabled")
 
@@ -579,9 +601,9 @@ class Monopoly(tk.Toplevel):
                     ):
                         self.unmortgage_button.configure(state="disabled")
 
-    def end_turn(self, received=False):
+    def end_turn(self, received=False, force=False):
         self.toggle_action_buttons()
-        if not received:
+        if not received and not force:
             if self.show_message(
                 "End Turn?",
                 f"{self.player_details[self.turn]['Name']}, are you sure you want to end your turn?",
@@ -737,7 +759,7 @@ class Monopoly(tk.Toplevel):
                         x1 - self.property_height * 0.3 + self.token_width / 2 + 3
                     ), int(y1 + self.property_height * 0.95 - self.token_width / 2)
                 else:
-                    print("You died")
+                    print("Position Error")
         elif not position % 10:
             x = x1 - (self.property_height * 0.5)
             y = y1 + (self.property_height * 0.5)
@@ -1531,9 +1553,7 @@ class Monopoly(tk.Toplevel):
 
     # region # Player Frame
 
-    def player_frame_popup(
-        self, list_of_open=[]
-    ):  # TODO: Highlight other than me, Adjust row height
+    def player_frame_popup(self, list_of_open=[]):
         self.player_frame = tk.Frame(
             self.main_frame,
             width=(self.board_side - 2) // 2.05,
@@ -1579,9 +1599,9 @@ class Monopoly(tk.Toplevel):
                     iid=i,
                     text="",
                     values=(j["Name"], j["Money"]),
-                    tags=("me"),
+                    tags=j["Colour"],
                 )
-
+                self.player_tree.tag_configure(j["Colour"], background=j["Colour"])
             else:
                 self.player_tree.insert(
                     parent="",
@@ -1589,10 +1609,10 @@ class Monopoly(tk.Toplevel):
                     iid=i,
                     text="",
                     values=(j["Name"], j["Money"]),
+                    tags=j["Colour"],
                 )
-            self.player_tree.tag_configure(
-                "me", background=self.player_details[self.me]["Colour"]
-            )
+                self.player_tree.tag_configure(j["Colour"], foreground=j["Colour"])
+
             if i in list_of_open:
                 self.player_tree.item(i, open=True)
             count = 0
@@ -1847,6 +1867,11 @@ class Monopoly(tk.Toplevel):
         self.clear_mort_button.place(relx=0.9, rely=0.85, anchor="nw")
 
     def final_mortgage(self, mortgage, l, received=False):
+        try:
+            self.final_mortgage_button.configure(state="disabled")
+            self.clear_mort_button.configure(state="disabled")
+        except:
+            pass
         if not received:
             if self.show_message(
                 "Mortgage Properties?" if mortgage else "Unmortgage Properties",
@@ -1862,6 +1887,11 @@ class Monopoly(tk.Toplevel):
             ):
                 pass
             else:
+                try:
+                    self.final_mortgage_button.configure(state="disabled")
+                    self.clear_mort_button.configure(state="disabled")
+                except:
+                    pass
                 if not self.isInDebt:
                     self.update_game()
                 return
@@ -2125,6 +2155,11 @@ class Monopoly(tk.Toplevel):
                 final_text_func()
 
             def build_all():
+                try:
+                    self.final_build_button.configure(state="disabled")
+                    self.clear_build_button.configure(state="disabled")
+                except:
+                    pass
                 if sell:
                     conftxt = f"Are you sure you want to sell {total_houses} houses from the {list(set_properties.keys())[0].colour} set, leaving {(self.player_details[self.me]['Money'])+int(list(set_properties.keys())[0].build * total_houses *0.5)} cash with you"
                 else:
@@ -2141,6 +2176,12 @@ class Monopoly(tk.Toplevel):
                             self.new_building[i],
                             sell,
                         )
+                else:
+                    try:
+                        self.final_build_button.configure(state="normal")
+                        self.clear_build_button.configure(state="normal")
+                    except:
+                        pass
 
             self.final_build_button = tk.Button(
                 self.build_frame,
@@ -2273,7 +2314,7 @@ class Monopoly(tk.Toplevel):
             self.place_houses()
             self.update_game()
         else:
-            print("Bruh Die")
+            print("You dont own this property")
 
         if not received:
             self.send_msg(("BUILD", property, number, sell))
@@ -2398,24 +2439,13 @@ class Monopoly(tk.Toplevel):
         pass
 
     def pay(self, payer, amt, receiver=None):
+        rollstate = self.roll_button.configure("state")
         if self.player_details[payer]["Money"] < amt:
             if self.isBankrupt(amt, payer):
-                if receiver:
-                    for i in self.player_details[payer]["Properties"]:
-                        i.owner = receiver
-                    self.player_details[receiver]["Money"] += self.player_details[
-                        payer
-                    ]["Money"]
-                else:
-                    for i in self.player_details[payer]["Properties"]:
-                        i.owner = None
-                        i.houses = -1
-                        i.isMortgaged = False
-                self.player_details[payer][
-                    "Money"
-                ] = -9999  # test #yeet player,send msg
+                self.bankrupt_popup(payer, receiver)
             else:
                 self.isInDebt = True
+                self.roll_button.configure(state="disabled")
                 self.debt_details = (payer, amt, receiver)
                 self.update_game(
                     f"You don't have enough money to pay!\nMortgage properties or sell houses worth {amt- self.player_details[payer]['Money']}"
@@ -2436,6 +2466,7 @@ class Monopoly(tk.Toplevel):
         else:
             if amt > 0:
                 self.isInDebt = False
+                self.roll_button.configure(state=rollstate)
             self.player_details[payer]["Money"] -= amt
             if receiver:
                 self.player_details[receiver]["Money"] += amt
@@ -2476,15 +2507,59 @@ class Monopoly(tk.Toplevel):
                 print("Closed CLI Thread")
                 break
 
-    def yeet(self):
-        root.destroy()
+    def quit_game(self):
+        if __name__ == "__main__":
+            root.destroy()
+        else:
+            self.destroy()
         try:
             self.mbwin.destroy()
         except:
             pass
 
-    def yeet_player(self, player_id):
-        pass
+    def player_leave(self, player_id, debtee=None, quitting=False):
+        if quitting:
+            if self.show_message(
+                "Quit Game?",
+                "Are you sure you wish to leave this game? This will imply you are forfeiting and will be bankrupt!",
+                type="okcancel",
+            ):
+                pass
+            else:
+                return
+        if self.me == player_id:
+            self.leave_room_msg()  # TODO Fix: When Quitting, recv stuff, else dont.
+        name = self.player_details[player_id]["Name"]
+        for i in self.player_details[player_id]["Properties"]:
+            i.owner = debtee
+            if not debtee:
+                i.houses = -1
+                i.isMortgaged = False
+        if debtee:
+            self.player_details[debtee]["Money"] += self.player_details[player_id][
+                "Money"
+            ]
+
+        d = {
+            "red": self.red_token,
+            "green": self.green_token,
+            "blue": self.blue_token,
+            "gold": self.yellow_token,
+        }
+
+        d[self.player_details[player_id]["Colour"]].destroy()
+        del self.player_details[player_id]
+        self.end_turn(force=True)
+        self.uuids.remove(player_id)
+
+        self.update_game(playerleft=name)
+
+        self.quit_game()
+        self.arcade.deiconify()
+
+    def bankrupt_popup(self, player_id, debtee):
+        self.player_leave(player_id, debtee)
+        # TODO GUI, endgame now(check everyone)
 
 
 class Chance:
@@ -2697,8 +2772,8 @@ class Community:
 
 # GOJF GUI, pick chance or 10
 # TODO: Chaitanya: Bankruptcy Update Room, Jail, Trading, Notifier, Automatic End Turns, Figure out Resizing
-# TODO: All Rules & Texts, Update GUI
-# ? (Voice) Chat, Select Colour
+# TODO: All Rules & Texts, Update GUI (place relatively)
+# ? (Voice) Chat, Select Colour, Want to watch game?
 
 if __name__ == "__main__":
     root = tk.Tk()
@@ -2717,5 +2792,4 @@ if __name__ == "__main__":
         hobj,
         order=[[i for i in range(20)], [i for i in range(20)]],
     )
-    mono.protocol("WM_DELETE_WINDOW", mono.yeet)
     root.mainloop()

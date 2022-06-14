@@ -173,9 +173,10 @@ class Arcade(tk.Toplevel):
                         self.game = Monopoly(
                             details[0],
                             details[1],
-                            lambda msg: self.send((dest, "MSG", msg)),
+                            lambda msg: self.send((dest,*msg)),
                             HTTP,
                             details[2],
+                            original_frame = self
                         )
 
             elif msg[1] == "MSG":
@@ -874,6 +875,8 @@ class Register(tk.Frame):
             self.notif = None
 
 
+#TODO: Number of arguments
+#TODO: !! YEEEEEET Previous login if new login
 if __name__ == "__main__":
     root = tk.Tk()
     arc = Arcade()
