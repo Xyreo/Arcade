@@ -531,8 +531,9 @@ class Monopoly(tk.Toplevel):
         if self.turn != self.me:
             self.roll_button.configure(state="disabled")
 
-    def toggle_action_buttons(self, enable=False):
+        print(self.turn)
 
+    def toggle_action_buttons(self, enable=False):
         if enable:
             state = "normal"
         else:
@@ -621,7 +622,7 @@ class Monopoly(tk.Toplevel):
         except:
             self.turn = self.uuids[0]
 
-        if self.turn == self.me:
+        if self.turn == self.me and not force:
             self.roll_button.configure(state="normal")
 
         if not received:
@@ -1676,78 +1677,90 @@ class Monopoly(tk.Toplevel):
         )
 
         self.action_frame.place(relx=0, rely=0, anchor="nw")
-
-        if self.turn != self.me:
-            not_your_turn = tk.Label(
+        if self.me not in self.uuids:
+            self.roll_button.configure(state="disabled")
+            print(
+                f"You are bankrupt!\n\n{self.player_details[self.turn]['Name']} is playing!"
+            )
+            tk.Label(
                 self.action_frame,
-                text=f'{self.player_details[self.turn]["Name"]} is playing!',
+                text=f"You are bankrupt!\n\n{self.player_details[self.turn]['Name']} is playing!",
                 font=50,
-            )
-            not_your_turn.place(relx=0.5, rely=0.5, anchor="center")
+            ).place(relx=0.5, rely=0.5, anchor="center") #TODO Doesnt work
         else:
-            self.buy_button = ttk.Button(
-                self.action_frame,
-                text="BUY",
-                style="my.TButton",
-                command=lambda: self.buy_property(
-                    self.player_details[self.turn]["Position"] % 40, self.turn
-                ),
-            )
-            self.buy_button.place(relx=0.2, rely=0.1, anchor="center")
+            if self.turn != self.me:
+                not_your_turn = tk.Label(
+                    self.action_frame,
+                    text=f'{self.player_details[self.turn]["Name"]} is playing!',
+                    font=50,
+                )
+                not_your_turn.place(relx=0.5, rely=0.5, anchor="center")
+            else:
+                self.buy_button = ttk.Button(
+                    self.action_frame,
+                    text="BUY",
+                    style="my.TButton",
+                    command=lambda: self.buy_property(
+                        self.player_details[self.turn]["Position"] % 40, self.turn
+                    ),
+                )
+                self.buy_button.place(relx=0.2, rely=0.1, anchor="center")
 
-            self.build_button = ttk.Button(
-                self.action_frame,
-                text="BUILD",
-                style="my.TButton",
-                command=self.build_sell_action_frame,
-            )
-            self.build_button.place(relx=0.2, rely=0.3, anchor="center")
+                self.build_button = ttk.Button(
+                    self.action_frame,
+                    text="BUILD",
+                    style="my.TButton",
+                    command=self.build_sell_action_frame,
+                )
+                self.build_button.place(relx=0.2, rely=0.3, anchor="center")
 
-            self.trade_button = ttk.Button(
-                self.action_frame,
-                text="TRADE",
-                style="my.TButton",
-                command=self.trade,
-            )
-            self.trade_button.place(relx=0.2, rely=0.5, anchor="center")
+                self.trade_button = ttk.Button(
+                    self.action_frame,
+                    text="TRADE",
+                    style="my.TButton",
+                    command=self.trade,
+                )
+                self.trade_button.place(relx=0.2, rely=0.5, anchor="center")
 
-            self.mortgage_button = ttk.Button(
-                self.action_frame,
-                text="MORTGAGE",
-                style="my.TButton",
-                command=lambda: self.mortgage_unmortgage(True),
-            )
-            self.mortgage_button.place(relx=0.8, rely=0.1, anchor="center")
+                self.mortgage_button = ttk.Button(
+                    self.action_frame,
+                    text="MORTGAGE",
+                    style="my.TButton",
+                    command=lambda: self.mortgage_unmortgage(True),
+                )
+                self.mortgage_button.place(relx=0.8, rely=0.1, anchor="center")
 
-            self.unmortgage_button = ttk.Button(
-                self.action_frame,
-                text="UNMORTGAGE",
-                style="my.TButton",
-                command=lambda: self.mortgage_unmortgage(False),
-            )
-            self.unmortgage_button.place(relx=0.8, rely=0.3, anchor="center")
+                self.unmortgage_button = ttk.Button(
+                    self.action_frame,
+                    text="UNMORTGAGE",
+                    style="my.TButton",
+                    command=lambda: self.mortgage_unmortgage(False),
+                )
+                self.unmortgage_button.place(relx=0.8, rely=0.3, anchor="center")
 
-            self.sell_button = ttk.Button(
-                self.action_frame,
-                text="SELL HOUSES",
-                style="my.TButton",
-                command=lambda: self.build_sell_action_frame(sell=True),
-            )
-            self.sell_button.place(relx=0.8, rely=0.5, anchor="center")
+                self.sell_button = ttk.Button(
+                    self.action_frame,
+                    text="SELL HOUSES",
+                    style="my.TButton",
+                    command=lambda: self.build_sell_action_frame(sell=True),
+                )
+                self.sell_button.place(relx=0.8, rely=0.5, anchor="center")
 
-            self.end_button = ttk.Button(
-                self.action_frame,
-                text="END TURN",
-                style="my.TButton",
-                command=lambda: self.end_turn(),
-            )
-            self.end_button.place(relx=0.5, rely=0.3, anchor="center")
+                self.end_button = ttk.Button(
+                    self.action_frame,
+                    text="END TURN",
+                    style="my.TButton",
+                    command=lambda: self.end_turn(),
+                )
+                self.end_button.place(relx=0.5, rely=0.3, anchor="center")
 
-            self.current_txt = txt
-            action_label = tk.Label(self.action_frame, text=self.current_txt, font=30)
-            action_label.place(relx=0.5, rely=0.75, anchor="center")
+                self.current_txt = txt
+                action_label = tk.Label(
+                    self.action_frame, text=self.current_txt, font=30
+                )
+                action_label.place(relx=0.5, rely=0.75, anchor="center")
 
-            self.toggle_action_buttons(True)
+                self.toggle_action_buttons(True)
 
     # region # Mortgage, Unmortgage
 
@@ -2520,6 +2533,8 @@ class Monopoly(tk.Toplevel):
             pass
 
     def player_leave(self, player_id, debtee=None, quitting=False):
+        self.end_turn(force=True)
+        watch = False
         if quitting:
             if self.show_message(
                 "Quit Game?",
@@ -2530,7 +2545,15 @@ class Monopoly(tk.Toplevel):
             else:
                 return
         if self.me == player_id:
-            self.leave_room_msg()
+            if not quitting:
+                if self.show_message(
+                    "You are bankrupt!",
+                    "Unfortunately, you have lost this game, Do you want to watch the other players play?",
+                    type="yesno",
+                ):
+                    watch = True
+            else:
+                self.leave_room_msg()
         name = self.player_details[player_id]["Name"]
         for i in self.player_details[player_id]["Properties"]:
             i.owner = debtee
@@ -2550,11 +2573,10 @@ class Monopoly(tk.Toplevel):
         }
 
         d[self.player_details[player_id]["Colour"]].destroy()
-        self.end_turn(force=True)
         del self.player_details[player_id]
         self.uuids.remove(player_id)
 
-        if self.me == player_id:
+        if self.me == player_id and not watch:
             self.quit_game()
             self.arcade.deiconify()
 
