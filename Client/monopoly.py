@@ -88,7 +88,7 @@ class Monopoly(tk.Toplevel):
         Monopoly.hobj = hobj
         print(self.player_details[self.me])
         self.send_msg = lambda msg: send(("MSG", msg))
-        self.leave_room_msg = lambda: send("LEAVE")
+        self.leave_room_msg = lambda: send(("LEAVE",))
         self.create_window()
         self.create_gui_divisions()
         self.initialise()
@@ -112,7 +112,7 @@ class Monopoly(tk.Toplevel):
         for i in self.player_details:
             self.player_details[i].update(
                 {
-                    "Money": 1500,
+                    "Money": 100,
                     "Injail": False,
                     "Position": 0,
                     "Properties": [],
@@ -126,6 +126,7 @@ class Monopoly(tk.Toplevel):
             self.cli_thread.start()
 
     def event_handler(self, msg):
+        print(msg)
         if msg[1] == "ROLL":
             self.roll_dice(msg[2], True)
         elif msg[1] == "BUY":
@@ -137,7 +138,8 @@ class Monopoly(tk.Toplevel):
         elif msg[1] == "MORTGAGE":
             self.final_mortgage(msg[2], msg[3], True)
         elif msg[1] == "LEAVE":
-            self.player_leave(msg[2])
+            if msg[0] in self.player_details:
+                self.player_leave(msg[0])
 
     # region # Create
 
@@ -2528,7 +2530,7 @@ class Monopoly(tk.Toplevel):
             else:
                 return
         if self.me == player_id:
-            self.leave_room_msg()  # TODO Fix: When Quitting, recv stuff, else dont.
+            self.leave_room_msg()
         name = self.player_details[player_id]["Name"]
         for i in self.player_details[player_id]["Properties"]:
             i.owner = debtee
@@ -2548,14 +2550,15 @@ class Monopoly(tk.Toplevel):
         }
 
         d[self.player_details[player_id]["Colour"]].destroy()
-        del self.player_details[player_id]
         self.end_turn(force=True)
+        del self.player_details[player_id]
         self.uuids.remove(player_id)
 
-        self.update_game(playerleft=name)
+        if self.me == player_id:
+            self.quit_game()
+            self.arcade.deiconify()
 
-        self.quit_game()
-        self.arcade.deiconify()
+        self.update_game(playerleft=name)
 
     def bankrupt_popup(self, player_id, debtee):
         self.player_leave(player_id, debtee)
