@@ -560,6 +560,12 @@ class Chess(tk.Toplevel):
         self.enable_canvas()
         self.lock.release()
 
+    def event_handler(self, msg):
+        if msg[0] == "LEAVE":
+            pass
+        else:
+            self.opp_move(msg)
+
     def opp_move(self, msg):
         start, end, pawn = msg
         self.chess_notifier(

@@ -180,11 +180,7 @@ class Arcade(tk.Toplevel):
                         )
 
             elif msg[1] == "MSG":
-                if game == "CHESS":
-                    self.game.opp_move(msg[2])
-
-                if game == "MNPLY":
-                    self.game.event_handler(msg[2])
+                self.game.event_handler(msg[2])
 
     def send(self, msg):
         time_gap = 0.1
