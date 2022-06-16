@@ -499,7 +499,7 @@ class Monopoly(tk.Toplevel):
                     check += i.houses
                 check += i.mortgage
 
-        if amt_to_pay < check:
+        if amt_to_pay <= check:
             return False
         else:
             return True
@@ -625,7 +625,7 @@ class Monopoly(tk.Toplevel):
         if self.turn == self.me and not force:
             self.roll_button.configure(state="normal")
 
-        if not received:
+        if not received or force:
             self.send_msg(("END",))
 
         self.update_game("It's your turn now! Click 'Roll Dice'")
@@ -858,9 +858,15 @@ class Monopoly(tk.Toplevel):
                     else:
                         self.update_game("You own this property!")
             else:
-                self.update_game("Click Buy to buy this property!")
-                if self.turn == self.me:
-                    self.buy_button.configure(state="normal")
+                if self.isBankrupt(
+                    self.properties[pos].price,
+                    self.turn,
+                ):
+                    self.update_game("You don't have enough cash to buy this property!")
+                else:
+                    self.update_game("Click Buy to buy this property!")
+                    if self.turn == self.me:
+                        self.buy_button.configure(state="normal")
 
     # endregion
 
@@ -1679,14 +1685,13 @@ class Monopoly(tk.Toplevel):
         self.action_frame.place(relx=0, rely=0, anchor="nw")
         if self.me not in self.uuids:
             self.roll_button.configure(state="disabled")
-            print(
-                f"You are bankrupt!\n\n{self.player_details[self.turn]['Name']} is playing!"
-            )
             tk.Label(
                 self.action_frame,
                 text=f"You are bankrupt!\n\n{self.player_details[self.turn]['Name']} is playing!",
                 font=50,
-            ).place(relx=0.5, rely=0.5, anchor="center") #TODO Doesnt work
+            ).place(
+                relx=0.5, rely=0.5, anchor="center"
+            )  # TODO Doesnt work
         else:
             if self.turn != self.me:
                 not_your_turn = tk.Label(
@@ -2533,7 +2538,8 @@ class Monopoly(tk.Toplevel):
             pass
 
     def player_leave(self, player_id, debtee=None, quitting=False):
-        self.end_turn(force=True)
+        if self.turn == player_id:
+            self.end_turn(force=True)
         watch = False
         if quitting:
             if self.show_message(
@@ -2541,7 +2547,7 @@ class Monopoly(tk.Toplevel):
                 "Are you sure you wish to leave this game? This will imply you are forfeiting and will be bankrupt!",
                 type="okcancel",
             ):
-                pass
+                self.leave_room_msg()
             else:
                 return
         if self.me == player_id:
