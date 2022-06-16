@@ -4,5 +4,4 @@ Arcade (Monopoly, Chess <& Scrabble>)
 
 Run 'The Arcade' to play.
 
-@Xyreo is cool
-
+@Xyreo is not cool
