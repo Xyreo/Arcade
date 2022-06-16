@@ -78,6 +78,10 @@ class Http:
         r = self.game_send("get", game, f"stats/{uuid}")
         return r.json()
 
+    def leaderboard(self, game):
+        r = self.game_send("get", game, f"leaderboard")
+        return r.json()
+
     def game_send(self, method, game, path, data=None):
         path = f"{game}/{path}"
         r = self.auth_send(method, path, data)
@@ -111,11 +115,16 @@ class Http:
 class Response:
     def __init__(self, code, body):
         self.status_code = code
+        self.body = body
+
+    def json(self):
+        return self.body
 
 
 if __name__ == "__main__":
     app = Http("http://localhost:5000")
     print(app.login("test", "test"))
-    # print(app.mply_addgame(30, {1: 1}, [1, 30]))
-    print(app.stats("monopoly", 1))
+    print(app.leaderboard("chess"))
+    # print(app.addgame("chess", 1, {1: 2}, [1, 32]))
+    # print(app.stats("monopoly", 1))
     # print(app.del_user())

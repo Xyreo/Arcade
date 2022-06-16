@@ -221,10 +221,10 @@ def monopoly_game_add():
         insert into game(type,result,winner,uuid) values ('MPY','{result}',{winner},@v1);
         {s}"""
         db.data_change(q, multi=True)
-        return jsonify("Succes"), 200
+        return jsonify("Success"), 200
     except Exception as e:
         print(e)
-        return jsonify("Bad Req"), 400
+        return jsonify("Bad Request"), 400
 
 
 @monopoly.route("/stats/<int:uuid>")
@@ -236,7 +236,33 @@ def monopoly_stats(uuid):
     return jsonify("Bad Request"), 400
 
 
+@monopoly.route("/leaderboard")
+def monopoly_leaderboard():
+    det = db.execute(
+        "select user.uuid, user.name, game.uuid, game.result, game.winner from user inner join game_user  on game_user.user=user.uuid inner join game on game_user.game = game.uuid where game.type='MPY';"
+    )
+    # cursor.execute('drop table monopoly_board_values')
+    try:
+        res = {}
+        for i in det:
+            if i[0] in res:
+                res[i[0]]["games"].append((i[2], eval(i[3]), i[4]))
+            else:
+                res[i[0]] = {"name": i[1], "games": [(i[2], eval(i[3]), i[4])]}
+        send = {}
+        for i, j in res.items():
+            g = [nw[1][str(i)] for nw in j["games"]]
+            send[j["name"]] = max(g)
+
+        return jsonify(send), 200
+
+    except Exception as e:
+        return jsonify(e), 404
+
+
 # endregion
+
+# region Chess
 @chess.route("/add_game", methods=["POST"])
 def chess_game_add():
     try:
@@ -262,7 +288,7 @@ def chess_game_add():
 
 
 @chess.route("/stats/<int:uuid>")
-def monopoly_stats(uuid):
+def chess_stats(uuid):
     q = f'select user.uuid,user.name,game.uuid,game.result,game.winner from user inner join game_user  on game_user.user=user.uuid inner join game on game_user.game = game.uuid where user.uuid={uuid} and game.type="CHS";'
     details = db.execute(q)
     if len(details):
@@ -270,7 +296,30 @@ def monopoly_stats(uuid):
     return jsonify("Bad Request"), 400
 
 
-# region Chess
+@chess.route("/leaderboard")
+def chess_leaderboard():
+    det = db.execute(
+        "select user.uuid, user.name, game.uuid, game.result, game.winner from user inner join game_user  on game_user.user=user.uuid inner join game on game_user.game = game.uuid where game.type='CHS';"
+    )
+    # cursor.execute('drop table monopoly_board_values')
+    try:
+        res = {}
+        for i in det:
+            if i[0] in res:
+                res[i[0]]["games"].append((i[2], eval(i[3]), i[4]))
+            else:
+                res[i[0]] = {"name": i[1], "games": [(i[2], eval(i[3]), i[4])]}
+        # print(tab.tabulate(cursor))
+        # print(res)
+        send = {}
+        for i, j in res.items():
+            g = [1 for nw in j["games"] if int(nw[2]) == i]
+            send[j["name"]] = len(g)
+        return jsonify(send), 200
+
+    except Exception as e:
+        return jsonify(e), 404
+
 
 # endregion
 req_authorisation.register_blueprint(monopoly, url_prefix="/monopoly")

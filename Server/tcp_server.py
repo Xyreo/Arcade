@@ -53,9 +53,7 @@ class Lobby(Channels):
     def create_room(self, host, settings):
         room = Room(host, settings, self.uuid)
         self.rooms.append(room)
-        self.broadcast_to_members(
-            ("ROOM", "ADD", room.details()), exclude=host.uuid
-        )
+        self.broadcast_to_members(("ROOM", "ADD", room.details()), exclude=host.uuid)
 
     def join_room(self, player, id):
         rooms[id].join(player)
@@ -111,8 +109,9 @@ class Room(Channels):
                 self.broadcast(("PLAYER", "REMOVE", player.uuid))
 
         elif self.status == "INGAME":
-            self.broadcast_to_members(("MSG", "LEAVE", player.uuid))
-
+            self.msg(("MSG", ("LEAVE",)), player.uuid)
+            if len(self.members) == 0:
+                del rooms[self.uuid]
         super().leave(player)
 
     def chess_start(self):
@@ -174,9 +173,9 @@ class Client(threading.Thread):
         self.addr = addr
         self.auth = auth
         try:
-            self.name = pickle.loads(self.conn.recv(1048))
+            self.name = pickle.loads(self.conn.recv(1048))[1]
         except:
-            print("AAAA")
+            self.name = "Unknown"
         print("Name", self.name)
         self.uuid = assign_uuid(list(players.keys()))
         players[self.uuid] = self
@@ -210,7 +209,7 @@ class Client(threading.Thread):
             if Driver.auth(message[0]):
                 self.instruction_handler(message[1:])
             else:
-                pass  # TODO unverified packet things
+                self.send_instruction(("GAME", "NEWLOGIN"))
         else:
             self.instruction_handler(message)
 
@@ -297,8 +296,12 @@ class Driver:
         while True:
             conn, addr = self.server.accept()
             print(f"active connections {threading.active_count()-1}")
-            client_thread = Client(conn, addr, False)
+            client_thread = Client(conn, addr)
             client_thread.start()
+
+
+lobbies: Lobby
+room: Room
 
 
 if __name__ == "__main__":

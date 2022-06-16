@@ -56,3 +56,4 @@ venv/
 *.pem
 .env
 remember_login.txt
+test.py

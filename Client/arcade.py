@@ -98,8 +98,8 @@ class Arcade(tk.Toplevel):
 
         self.current_room = None
 
-        self.cobj = Client((CLIENT_ADDRESS, 6969), self.event_handler)
-        self.cobj.send((self.name))
+        self.cobj = Client((CLIENT_ADDRESS, 6969), self.event_handler, token)
+        self.cobj.send((self.name,))
 
         self.main_notebook = ttk.Notebook(
             self, height=self.screen_height, width=self.screen_width
