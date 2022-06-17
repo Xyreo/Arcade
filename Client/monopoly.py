@@ -116,7 +116,7 @@ class Monopoly(tk.Toplevel):
                     "Injail": False,
                     "Position": 0,
                     "Properties": [],
-                    "GOJF": [False, False],
+                    "GOJF": 0,
                 }
             )  # Properties will store obj from properties dict
 
@@ -1646,6 +1646,19 @@ class Monopoly(tk.Toplevel):
                         values=(k.name, k.value()),
                     )
                 count += 1
+
+            if j["GOJF"]:
+                self.player_tree.insert(
+                    parent="",
+                    index="end",
+                    iid=i,
+                    text="",
+                    values=(
+                        "Get out of Jail Free" + "s" if j["GOJF"] > 1 else "",
+                        j["GOJF"],
+                    ),
+                )
+                
         for i, j in self.properties.items():
             try:
                 self.player_tree.tag_configure(j.hex, background=j.hex)
@@ -2714,7 +2727,7 @@ class Chance:
         self.game.move(uuid, move, endturn=not bool(self.game.doubles_counter))
 
     def get_out_of_jail_free(self):
-        self.game.player_details[self.game.turn]["GOJF"][0] = True
+        self.game.player_details[self.game.turn]["GOJF"] += 1
 
     def bank_transaction(self, amt):
         uuid = self.game.turn
@@ -2819,7 +2832,7 @@ class Community:
         self.game.move(uuid, move, endturn=not bool(self.game.doubles_counter))
 
     def get_out_of_jail_free(self):
-        self.game.player_details[self.game.turn]["GOJF"][1] = True
+        self.game.player_details[self.game.turn]["GOJF"] += 1
 
     def bank_transaction(self, amt):
         uuid = self.game.turn
