@@ -1651,10 +1651,10 @@ class Monopoly(tk.Toplevel):
                 self.player_tree.insert(
                     parent=i,
                     index="end",
-                    iid="gojf",
+                    iid="gojf" + i,
                     text="",
                     values=(
-                        "Get out of Jail Free" + "s" if j["GOJF"] > 1 else "",
+                        "Get out of Jail Free" + ("s" if j["GOJF"] > 1 else ""),
                         j["GOJF"],
                     ),
                 )
