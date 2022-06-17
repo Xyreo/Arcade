@@ -2592,7 +2592,7 @@ class Monopoly(tk.Toplevel):
         if self.me != player_id:
             self.endgame_frame = tk.Frame(self,background="white")
             self.endgame_frame.place(relx=0.5,rely=0.5,relwidth=1,relheight=1,anchor='center')
-            tk.label(f"{name} is Bankrupt! Do you want to end the game now?").place(relx=0.5,rely=0.5.anchor='center')
+            tk.label(f"{name} is Bankrupt! Do you want to end the game now?").place(relx=0.5,rely=0.5,anchor='center')
         # TODO GUI, endgame now(check everyone)
 
 
