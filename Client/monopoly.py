@@ -1689,9 +1689,7 @@ class Monopoly(tk.Toplevel):
                 self.action_frame,
                 text=f"You are bankrupt!\n\n{self.player_details[self.turn]['Name']} is playing!",
                 font=50,
-            ).place(
-                relx=0.5, rely=0.5, anchor="center"
-            )
+            ).place(relx=0.5, rely=0.5, anchor="center")
         else:
             if self.turn != self.me:
                 not_your_turn = tk.Label(
@@ -2589,7 +2587,12 @@ class Monopoly(tk.Toplevel):
         self.update_game(playerleft=name)
 
     def bankrupt_popup(self, player_id, debtee):
+        name = self.player_details[player_id]["Name"]
         self.player_leave(player_id, debtee)
+        if self.me != player_id:
+            self.endgame_frame = tk.Frame(self,background="white")
+            self.endgame_frame.place(relx=0.5,rely=0.5,relwidth=1,relheight=1,anchor='center')
+            tk.label(f"{name} is Bankrupt! Do you want to end the game now?").place(relx=0.5,rely=0.5.anchor='center')
         # TODO GUI, endgame now(check everyone)
 
 
