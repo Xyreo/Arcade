@@ -113,7 +113,7 @@ class Monopoly(tk.Toplevel):
             self.player_details[i].update(
                 {
                     "Money": 100,
-                    "Injail": False,
+                    "Injail": [False, 0],
                     "Position": 0,
                     "Properties": [],
                     "GOJF": 0,
@@ -141,7 +141,9 @@ class Monopoly(tk.Toplevel):
             if msg[0] in self.player_details:
                 self.player_leave(msg[0])
         elif msg[1] == "POLL":
-            self.poll(msg[0], msg[2])
+            self.poll(msg[0], msg[2], True)
+        elif msg[1] == "JAIL":
+            self.out_of_jail(msg[2], True)
 
     # region # Create
 
@@ -175,6 +177,7 @@ class Monopoly(tk.Toplevel):
         self.uuids = list(self.player_details.keys())
         self.turn = self.uuids[0]
         self.doubles_counter = 0
+        self.collective = {}
 
         self.isInDebt = False
         self.debt_details = []
@@ -533,8 +536,6 @@ class Monopoly(tk.Toplevel):
         if self.turn != self.me:
             self.roll_button.configure(state="disabled")
 
-        print(self.turn)
-
     def toggle_action_buttons(self, enable=False):
         if enable:
             state = "normal"
@@ -624,13 +625,39 @@ class Monopoly(tk.Toplevel):
         except:
             self.turn = self.uuids[0]
 
-        if self.turn == self.me:
-            self.roll_button.configure(state="normal")
-
         if not (received or force):
             self.send_msg(("END",))
 
-        self.update_game("It's your turn now! Click 'Roll Dice'")
+        if self.turn == self.me:
+            self.roll_button.configure(state="normal")
+            if self.player_details[self.turn]["Injail"][0]:
+                if self.player_details[self.turn]["Injail"][1] == 0:
+                    text = "Do you wish to pay 50"
+                    if self.player_details[self.turn]["GOJF"]:
+                        text += " (or Use your Get out of Jail Free Card) now?"
+                    else:
+                        text += " now?"
+                    if self.show_message(
+                        "You are in jail! Pay Now?",
+                        text
+                        + " If no, you have to roll doubles in the next 3 turns to get out of Jail.",
+                        type="yesno",
+                    ):
+                        self.ask_pay_jail()
+                    else:
+                        self.update_game("Roll doubles to get out of jail!")
+                elif self.player_details[self.turn]["Injail"][1] == 2:
+                    text = "Roll Doubles to get out of jail or you have to"
+                    if self.player_details[self.turn]["GOJF"]:
+                        text += "\nPay 50 or Use your Get out of Jail Free Card"
+                    else:
+                        text += " Pay 50"
+                    self.update_game(text)
+                else:
+                    self.update_game("Roll doubles to get out of jail!")
+            else:
+                self.update_game("It's your turn now! Click on Roll Dice")
+        self.update_game()
 
     # endregion
 
@@ -657,16 +684,33 @@ class Monopoly(tk.Toplevel):
         self.dice_spot1.update()
         self.dice_spot2.update()
         self.current_move = sum(dice_roll)
-        if dice_roll[0] == dice_roll[1]:
-            self.move(self.turn, self.current_move, endturn=False)
-            self.doubles_counter += 1
+        if self.player_details[self.turn]["Injail"][0]:
+            if dice_roll[0] == dice_roll[1]:
+                self.player_details[self.turn]["Injail"][0] = False
+                self.move(self.turn, 0)
+                self.player_details[self.turn]["Injail"][1] = 0
+                self.move(self.turn, self.current_move, endturn=True)
+            else:
+                if self.player_details[self.turn]["Injail"][1] < 2:
+                    self.update_game("Try again next turn!")
+                    try:
+                        self.end_button.configure(state="normal")
+                    except:
+                        pass
+                    self.player_details[self.turn]["Injail"][1] += 1
+                else:
+                    self.ask_pay_jail()
         else:
-            self.doubles_counter = 0
-            self.move(self.turn, self.current_move, endturn=True)
-        if self.doubles_counter == 3:
-            self.move(self.turn, self.current_move, endturn=True)
-            # TODO GO TO JAIL #END TURN AUTOMATICALLY
-            self.action_frame_popup("Jail")
+            if dice_roll[0] == dice_roll[1]:
+                self.doubles_counter += 1
+                if self.doubles_counter == 3:
+                    self.doubles_counter = 0
+                    self.go_to_jail(self.turn)
+                else:
+                    self.move(self.turn, self.current_move, endturn=False)
+            else:
+                self.doubles_counter = 0
+                self.move(self.turn, self.current_move, endturn=True)
 
     def click_to_position(self, event):
         x, y = event.x, event.y
@@ -743,7 +787,7 @@ class Monopoly(tk.Toplevel):
 
         x1, y1 = self.position_to_xy(position)
         if position == 10:
-            if self.player_details[player]["Injail"]:
+            if self.player_details[player]["Injail"][0]:
                 x = x1 - (self.property_height * 0.35)
                 y = y1 + (self.property_height * 0.35)
             else:
@@ -828,13 +872,13 @@ class Monopoly(tk.Toplevel):
             if self.end_button.winfo_exists():
                 self.end_button.configure(state="disabled")
 
-        if pos in [10, 30]:
-            self.update_game("Jail")
+        if pos == 30:
+            self.go_to_jail(self.turn)
         elif pos == 4:
             self.pay(self.turn, 200)
         elif pos == 38:
             self.pay(self.turn, 100)
-        elif pos in [0, 20]:
+        elif pos in [0, 10, 20]:
             self.update_game()
         elif pos in [2, 17, 33]:
             self.update_game(self.community())
@@ -869,6 +913,54 @@ class Monopoly(tk.Toplevel):
                     self.update_game("Click Buy to buy this property!")
                     if self.turn == self.me:
                         self.buy_button.configure(state="normal")
+
+    # endregion
+
+    # region # Jail
+
+    def go_to_jail(self, player):
+        self.player_details[player]["Injail"][0] = True
+        move = (10 - self.player_details[player]["Position"] % 40) % 40
+        self.move(player, move, showmove=False, endturn=True)
+        text = "You are in jail! Roll Doubles in the next 3 turns"
+        if self.player_details[player]["GOJF"]:
+            text += ",\nPay 50 or Use your Get out of Jail Free Card"
+        else:
+            text += " or Pay 50"
+        self.action_frame_popup(text)
+        sleep(2)
+        self.end_turn(force=True)
+        self.update_game()
+
+    def ask_pay_jail(self):
+        if self.turn == self.me:
+            if self.player_details[self.turn]["GOJF"]:
+                if self.show_message(
+                    "Use Get out of Jail Free?",
+                    "Do you want to use your Get out of Jail Free Card? If not, you'll have to pay 50!",
+                    type="yesno",
+                ):
+                    self.out_of_jail("GOJF")
+                else:
+                    self.out_of_jail("PAY")
+            else:
+                self.out_of_jail("PAY")
+
+    def out_of_jail(self, method, received=False):
+        if method == "GOJF":
+            self.player_details[self.turn]["GOJF"] -= 1
+            self.chance.add_back()
+            self.community.add_back()
+        elif method == "PAY":
+            self.pay(self.turn, 50)
+
+        self.player_details[self.turn]["Injail"][0] = False
+        self.move(self.turn, 0)
+        self.player_details[self.turn]["Injail"][1] = 0
+        self.update_game("You're out of jail now! Click on Roll Dice")
+
+        if not received:
+            self.send_msg(("JAIL", method))
 
     # endregion
 
@@ -1696,8 +1788,8 @@ class Monopoly(tk.Toplevel):
             width=(self.board_side - 2) // 1,
             height=(self.board_side - 2) // 2.45,
         )
-
         self.action_frame.place(relx=0, rely=0, anchor="nw")
+
         if self.me not in self.uuids:
             self.roll_button.configure(state="disabled")
             tk.Label(
@@ -1705,7 +1797,9 @@ class Monopoly(tk.Toplevel):
                 text=f"You are bankrupt!\n\n{self.player_details[self.turn]['Name']} is playing!",
                 font=50,
             ).place(relx=0.5, rely=0.5, anchor="center")
+
         else:
+
             if self.turn != self.me:
                 not_your_turn = tk.Label(
                     self.action_frame,
@@ -1713,6 +1807,7 @@ class Monopoly(tk.Toplevel):
                     font=50,
                 )
                 not_your_turn.place(relx=0.5, rely=0.5, anchor="center")
+
             else:
                 self.buy_button = ttk.Button(
                     self.action_frame,
@@ -2419,11 +2514,12 @@ class Monopoly(tk.Toplevel):
                 ),
                 type="okcancel",
             ):
-                pass
+                self.send_msg(("BUY", propertypos))
             else:
                 self.update_game("Buy")
                 self.toggle_action_buttons(True)
                 return
+
         if self.properties[propertypos].colour:
             if not self.properties[propertypos].owner:
                 self.properties[propertypos].owner = buyer
@@ -2454,12 +2550,12 @@ class Monopoly(tk.Toplevel):
                             i.houses = 0
             else:
                 print("Owned")
+
         else:
             print("Can't Buy")
+
         if not self.isInDebt:
             self.update_game("Default")
-        if not received:
-            self.send_msg(("BUY", propertypos))
 
     def trade(self):
         pass
@@ -2467,9 +2563,6 @@ class Monopoly(tk.Toplevel):
     def pass_go(self, player):
         self.player_details[player]["Money"] += 200
         self.update_game("You received 200 as salary!")
-
-    def go_to_jail(self, player):
-        pass
 
     def pay(self, payer, amt, receiver=None):
         rollstate = self.roll_button.configure("state")
@@ -2496,6 +2589,7 @@ class Monopoly(tk.Toplevel):
                             d[i].configure(state="disabled")
                         except:
                             pass
+
         else:
             if amt > 0:
                 self.isInDebt = False
@@ -2516,29 +2610,7 @@ class Monopoly(tk.Toplevel):
                 )
             self.toggle_action_buttons(True)
 
-    def CLI(self):
-        while True:
-            t = tuple(i for i in input().split())
-            if t:
-                if t[0] == "roll":
-                    try:
-                        self.roll_dice(roll=(int(t[1]), int(t[2])), cli=True)
-                    except:
-                        pass
-                elif t[0] == "buy":
-                    for i in t[1:]:
-                        self.buy_property(int(i), self.me)
-
-                elif t[0] == "build":
-                    try:
-                        self.build_sell(int(t[1]), int(t[2]))
-                    except:
-                        pass
-                else:
-                    print("Die")
-            else:
-                print("Closed CLI Thread")
-                break
+    # region # End Game
 
     def quit_game(self):
         if __name__ == "__main__":
@@ -2551,6 +2623,7 @@ class Monopoly(tk.Toplevel):
             pass
 
     def player_leave(self, player_id, debtee=None, quitting=False):
+        name = self.player_details[player_id]["Name"]
         if self.turn == player_id:
             self.end_turn(force=True)
         watch = False
@@ -2572,8 +2645,8 @@ class Monopoly(tk.Toplevel):
                 ):
                     watch = True
             else:
+                self.poll(self.me, ("CREATE", "endgame", True, name))
                 self.leave_room_msg()
-        name = self.player_details[player_id]["Name"]
         for i in self.player_details[player_id]["Properties"]:
             i.owner = debtee
             if not debtee:
@@ -2605,29 +2678,28 @@ class Monopoly(tk.Toplevel):
         name = self.player_details[player_id]["Name"]
         self.player_leave(player_id, debtee)
         if self.me == player_id:
-            self.ask_end_game(True, name)
+            self.poll(self.me, ("CREATE", "endgame", True, name))
 
-    def ask_end_game(self, bankrupt, ender):
-        self.send_msg(("POLL", ("CREATE", "endgame", bankrupt, ender)))
-        self.poll(self.me, ("CREATE", "endgame"))
-
-    def poll(self, user, poll):
+    def poll(self, user, poll, received=False):  # UTIL
         if poll[0] == "UPDATE":
             self.collective[poll[1]][user] = poll[2]
-            if len(self.collective[poll[0]]) == len(self.player_details):
+            if len(self.collective[poll[1]]) == len(self.player_details):
                 c = 0
-                for i, j in self.collective[poll[0]].items():
+                for i, j in self.collective[poll[1]].items():
                     if j:
                         c += 1
-            if c > len(self.player_details) // 2:
-                self.end_game()
-            else:
-                self.endgame_frame.destroy()
-            del self.collective[poll[0]]
+                if c > len(self.player_details) // 2:
+                    self.end_game()
+                else:
+                    self.endgame_frame.destroy()
+            del self.collective[poll[1]]
 
         elif poll[0] == "CREATE":
             self.collective[poll[1]] = {user: True}
             self.get_input(poll[2], poll[3])
+
+        if not received:
+            self.send_msg(("POLL", ("CREATE", "endgame", poll[2], poll[3])))
 
     def get_input(self, bankrupt, ender):
         self.endgame_frame = tk.Frame(self, background="white")
@@ -2638,11 +2710,15 @@ class Monopoly(tk.Toplevel):
             tk.Label(
                 self.endgame_frame,
                 text=f"{ender} is Bankrupt! Do you want to end the game now?",
+                font=20,
+                bg="white",
             ).place(relx=0.5, rely=0.5, anchor="center")
         else:
             tk.Label(
                 self.endgame_frame,
                 text=f"{ender} wants to end the game! Do you want to end the game too?",
+                font=20,
+                bg="white",
             ).place(relx=0.5, rely=0.5, anchor="center")
 
         button_style = ttk.Style()
@@ -2660,10 +2736,36 @@ class Monopoly(tk.Toplevel):
             text="NO",
             style="my.TButton",
             command=lambda: self.send_msg(("POLL", ("UPDATE", "endgame", False))),
-        ).place(relx=0.4, rely=0.75, anchor="center")
+        ).place(relx=0.6, rely=0.75, anchor="center")
 
     def end_game(self):
-        pass
+        print("Game Ended")
+
+    # endregion
+
+    def CLI(self):
+        while True:
+            t = tuple(i for i in input().split())
+            if t:
+                if t[0] == "roll":
+                    try:
+                        self.roll_dice(roll=(int(t[1]), int(t[2])), cli=True)
+                    except:
+                        pass
+                elif t[0] == "buy":
+                    for i in t[1:]:
+                        self.buy_property(int(i), self.me)
+
+                elif t[0] == "build":
+                    try:
+                        self.build_sell(int(t[1]), int(t[2]))
+                    except:
+                        pass
+                else:
+                    print("Die")
+            else:
+                print("Closed CLI Thread")
+                break
 
 
 class Chance:
@@ -2769,8 +2871,9 @@ class Chance:
                 self.game.pay(self.game.turn, amt, i)
 
     def add_back(self):
-        self.options.append(self.get_out_of_jail_free)
-        self.text.append("Get out of Jail Free.\nThis card maybe used only once.")
+        if self.get_out_of_jail_free not in self.options:
+            self.options.append(self.get_out_of_jail_free)
+            self.text.append("Get out of Jail Free.\nThis card maybe used only once.")
 
     def __call__(self):
         self.game.after(1500, self.options[0])
@@ -2877,8 +2980,9 @@ class Community:
         pass
 
     def add_back(self):
-        self.options.append(self.get_out_of_jail_free)
-        self.text.append("Get out of Jail Free.\nThis card maybe used only once.")
+        if self.get_out_of_jail_free not in self.options:
+            self.options.append(self.get_out_of_jail_free)
+            self.text.append("Get out of Jail Free.\nThis card maybe used only once.")
 
     def __call__(self):
         self.game.after(1500, self.options[0])
@@ -2891,8 +2995,8 @@ class Community:
         return self.text[-1]
 
 
-# pick chance or 10
-# TODO: Chaitanya: Jail, Trading, Notifier, Automatic End Turns, Figure out Resizing
+# ? Pick Chance or Pay 10
+# TODO: Chaitanya: Winner Frame, Trading, Notifier, Automatic End Turns, Resizing
 # TODO: All Rules & Texts, Update GUI (place relatively)
 # ? (Voice) Chat, Select Colour
 
