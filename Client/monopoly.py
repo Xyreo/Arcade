@@ -625,7 +625,7 @@ class Monopoly(tk.Toplevel):
         if self.turn == self.me and not force:
             self.roll_button.configure(state="normal")
 
-        if not received or force:
+        if not (received or force):
             self.send_msg(("END",))
 
         self.update_game("It's your turn now! Click 'Roll Dice'")
