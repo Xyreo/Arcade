@@ -140,6 +140,8 @@ class Monopoly(tk.Toplevel):
         elif msg[1] == "LEAVE":
             if msg[0] in self.player_details:
                 self.player_leave(msg[0])
+        elif msg[1] == "POLL":
+            self.poll(msg[0], msg[2])
 
     # region # Create
 
@@ -2612,6 +2614,38 @@ class Monopoly(tk.Toplevel):
             )
         # TODO GUI, endgame now(check everyone)
 
+    def ask_end_game(self):
+        self.send_msg(("POLL", ("CREATE", "endgame")))
+        self.poll(self.me, ("CREATE", "endgame"))
+
+    def poll(self, user, poll):
+
+        if poll[0] == "UPDATE":
+            self.collective[poll[1]][user] = poll[2]
+            if len(self.collective[poll[0]]) == len(self.player_details):
+                c = 0
+                for i, j in self.collective[poll[0]].items():
+                    if j:
+                        c += 1
+            if c > len(self.player_details) // 2:
+                self.end_game()
+            else:
+                pass  # TODO remove the input thingy
+            del self.collective[poll[0]]
+
+        elif poll[0] == "CREATE":
+            self.collective[poll[1]] = {user: True}
+            self.get_input()
+
+    def get_input(self):
+        pass  # TODO get input
+        """
+        Lambda - self.send_msg(("POLL",("UPDATE","endgame", TRUE/FALSE)))
+        """
+
+    def end_game(self):
+        pass
+
 
 class Chance:
     def __init__(self, game, order):
@@ -2715,10 +2749,19 @@ class Chance:
             if i != self.game.turn:
                 self.game.pay(self.game.turn, amt, i)
 
+    def add_back(self):
+        self.options.append(self.get_out_of_jail_free)
+        self.text.append("Get out of Jail Free.\nThis card maybe used only once.")
+
     def __call__(self):
         self.game.after(1500, self.options[0])
-        self.options.append(self.options.pop(0))
-        self.text.append(self.text.pop(0))
+        if self.text[0] == "Get out of Jail Free.\nThis card maybe used only once.":
+            # TODO add get out of jail back into deck when used
+            self.options.remove(self.options[0])
+            self.text.remove(self.text[0])
+        else:
+            self.options.append(self.options.pop(0))
+            self.text.append(self.text.pop(0))
         return self.text[-1]
 
 
@@ -2814,10 +2857,18 @@ class Community:
     def pick_chance(self):
         pass
 
+    def add_back(self):
+        self.options.append(self.get_out_of_jail_free)
+        self.text.append("Get out of Jail Free.\nThis card maybe used only once.")
+
     def __call__(self):
         self.game.after(1500, self.options[0])
-        self.options.append(self.options.pop(0))
-        self.text.append(self.text.pop(0))
+        if self.text[0] == "Get out of Jail Free.\nThis card maybe used only once.":
+            self.options.remove(self.options[0])
+            self.text.remove(self.text[0])
+        else:
+            self.options.append(self.options.pop(0))
+            self.text.append(self.text.pop(0))
         return self.text[-1]
 
 
