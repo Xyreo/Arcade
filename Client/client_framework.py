@@ -29,6 +29,9 @@ class Client:
         while self.connected:
             try:
                 instruction = self.conn.recv(1024)
+                if not instruction:
+                    print("Server Unexpectedly Quit")
+                    break
                 instruction = pickle.loads(instruction)
                 self.updater(instruction)
             except OSError:

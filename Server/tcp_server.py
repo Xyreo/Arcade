@@ -176,7 +176,7 @@ class Client(threading.Thread):
             self.name = pickle.loads(self.conn.recv(1048))[1]
         except:
             self.name = "Unknown"
-        print("Name", self.name)
+        print("Name\t", self.name)
         self.uuid = assign_uuid(list(players.keys()))
         players[self.uuid] = self
 
@@ -188,19 +188,18 @@ class Client(threading.Thread):
         try:
             while self.connected:
                 sent = self.conn.recv(1048)
+                if not sent:
+                    self.close()
+                    break
                 m = pickle.loads(sent)
-                print("Received", m)
+                print("Received\t", m)
                 t = threading.Thread(
                     target=self.authenticate,
                     args=(m,),
                     kwargs={"auth": self.auth},
                 )
                 t.start()
-        except (EOFError, ConnectionResetError):
-            self.close()
-            self.conn.close()
-            print("Connection Closed")
-            return
+
         except Exception as e:
             log(f"Load Error: {e}")
 
@@ -215,7 +214,10 @@ class Client(threading.Thread):
 
     def instruction_handler(self, instruction):
         channel = instruction[0]
-        if channel == "0":
+        if channel == "GAME":
+            if instruction[1] == "LEAVE":
+                self.close()
+        elif channel == "0":
             self.main_handler(instruction[1:])
         elif channel in lobbies:
             self.lobby_handler(channel, instruction[1:])
@@ -239,8 +241,6 @@ class Client(threading.Thread):
             lobbies[lobby].join_room(self, msg[1])
         elif action == "CREATE":
             lobbies[lobby].create_room(self, msg[1])
-        elif action == "DELETE":
-            lobbies[lobby].delete_room(msg[1])
         else:
             pass  # TODO Wrong Action
 
@@ -256,11 +256,13 @@ class Client(threading.Thread):
     def send_instruction(self, instruction):
         try:
             self.conn.send(pickle.dumps(instruction))
-            print(instruction, "SENT.")
+            print("Sent\t", instruction)
+        except socket.error:
+            self.close()
         except (ConnectionResetError, EOFError, BrokenPipeError):
             print("Couldnt send the message-", instruction)
         except Exception as e:
-            log(f"Sending: {e}")
+            log(f"Error Sending: {e}")
 
     def details(self):
         d = {"name": self.name, "puid": self.uuid}
@@ -272,7 +274,10 @@ class Client(threading.Thread):
                 lobbies[i].leave(self)
             elif i in rooms:
                 rooms[i].leave(self)
-        del players[self.uuid]
+        self.channels = []
+        if self.uuid in players:
+            del players[self.uuid]
+        self.conn.close()
 
 
 class Driver:
@@ -300,8 +305,8 @@ class Driver:
             client_thread.start()
 
 
-lobbies: Lobby
-room: Room
+lobbies: list[Lobby]
+room: list[Room]
 
 
 if __name__ == "__main__":
