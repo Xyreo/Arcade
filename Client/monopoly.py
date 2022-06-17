@@ -1647,16 +1647,16 @@ class Monopoly(tk.Toplevel):
 
             if j["GOJF"]:
                 self.player_tree.insert(
-                    parent="",
+                    parent=i,
                     index="end",
-                    iid=i,
+                    iid="gojf",
                     text="",
                     values=(
                         "Get out of Jail Free" + "s" if j["GOJF"] > 1 else "",
                         j["GOJF"],
                     ),
                 )
-                
+
         for i, j in self.properties.items():
             try:
                 self.player_tree.tag_configure(j.hex, background=j.hex)
@@ -2821,7 +2821,7 @@ class Community:
         return self.text[-1]
 
 
-# GOJF GUI, pick chance or 10
+# pick chance or 10
 # TODO: Chaitanya: Bankruptcy Update Room, Jail, Trading, Notifier, Automatic End Turns, Figure out Resizing
 # TODO: All Rules & Texts, Update GUI (place relatively)
 # ? (Voice) Chat, Select Colour, Want to watch game?
