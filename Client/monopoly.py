@@ -113,7 +113,7 @@ class Monopoly(tk.Toplevel):
             self.player_details[i].update(
                 {
                     "Money": 100,
-                    "Injail": False,
+                    "Injail": [False, 0],
                     "Position": 0,
                     "Properties": [],
                     "GOJF": 0,
@@ -534,8 +534,6 @@ class Monopoly(tk.Toplevel):
         if self.turn != self.me:
             self.roll_button.configure(state="disabled")
 
-        print(self.turn)
-
     def toggle_action_buttons(self, enable=False):
         if enable:
             state = "normal"
@@ -625,13 +623,54 @@ class Monopoly(tk.Toplevel):
         except:
             self.turn = self.uuids[0]
 
-        if self.turn == self.me:
-            self.roll_button.configure(state="normal")
-
         if not (received or force):
             self.send_msg(("END",))
 
-        self.update_game("It's your turn now! Click 'Roll Dice'")
+        if self.turn == self.me:
+            self.roll_button.configure(state="normal")
+            if self.player_details[self.turn]["Injail"][0]:
+                if self.player_details[self.turn]["Injail"][1] == 0:
+                    text = "Do you wish to pay 50"
+                    if self.player_details[self.turn]["GOJF"]:
+                        text += " (or Use your Get out of Jail Free Card) now?"
+                    else:
+                        text += " now?"
+                    if self.show_message(
+                        "You are in jail! Pay Now?",
+                        text
+                        + " If no, you have to roll doubles in the next 3 turns to get out of Jail.",
+                        type="yesno",
+                    ):
+                        if self.player_details[self.turn]["GOJF"]:
+                            if self.show_message(
+                                "Use Get out of Jail Free?",
+                                "Do you want to use your Get out of Jail Free Card? If not, you'll have to pay 50!",
+                                type="yesno",
+                            ):
+                                self.player_details[self.turn]["GOJF"] -= 1
+                                # ADD
+
+                            else:
+                                self.pay(self.turn, 50)
+                        else:
+                            self.pay(self.turn, 50)
+                        self.player_details[self.turn]["Injail"][0] = False
+                        self.move(self.turn, 0)
+                        self.update_game("You're out of jail now! Click on Roll Dice")
+                    else:
+                        self.update_game("Roll doubles to get out of jail!")
+                elif self.player_details[self.turn]["Injail"][1] == 2:
+                    text = "Roll Doubles to get out of jail or you have to"
+                    if self.player_details[self.turn]["GOJF"]:
+                        text += "\nPay 50 or Use your Get out of Jail Free Card"
+                    else:
+                        text += " Pay 50"
+                    self.update_game(text)
+                else:
+                    self.update_game("Roll doubles to get out of jail!")
+            else:
+                self.update_game("It's your turn now! Click on Roll Dice")
+        self.update_game()
 
     # endregion
 
@@ -658,16 +697,48 @@ class Monopoly(tk.Toplevel):
         self.dice_spot1.update()
         self.dice_spot2.update()
         self.current_move = sum(dice_roll)
-        if dice_roll[0] == dice_roll[1]:
-            self.move(self.turn, self.current_move, endturn=False)
-            self.doubles_counter += 1
+        if self.player_details[self.turn]["Injail"][0]:
+            if dice_roll[0] == dice_roll[1]:
+                self.player_details[self.turn]["Injail"][0] = False
+                self.move(self.turn, 0)
+                self.player_details[self.turn]["Injail"][1] = 0
+                self.move(self.turn, self.current_move, endturn=True)
+            else:
+                if self.player_details[self.turn]["Injail"][1] < 2:
+                    self.update_game("Try again next turn!")
+                    try:
+                        self.end_button.configure(state="normal")
+                    except:
+                        pass
+                    self.player_details[self.turn]["Injail"][1] += 1
+                else:
+                    if self.player_details[self.turn]["GOJF"]:
+                        if self.show_message(
+                            "Use Get out of Jail Free?",
+                            "Do you want to use your Get out of Jail Free Card? If not, you'll have to pay 50!",
+                            type="yesno",
+                        ):
+                            self.player_details[self.turn]["GOJF"] -= 1
+                            # ADD
+                        else:
+                            self.pay(self.turn, 50)
+                    else:
+                        self.pay(self.turn, 50)
+                    self.player_details[self.turn]["Injail"][0] = False
+                    self.move(self.turn, 0)
+                    self.player_details[self.turn]["Injail"][1] = 0
+                    self.move(self.turn, self.current_move, endturn=True)
         else:
-            self.doubles_counter = 0
-            self.move(self.turn, self.current_move, endturn=True)
-        if self.doubles_counter == 3:
-            self.move(self.turn, self.current_move, endturn=True)
-            # TODO GO TO JAIL #END TURN AUTOMATICALLY
-            self.action_frame_popup("Jail")
+            if dice_roll[0] == dice_roll[1]:
+                self.doubles_counter += 1
+                if self.doubles_counter == 3:
+                    self.doubles_counter = 0
+                    self.go_to_jail(self.turn)
+                else:
+                    self.move(self.turn, self.current_move, endturn=False)
+            else:
+                self.doubles_counter = 0
+                self.move(self.turn, self.current_move, endturn=True)
 
     def click_to_position(self, event):
         x, y = event.x, event.y
@@ -744,7 +815,7 @@ class Monopoly(tk.Toplevel):
 
         x1, y1 = self.position_to_xy(position)
         if position == 10:
-            if self.player_details[player]["Injail"]:
+            if self.player_details[player]["Injail"][0]:
                 x = x1 - (self.property_height * 0.35)
                 y = y1 + (self.property_height * 0.35)
             else:
@@ -829,13 +900,13 @@ class Monopoly(tk.Toplevel):
             if self.end_button.winfo_exists():
                 self.end_button.configure(state="disabled")
 
-        if pos in [10, 30]:
-            self.update_game("Jail")
+        if pos == 30:
+            self.go_to_jail(self.turn)
         elif pos == 4:
             self.pay(self.turn, 200)
         elif pos == 38:
             self.pay(self.turn, 100)
-        elif pos in [0, 20]:
+        elif pos in [0, 10, 20]:
             self.update_game()
         elif pos in [2, 17, 33]:
             self.update_game(self.community())
@@ -2470,7 +2541,18 @@ class Monopoly(tk.Toplevel):
         self.update_game("You received 200 as salary!")
 
     def go_to_jail(self, player):
-        pass
+        self.player_details[player]["Injail"][0] = True
+        move = (10 - self.player_details[player]["Position"] % 40) % 40
+        self.move(player, move, showmove=False, endturn=True)
+        text = "You are in jail! Roll Doubles in the next 3 turns"
+        if self.player_details[player]["GOJF"]:
+            text += ",\nPay 50 or Use your Get out of Jail Free Card"
+        else:
+            text += "or Pay 50"
+        self.action_frame_popup(text)
+        sleep(2)
+        self.end_turn(force=True)
+        self.update_game()
 
     def pay(self, payer, amt, receiver=None):
         rollstate = self.roll_button.configure("state")
@@ -2640,11 +2722,15 @@ class Monopoly(tk.Toplevel):
             tk.Label(
                 self.endgame_frame,
                 text=f"{ender} is Bankrupt! Do you want to end the game now?",
+                font=20,
+                bg="white",
             ).place(relx=0.5, rely=0.5, anchor="center")
         else:
             tk.Label(
                 self.endgame_frame,
                 text=f"{ender} wants to end the game! Do you want to end the game too?",
+                font=20,
+                bg="white",
             ).place(relx=0.5, rely=0.5, anchor="center")
 
         button_style = ttk.Style()
