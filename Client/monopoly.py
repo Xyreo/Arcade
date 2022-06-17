@@ -141,7 +141,9 @@ class Monopoly(tk.Toplevel):
             if msg[0] in self.player_details:
                 self.player_leave(msg[0])
         elif msg[1] == "POLL":
-            self.poll(msg[0], msg[2])
+            self.poll(msg[0], msg[2], True)
+        elif msg[1] == "JAIL":
+            self.out_of_jail(msg[2], True)
 
     # region # Create
 
@@ -641,22 +643,7 @@ class Monopoly(tk.Toplevel):
                         + " If no, you have to roll doubles in the next 3 turns to get out of Jail.",
                         type="yesno",
                     ):
-                        if self.player_details[self.turn]["GOJF"]:
-                            if self.show_message(
-                                "Use Get out of Jail Free?",
-                                "Do you want to use your Get out of Jail Free Card? If not, you'll have to pay 50!",
-                                type="yesno",
-                            ):
-                                self.player_details[self.turn]["GOJF"] -= 1
-                                # ADD
-
-                            else:
-                                self.pay(self.turn, 50)
-                        else:
-                            self.pay(self.turn, 50)
-                        self.player_details[self.turn]["Injail"][0] = False
-                        self.move(self.turn, 0)
-                        self.update_game("You're out of jail now! Click on Roll Dice")
+                        self.ask_pay_jail()
                     else:
                         self.update_game("Roll doubles to get out of jail!")
                 elif self.player_details[self.turn]["Injail"][1] == 2:
@@ -712,22 +699,7 @@ class Monopoly(tk.Toplevel):
                         pass
                     self.player_details[self.turn]["Injail"][1] += 1
                 else:
-                    if self.player_details[self.turn]["GOJF"]:
-                        if self.show_message(
-                            "Use Get out of Jail Free?",
-                            "Do you want to use your Get out of Jail Free Card? If not, you'll have to pay 50!",
-                            type="yesno",
-                        ):
-                            self.player_details[self.turn]["GOJF"] -= 1
-                            # ADD
-                        else:
-                            self.pay(self.turn, 50)
-                    else:
-                        self.pay(self.turn, 50)
-                    self.player_details[self.turn]["Injail"][0] = False
-                    self.move(self.turn, 0)
-                    self.player_details[self.turn]["Injail"][1] = 0
-                    self.move(self.turn, self.current_move, endturn=True)
+                    self.ask_pay_jail()
         else:
             if dice_roll[0] == dice_roll[1]:
                 self.doubles_counter += 1
@@ -2548,11 +2520,41 @@ class Monopoly(tk.Toplevel):
         if self.player_details[player]["GOJF"]:
             text += ",\nPay 50 or Use your Get out of Jail Free Card"
         else:
-            text += "or Pay 50"
+            text += " or Pay 50"
         self.action_frame_popup(text)
         sleep(2)
         self.end_turn(force=True)
         self.update_game()
+
+    def ask_pay_jail(self):
+        if self.turn == self.me:
+            if self.player_details[self.turn]["GOJF"]:
+                if self.show_message(
+                    "Use Get out of Jail Free?",
+                    "Do you want to use your Get out of Jail Free Card? If not, you'll have to pay 50!",
+                    type="yesno",
+                ):
+                    self.out_of_jail("GOJF")
+                else:
+                    self.out_of_jail("PAY")
+            else:
+                self.out_of_jail("PAY")
+
+    def out_of_jail(self, method, received=False):
+        if method == "GOJF":
+            self.player_details[self.turn]["GOJF"] -= 1
+            self.chance.add_back()
+            self.community.add_back()
+        elif method == "PAY":
+            self.pay(self.turn, 50)
+
+        self.player_details[self.turn]["Injail"][0] = False
+        self.move(self.turn, 0)
+        self.player_details[self.turn]["Injail"][1] = 0
+        self.update_game("You're out of jail now! Click on Roll Dice")
+
+        if not received:
+            self.send_msg(("JAIL", method))
 
     def pay(self, payer, amt, receiver=None):
         rollstate = self.roll_button.configure("state")
@@ -2656,7 +2658,7 @@ class Monopoly(tk.Toplevel):
                 ):
                     watch = True
             else:
-                self.ask_end_game(True, name)
+                self.poll(self.me, ("CREATE", "endgame", True, name))
                 self.leave_room_msg()
         for i in self.player_details[player_id]["Properties"]:
             i.owner = debtee
@@ -2689,13 +2691,9 @@ class Monopoly(tk.Toplevel):
         name = self.player_details[player_id]["Name"]
         self.player_leave(player_id, debtee)
         if self.me == player_id:
-            self.ask_end_game(True, name)
+            self.poll(self.me, ("CREATE", "endgame", True, name))
 
-    def ask_end_game(self, bankrupt, ender):
-        self.send_msg(("POLL", ("CREATE", "endgame", bankrupt, ender)))
-        self.poll(self.me, ("CREATE", "endgame"))
-
-    def poll(self, user, poll):
+    def poll(self, user, poll, received=False):
         if poll[0] == "UPDATE":
             self.collective[poll[1]][user] = poll[2]
             if len(self.collective[poll[1]]) == len(self.player_details):
@@ -2712,6 +2710,9 @@ class Monopoly(tk.Toplevel):
         elif poll[0] == "CREATE":
             self.collective[poll[1]] = {user: True}
             self.get_input(poll[2], poll[3])
+
+        if not received:
+            self.send_msg(("POLL", ("CREATE", "endgame", poll[2], poll[3])))
 
     def get_input(self, bankrupt, ender):
         self.endgame_frame = tk.Frame(self, background="white")
@@ -2857,8 +2858,9 @@ class Chance:
                 self.game.pay(self.game.turn, amt, i)
 
     def add_back(self):
-        self.options.append(self.get_out_of_jail_free)
-        self.text.append("Get out of Jail Free.\nThis card maybe used only once.")
+        if self.get_out_of_jail_free not in self.options:
+            self.options.append(self.get_out_of_jail_free)
+            self.text.append("Get out of Jail Free.\nThis card maybe used only once.")
 
     def __call__(self):
         self.game.after(1500, self.options[0])
@@ -2965,8 +2967,9 @@ class Community:
         pass
 
     def add_back(self):
-        self.options.append(self.get_out_of_jail_free)
-        self.text.append("Get out of Jail Free.\nThis card maybe used only once.")
+        if self.get_out_of_jail_free not in self.options:
+            self.options.append(self.get_out_of_jail_free)
+            self.text.append("Get out of Jail Free.\nThis card maybe used only once.")
 
     def __call__(self):
         self.game.after(1500, self.options[0])
@@ -2980,7 +2983,7 @@ class Community:
 
 
 # pick chance or 10, Winner Frame
-# TODO: Chaitanya: Jail, Trading, Notifier, Automatic End Turns, Figure out Resizing
+# TODO: Chaitanya: Trading, Notifier, Automatic End Turns, Figure out Resizing
 # TODO: All Rules & Texts, Update GUI (place relatively)
 # ? (Voice) Chat, Select Colour
 
