@@ -916,6 +916,54 @@ class Monopoly(tk.Toplevel):
 
     # endregion
 
+    # region # Jail
+
+    def go_to_jail(self, player):
+        self.player_details[player]["Injail"][0] = True
+        move = (10 - self.player_details[player]["Position"] % 40) % 40
+        self.move(player, move, showmove=False, endturn=True)
+        text = "You are in jail! Roll Doubles in the next 3 turns"
+        if self.player_details[player]["GOJF"]:
+            text += ",\nPay 50 or Use your Get out of Jail Free Card"
+        else:
+            text += " or Pay 50"
+        self.action_frame_popup(text)
+        sleep(2)
+        self.end_turn(force=True)
+        self.update_game()
+
+    def ask_pay_jail(self):
+        if self.turn == self.me:
+            if self.player_details[self.turn]["GOJF"]:
+                if self.show_message(
+                    "Use Get out of Jail Free?",
+                    "Do you want to use your Get out of Jail Free Card? If not, you'll have to pay 50!",
+                    type="yesno",
+                ):
+                    self.out_of_jail("GOJF")
+                else:
+                    self.out_of_jail("PAY")
+            else:
+                self.out_of_jail("PAY")
+
+    def out_of_jail(self, method, received=False):
+        if method == "GOJF":
+            self.player_details[self.turn]["GOJF"] -= 1
+            self.chance.add_back()
+            self.community.add_back()
+        elif method == "PAY":
+            self.pay(self.turn, 50)
+
+        self.player_details[self.turn]["Injail"][0] = False
+        self.move(self.turn, 0)
+        self.player_details[self.turn]["Injail"][1] = 0
+        self.update_game("You're out of jail now! Click on Roll Dice")
+
+        if not received:
+            self.send_msg(("JAIL", method))
+
+    # endregion
+
     # region # Property Frame
 
     def station_property_frame(self, position):
@@ -1740,8 +1788,8 @@ class Monopoly(tk.Toplevel):
             width=(self.board_side - 2) // 1,
             height=(self.board_side - 2) // 2.45,
         )
-
         self.action_frame.place(relx=0, rely=0, anchor="nw")
+
         if self.me not in self.uuids:
             self.roll_button.configure(state="disabled")
             tk.Label(
@@ -1749,7 +1797,9 @@ class Monopoly(tk.Toplevel):
                 text=f"You are bankrupt!\n\n{self.player_details[self.turn]['Name']} is playing!",
                 font=50,
             ).place(relx=0.5, rely=0.5, anchor="center")
+
         else:
+
             if self.turn != self.me:
                 not_your_turn = tk.Label(
                     self.action_frame,
@@ -1757,6 +1807,7 @@ class Monopoly(tk.Toplevel):
                     font=50,
                 )
                 not_your_turn.place(relx=0.5, rely=0.5, anchor="center")
+
             else:
                 self.buy_button = ttk.Button(
                     self.action_frame,
@@ -2463,11 +2514,12 @@ class Monopoly(tk.Toplevel):
                 ),
                 type="okcancel",
             ):
-                pass
+                self.send_msg(("BUY", propertypos))
             else:
                 self.update_game("Buy")
                 self.toggle_action_buttons(True)
                 return
+
         if self.properties[propertypos].colour:
             if not self.properties[propertypos].owner:
                 self.properties[propertypos].owner = buyer
@@ -2498,12 +2550,12 @@ class Monopoly(tk.Toplevel):
                             i.houses = 0
             else:
                 print("Owned")
+
         else:
             print("Can't Buy")
+
         if not self.isInDebt:
             self.update_game("Default")
-        if not received:
-            self.send_msg(("BUY", propertypos))
 
     def trade(self):
         pass
@@ -2511,50 +2563,6 @@ class Monopoly(tk.Toplevel):
     def pass_go(self, player):
         self.player_details[player]["Money"] += 200
         self.update_game("You received 200 as salary!")
-
-    def go_to_jail(self, player):
-        self.player_details[player]["Injail"][0] = True
-        move = (10 - self.player_details[player]["Position"] % 40) % 40
-        self.move(player, move, showmove=False, endturn=True)
-        text = "You are in jail! Roll Doubles in the next 3 turns"
-        if self.player_details[player]["GOJF"]:
-            text += ",\nPay 50 or Use your Get out of Jail Free Card"
-        else:
-            text += " or Pay 50"
-        self.action_frame_popup(text)
-        sleep(2)
-        self.end_turn(force=True)
-        self.update_game()
-
-    def ask_pay_jail(self):
-        if self.turn == self.me:
-            if self.player_details[self.turn]["GOJF"]:
-                if self.show_message(
-                    "Use Get out of Jail Free?",
-                    "Do you want to use your Get out of Jail Free Card? If not, you'll have to pay 50!",
-                    type="yesno",
-                ):
-                    self.out_of_jail("GOJF")
-                else:
-                    self.out_of_jail("PAY")
-            else:
-                self.out_of_jail("PAY")
-
-    def out_of_jail(self, method, received=False):
-        if method == "GOJF":
-            self.player_details[self.turn]["GOJF"] -= 1
-            self.chance.add_back()
-            self.community.add_back()
-        elif method == "PAY":
-            self.pay(self.turn, 50)
-
-        self.player_details[self.turn]["Injail"][0] = False
-        self.move(self.turn, 0)
-        self.player_details[self.turn]["Injail"][1] = 0
-        self.update_game("You're out of jail now! Click on Roll Dice")
-
-        if not received:
-            self.send_msg(("JAIL", method))
 
     def pay(self, payer, amt, receiver=None):
         rollstate = self.roll_button.configure("state")
@@ -2581,6 +2589,7 @@ class Monopoly(tk.Toplevel):
                             d[i].configure(state="disabled")
                         except:
                             pass
+
         else:
             if amt > 0:
                 self.isInDebt = False
@@ -2601,29 +2610,7 @@ class Monopoly(tk.Toplevel):
                 )
             self.toggle_action_buttons(True)
 
-    def CLI(self):
-        while True:
-            t = tuple(i for i in input().split())
-            if t:
-                if t[0] == "roll":
-                    try:
-                        self.roll_dice(roll=(int(t[1]), int(t[2])), cli=True)
-                    except:
-                        pass
-                elif t[0] == "buy":
-                    for i in t[1:]:
-                        self.buy_property(int(i), self.me)
-
-                elif t[0] == "build":
-                    try:
-                        self.build_sell(int(t[1]), int(t[2]))
-                    except:
-                        pass
-                else:
-                    print("Die")
-            else:
-                print("Closed CLI Thread")
-                break
+    # region # End Game
 
     def quit_game(self):
         if __name__ == "__main__":
@@ -2693,7 +2680,7 @@ class Monopoly(tk.Toplevel):
         if self.me == player_id:
             self.poll(self.me, ("CREATE", "endgame", True, name))
 
-    def poll(self, user, poll, received=False):
+    def poll(self, user, poll, received=False):  # UTIL
         if poll[0] == "UPDATE":
             self.collective[poll[1]][user] = poll[2]
             if len(self.collective[poll[1]]) == len(self.player_details):
@@ -2753,6 +2740,32 @@ class Monopoly(tk.Toplevel):
 
     def end_game(self):
         print("Game Ended")
+
+    # endregion
+
+    def CLI(self):
+        while True:
+            t = tuple(i for i in input().split())
+            if t:
+                if t[0] == "roll":
+                    try:
+                        self.roll_dice(roll=(int(t[1]), int(t[2])), cli=True)
+                    except:
+                        pass
+                elif t[0] == "buy":
+                    for i in t[1:]:
+                        self.buy_property(int(i), self.me)
+
+                elif t[0] == "build":
+                    try:
+                        self.build_sell(int(t[1]), int(t[2]))
+                    except:
+                        pass
+                else:
+                    print("Die")
+            else:
+                print("Closed CLI Thread")
+                break
 
 
 class Chance:
@@ -2982,8 +2995,8 @@ class Community:
         return self.text[-1]
 
 
-# pick chance or 10, Winner Frame
-# TODO: Chaitanya: Trading, Notifier, Automatic End Turns, Figure out Resizing
+# ? Pick Chance or Pay 10
+# TODO: Chaitanya: Winner Frame, Trading, Notifier, Automatic End Turns, Resizing
 # TODO: All Rules & Texts, Update GUI (place relatively)
 # ? (Voice) Chat, Select Colour
 
