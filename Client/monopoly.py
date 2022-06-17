@@ -2,7 +2,6 @@ import copy
 import os
 import random
 import threading
-import time
 import tkinter as tk
 import tkinter.ttk as ttk
 from time import sleep

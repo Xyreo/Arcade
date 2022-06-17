@@ -2,13 +2,10 @@ import os
 import threading
 import time
 import tkinter as tk
-
-from plyer import notification as noti
-
-if os.name == "nt":
-    from win32gui import GetForegroundWindow, GetWindowText
+from ctypes import create_unicode_buffer, windll
 
 from PIL import Image, ImageOps, ImageTk
+from plyer import notification as noti
 
 ASSET_PATH = "Assets"
 ASSET_PATH = ASSET_PATH if os.path.exists(ASSET_PATH) else "Client/" + ASSET_PATH
@@ -584,10 +581,11 @@ class Chess(tk.Toplevel):
         self.start_move(start, end, multi=True)
 
     def get_active_window(self):
-        try:
-            return GetWindowText(GetForegroundWindow())  # type: ignore
-        except:
-            return None
+        hWnd = windll.user32.GetForegroundWindow()
+        length = windll.user32.GetWindowTextLengthW(hWnd)
+        buf = create_unicode_buffer(length + 1)
+        windll.user32.GetWindowTextW(hWnd, buf, length + 1)
+        return buf.value if buf.value else None
 
     def chess_notifier(self, opponent, piece, dest, captured=None):
         try:
