@@ -55,10 +55,12 @@ class Chess(tk.Toplevel):
         self.lock.acquire(blocking=False)
 
     def initialize_canvas(self):
-        Chess.size = self.winfo_screenheight() * 4 // 5
-        self.geometry(
-            f"{Chess.size}x{Chess.size}+{self.winfo_screenwidth()//2}+{Chess.size//16}"
-        )
+        Chess.size = int(self.winfo_screenheight() * 3.5) // 5
+        screen_width = int(0.9 * self.winfo_screenwidth())
+        screen_height = int(screen_width / 1.9)
+        x_coord = self.winfo_screenwidth() // 2 - screen_width // 2
+        y_coord = (self.winfo_screenheight() - 70) // 2 - screen_height // 2
+        self.geometry(f"{screen_width}x{screen_height}+{x_coord}+{y_coord}")
         self.title("Chess")
         self.canvas = tk.Canvas(
             self,
@@ -66,7 +68,7 @@ class Chess(tk.Toplevel):
             height=Chess.size,
             width=Chess.size,
         )
-        self.canvas.pack()
+        self.canvas.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         for i in range(8):
             for j in range(8):
                 s = os.path.join(ASSET_PATH, "Chess_Assets", "circle.png")
@@ -302,10 +304,7 @@ class Chess(tk.Toplevel):
             self.state = "Move"
 
         elif self.board[k] == None or (
-            (
-                not self.debug
-                and (self.board[k].color != self.side or self.side != self.turn)
-            )
+            (not self.debug and self.board[k].color != self.side)
         ):
             pass
 
@@ -325,10 +324,10 @@ class Chess(tk.Toplevel):
                     self.unselect()
 
                 self.selected = k
-                self.display_moves()
-
-                self.set(k, "select")
-                self.set(k, "button")
+                if self.side == self.turn:
+                    self.display_moves()
+                    self.set(k, "select")
+                    self.set(k, "button")
 
             self.canvas.tag_raise(self.board[k].img_id)
             self.move_obj(self.board[k], e.x, e.y)
@@ -478,7 +477,7 @@ class Chess(tk.Toplevel):
         # endregion
         sent = (start, end, self.pawn_promotion)
         if not multi or self.debug:
-            self.update_move(sent)
+            self.update_move(("MOVE", sent))
             self.display_moves(False)
         else:
             self.possible_moves = []
@@ -506,8 +505,12 @@ class Chess(tk.Toplevel):
             self.COLOREDSQUARES["check"] = i
 
         if self.check_for_mate(Chess.swap[color]):
+            # TODO GUI part
             if check:
                 print("Checkmate")
+                tk.Label(self, text="Checkmate", font=40).place(
+                    relx=0.5, rely=0.5, anchor=tk.CENTER, relheight=1, relwidth=1
+                )
             else:
                 print("Stalemate")
 
@@ -563,8 +566,10 @@ class Chess(tk.Toplevel):
     def event_handler(self, msg):
         if msg[0] == "LEAVE":
             pass
+        elif msg[0] == "MOVE":
+            self.opp_move(msg[1])
         else:
-            self.opp_move(msg)
+            pass
 
     def opp_move(self, msg):
         start, end, pawn = msg
@@ -585,16 +590,19 @@ class Chess(tk.Toplevel):
             return None
 
     def chess_notifier(self, opponent, piece, dest, captured=None):
-        message = f"{opponent} played {piece.title()} to {dest.upper()}"
-        if captured:
-            message += f", capturing your {captured.piece.title()}"
-        if self.get_active_window() != "Chess":
-            noti.notify(
-                title="Your Turn has started",
-                app_name="Chess",
-                message=message,
-                timeout=5,
-            )
+        try:
+            message = f"{opponent} played {piece.title()} to {dest.upper()}"
+            if captured:
+                message += f", capturing your {captured.piece.title()}"
+            if self.get_active_window() != "Chess":
+                noti.notify(
+                    title="Your Turn has started",
+                    app_name="Chess",
+                    message=message,
+                    timeout=5,
+                )
+        except NotImplementedError:
+            print("mac is weird")
 
     @staticmethod
     def grid_to_square(k):
