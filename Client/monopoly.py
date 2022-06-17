@@ -175,6 +175,7 @@ class Monopoly(tk.Toplevel):
         self.uuids = list(self.player_details.keys())
         self.turn = self.uuids[0]
         self.doubles_counter = 0
+        self.collective = {}
 
         self.isInDebt = False
         self.debt_details = []
@@ -2551,6 +2552,7 @@ class Monopoly(tk.Toplevel):
             pass
 
     def player_leave(self, player_id, debtee=None, quitting=False):
+        name = self.player_details[player_id]["Name"]
         if self.turn == player_id:
             self.end_turn(force=True)
         watch = False
@@ -2572,8 +2574,8 @@ class Monopoly(tk.Toplevel):
                 ):
                     watch = True
             else:
+                self.ask_end_game(True, name)
                 self.leave_room_msg()
-        name = self.player_details[player_id]["Name"]
         for i in self.player_details[player_id]["Properties"]:
             i.owner = debtee
             if not debtee:
@@ -2614,16 +2616,16 @@ class Monopoly(tk.Toplevel):
     def poll(self, user, poll):
         if poll[0] == "UPDATE":
             self.collective[poll[1]][user] = poll[2]
-            if len(self.collective[poll[0]]) == len(self.player_details):
+            if len(self.collective[poll[1]]) == len(self.player_details):
                 c = 0
-                for i, j in self.collective[poll[0]].items():
+                for i, j in self.collective[poll[1]].items():
                     if j:
                         c += 1
-            if c > len(self.player_details) // 2:
-                self.end_game()
-            else:
-                self.endgame_frame.destroy()
-            del self.collective[poll[0]]
+                if c > len(self.player_details) // 2:
+                    self.end_game()
+                else:
+                    self.endgame_frame.destroy()
+            del self.collective[poll[1]]
 
         elif poll[0] == "CREATE":
             self.collective[poll[1]] = {user: True}
@@ -2660,10 +2662,10 @@ class Monopoly(tk.Toplevel):
             text="NO",
             style="my.TButton",
             command=lambda: self.send_msg(("POLL", ("UPDATE", "endgame", False))),
-        ).place(relx=0.4, rely=0.75, anchor="center")
+        ).place(relx=0.6, rely=0.75, anchor="center")
 
     def end_game(self):
-        pass
+        print("Game Ended")
 
 
 class Chance:
@@ -2891,7 +2893,7 @@ class Community:
         return self.text[-1]
 
 
-# pick chance or 10
+# pick chance or 10, Winner Frame
 # TODO: Chaitanya: Jail, Trading, Notifier, Automatic End Turns, Figure out Resizing
 # TODO: All Rules & Texts, Update GUI (place relatively)
 # ? (Voice) Chat, Select Colour
