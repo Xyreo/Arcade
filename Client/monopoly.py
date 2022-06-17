@@ -1801,6 +1801,7 @@ class Monopoly(tk.Toplevel):
         else:
 
             if self.turn != self.me:
+                self.roll_button.configure(state="disabled")
                 not_your_turn = tk.Label(
                     self.action_frame,
                     text=f'{self.player_details[self.turn]["Name"]} is playing!',
