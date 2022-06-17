@@ -499,7 +499,7 @@ class Monopoly(tk.Toplevel):
                     check += i.houses
                 check += i.mortgage
 
-        if amt_to_pay <= check:
+        if amt_to_pay <= check + self.player_details[payer]["Money"]:
             return False
         else:
             return True
@@ -622,7 +622,7 @@ class Monopoly(tk.Toplevel):
         except:
             self.turn = self.uuids[0]
 
-        if self.turn == self.me and not force:
+        if self.turn == self.me:
             self.roll_button.configure(state="normal")
 
         if not (received or force):
@@ -1691,7 +1691,7 @@ class Monopoly(tk.Toplevel):
                 font=50,
             ).place(
                 relx=0.5, rely=0.5, anchor="center"
-            )  # TODO Doesnt work
+            )
         else:
             if self.turn != self.me:
                 not_your_turn = tk.Label(
