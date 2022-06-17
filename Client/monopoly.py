@@ -2604,22 +2604,14 @@ class Monopoly(tk.Toplevel):
     def bankrupt_popup(self, player_id, debtee):
         name = self.player_details[player_id]["Name"]
         self.player_leave(player_id, debtee)
-        if self.me != player_id:
-            self.endgame_frame = tk.Frame(self, background="white")
-            self.endgame_frame.place(
-                relx=0.5, rely=0.5, relwidth=1, relheight=1, anchor="center"
-            )
-            tk.label(f"{name} is Bankrupt! Do you want to end the game now?").place(
-                relx=0.5, rely=0.5, anchor="center"
-            )
-        # TODO GUI, endgame now(check everyone)
+        if self.me == player_id:
+            self.ask_end_game(True, name)
 
-    def ask_end_game(self):
-        self.send_msg(("POLL", ("CREATE", "endgame")))
+    def ask_end_game(self, bankrupt, ender):
+        self.send_msg(("POLL", ("CREATE", "endgame", bankrupt, ender)))
         self.poll(self.me, ("CREATE", "endgame"))
 
     def poll(self, user, poll):
-
         if poll[0] == "UPDATE":
             self.collective[poll[1]][user] = poll[2]
             if len(self.collective[poll[0]]) == len(self.player_details):
@@ -2630,18 +2622,45 @@ class Monopoly(tk.Toplevel):
             if c > len(self.player_details) // 2:
                 self.end_game()
             else:
-                pass  # TODO remove the input thingy
+                self.endgame_frame.destroy()
             del self.collective[poll[0]]
 
         elif poll[0] == "CREATE":
             self.collective[poll[1]] = {user: True}
-            self.get_input()
+            self.get_input(poll[2], poll[3])
 
-    def get_input(self):
-        pass  # TODO get input
-        """
-        Lambda - self.send_msg(("POLL",("UPDATE","endgame", TRUE/FALSE)))
-        """
+    def get_input(self, bankrupt, ender):
+        self.endgame_frame = tk.Frame(self, background="white")
+        self.endgame_frame.place(
+            relx=0.5, rely=0.5, relwidth=1, relheight=1, anchor="center"
+        )
+        if bankrupt:
+            tk.Label(
+                self.endgame_frame,
+                text=f"{ender} is Bankrupt! Do you want to end the game now?",
+            ).place(relx=0.5, rely=0.5, anchor="center")
+        else:
+            tk.Label(
+                self.endgame_frame,
+                text=f"{ender} wants to end the game! Do you want to end the game too?",
+            ).place(relx=0.5, rely=0.5, anchor="center")
+
+        button_style = ttk.Style()
+        button_style.configure("my.TButton", font=("times", 20))
+
+        ttk.Button(
+            self.endgame_frame,
+            text="YES",
+            style="my.TButton",
+            command=lambda: self.send_msg(("POLL", ("UPDATE", "endgame", True))),
+        ).place(relx=0.4, rely=0.75, anchor="center")
+
+        ttk.Button(
+            self.endgame_frame,
+            text="NO",
+            style="my.TButton",
+            command=lambda: self.send_msg(("POLL", ("UPDATE", "endgame", False))),
+        ).place(relx=0.4, rely=0.75, anchor="center")
 
     def end_game(self):
         pass
@@ -2873,9 +2892,9 @@ class Community:
 
 
 # pick chance or 10
-# TODO: Chaitanya: Bankruptcy Update Room, Jail, Trading, Notifier, Automatic End Turns, Figure out Resizing
+# TODO: Chaitanya: Jail, Trading, Notifier, Automatic End Turns, Figure out Resizing
 # TODO: All Rules & Texts, Update GUI (place relatively)
-# ? (Voice) Chat, Select Colour, Want to watch game?
+# ? (Voice) Chat, Select Colour
 
 if __name__ == "__main__":
     root = tk.Tk()
