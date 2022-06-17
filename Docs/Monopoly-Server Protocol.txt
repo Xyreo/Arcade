@@ -18,3 +18,13 @@ Mortgage/ Unmortgage:
 
 End Turn:
     (END)
+
+Leave Game:
+    (LEAVE)
+
+Poll EndGame:
+    (POLL, (CREATE, endgame, bool: bankrupt, ender)
+    (POLL, (UPDATE, endgame, bool: Yes or No)
+
+Jail:
+    (JAIL, method - (GOJF or PAY))
