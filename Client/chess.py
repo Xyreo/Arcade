@@ -599,6 +599,7 @@ class Chess(tk.Toplevel):
             message = f"{opponent} played {piece.title()} to {dest.upper()}"
             if captured:
                 message += f", capturing your {captured.piece.title()}"
+            print(self.get_active_window())
             if self.get_active_window() != "Chess":
                 noti.notify(
                     title="Your Turn has started",
