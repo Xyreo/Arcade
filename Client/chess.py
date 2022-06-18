@@ -2,7 +2,6 @@ import os
 import threading
 import time
 import tkinter as tk
-from ctypes import create_unicode_buffer, windll
 
 from PIL import Image, ImageOps, ImageTk
 from plyer import notification as noti
@@ -581,11 +580,19 @@ class Chess(tk.Toplevel):
         self.start_move(start, end, multi=True)
 
     def get_active_window(self):
-        hWnd = windll.user32.GetForegroundWindow()
-        length = windll.user32.GetWindowTextLengthW(hWnd)
-        buf = create_unicode_buffer(length + 1)
-        windll.user32.GetWindowTextW(hWnd, buf, length + 1)
-        return buf.value if buf.value else None
+        if os.name == "nt":
+            from ctypes import create_unicode_buffer, windll
+
+            hWnd = windll.user32.GetForegroundWindow()
+            length = windll.user32.GetWindowTextLengthW(hWnd)
+            buf = create_unicode_buffer(length + 1)
+            windll.user32.GetWindowTextW(hWnd, buf, length + 1)
+            return buf.value if buf.value else None
+        else:
+            from AppKit import NSWorkspace
+
+            a = NSWorkspace.sharedWorkspace().frontmostApplication()
+            return a if a else None
 
     def chess_notifier(self, opponent, piece, dest, captured=None):
         try:
