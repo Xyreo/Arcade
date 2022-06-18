@@ -1,3 +1,4 @@
+import datetime
 import pickle
 import random
 import secrets
@@ -10,10 +11,14 @@ lobbies = {}
 rooms = {}
 players = {}  # Stores the socks of all the players connected to the server
 
+l = [1, 2]
 
-def log(msg):
+
+def log(*msg):
+    print(" ".join(map(str, msg)))
     with open("tcp_log.txt", "a") as f:
-        f.write(msg + "\n")
+        x = datetime.datetime.now()
+        f.write(x.strftime("[%d/%m/%y %H:%M:%S] ") + " ".join(map(str, msg)) + "\n")
 
 
 def assign_uuid(l):
@@ -176,7 +181,9 @@ class Client(threading.Thread):
             self.name = pickle.loads(self.conn.recv(1048))[1]
         except:
             self.name = "Unknown"
-        print("Name\t", self.name)
+
+        log(f"Connected to {self.addr} as {self.name}")
+
         self.uuid = assign_uuid(list(players.keys()))
         players[self.uuid] = self
 
@@ -192,7 +199,8 @@ class Client(threading.Thread):
                     self.close()
                     break
                 m = pickle.loads(sent)
-                print("Received\t", m)
+                log("Received\t", m)
+
                 t = threading.Thread(
                     target=self.authenticate,
                     args=(m,),
@@ -200,6 +208,9 @@ class Client(threading.Thread):
                 )
                 t.start()
 
+        except (EOFError, ConnectionResetError):
+            self.close()
+            return
         except Exception as e:
             log(f"Load Error: {e}")
 
@@ -208,7 +219,7 @@ class Client(threading.Thread):
             if Driver.auth(message[0]):
                 self.instruction_handler(message[1:])
             else:
-                self.send_instruction(("GAME", "NEWLOGIN"))
+                self.send_instruction(("GAME", "SESSION_EXP"))
         else:
             self.instruction_handler(message)
 
@@ -256,11 +267,11 @@ class Client(threading.Thread):
     def send_instruction(self, instruction):
         try:
             self.conn.send(pickle.dumps(instruction))
-            print("Sent\t", instruction)
+            log("Sent\t", instruction)
         except socket.error:
-            self.close()
+            log("Couldnt send the message-", instruction)
         except (ConnectionResetError, EOFError, BrokenPipeError):
-            print("Couldnt send the message-", instruction)
+            log("Couldnt send the message-", instruction)
         except Exception as e:
             log(f"Error Sending: {e}")
 
@@ -278,6 +289,9 @@ class Client(threading.Thread):
         if self.uuid in players:
             del players[self.uuid]
         self.conn.close()
+        log(
+            f"Connection to {self.addr} closed. {threading.active_count() - 2} players connected"
+        )
 
 
 class Driver:
@@ -296,17 +310,17 @@ class Driver:
         self.server.bind(ADDRESS)
 
     def start(self):
-        print("Server Started")
+        log("Server Started")
         self.server.listen()
         while True:
             conn, addr = self.server.accept()
-            print(f"active connections {threading.active_count()-1}")
+            log(f"Active connections {threading.active_count()-1}")
             client_thread = Client(conn, addr)
             client_thread.start()
 
 
 lobbies: list[Lobby]
-room: list[Room]
+rooms: list[Room]
 
 
 if __name__ == "__main__":

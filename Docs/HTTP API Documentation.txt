@@ -5,7 +5,7 @@ Initializing requires base url path passed in.
 Methods:
 
 1. obj.login(str:username, str:password):
-    Returns True if successful, else returns False. Sets the authorization token automatically if successful.
+    Returns 1 if successful, 0 if unsuccessful and -1 if user already logged in. Adds the token automatically if successful.
 
 2. obj.register(str:username, str:password):
     Returns True if successful, else returns False. False implies that a user with the same name already exists.

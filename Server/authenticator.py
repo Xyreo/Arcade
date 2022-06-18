@@ -3,24 +3,27 @@ from datetime import timedelta
 
 import redis
 
+time = 30
+
 
 class Auth:
     def __init__(self):
         self.r = redis.Redis(host="localhost", port=6379, db=1)
 
     def add(self, name):
-        for i in self.r.keys():
-            if name == self.r.get(i).decode("utf-8"):
-                self.r.delete(i)
+        if self.r.exists(name):
+            return False
 
         session_id = secrets.token_hex(16)
         while self.r.exists(session_id):
             session_id = secrets.token_hex(16)
-        self.r.setex(session_id, timedelta(minutes=30), value=name)
+        self.r.setex(session_id, timedelta(minutes=time), value=name)
+        self.r.setex(name, timedelta(minutes=time), value=session_id)
         return session_id
 
     def end_session(self, session_id):
         if self.r.exists(session_id):
+            self.r.delete(self.r.get(session_id))
             self.r.delete(session_id)
 
     def get_user(self, session_id):
@@ -32,8 +35,8 @@ class Auth:
 
     def __call__(self, session_id):
         if self.r.exists(session_id):
-            self.r.expire(name=session_id, time=timedelta(minutes=30))
-            print(self.r.ttl(session_id))
+            self.r.expire(name=session_id, time=timedelta(minutes=time))
+            self.r.expire(name=self.r.get(session_id), time=timedelta(minutes=time))
             return True
         return False
 
