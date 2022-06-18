@@ -85,7 +85,7 @@ class Arcade(tk.Toplevel):
             f"{self.screen_width//2}x{self.screen_height}+{self.x_coord+self.screen_width//4}+{self.y_coord}"
         )
         self.config(bg="white")
-        self.protocol("WM_DELETE_WINDOW", root.destroy)
+        self.protocol("WM_DELETE_WINDOW", self.exit)
 
     def initialize(self, name, token):
         # self.login.destroy()
@@ -127,7 +127,9 @@ class Arcade(tk.Toplevel):
         room = None
         if dest == "NAME":
             self.me = msg[1]
-
+        elif dest == "GAME":
+            if msg[1] == "SESSION_EXP":
+                pass  # TODO session expired stuff
         elif dest in ["CHESS", "MNPLY"]:
             if msg[1] == "INIT":
                 self.rooms.initialize(dest, msg[2])
@@ -491,6 +493,10 @@ class Arcade(tk.Toplevel):
 
     def start_room(self, game, room):
         self.send((room, "START"))
+
+    def exit(self):
+        HTTP.logout()
+        root.destroy()
 
 
 class Login(tk.Frame):

@@ -22,8 +22,10 @@ class Http:
                 self.TOKEN = r.json()["Token"]
                 if remember_me:
                     return r.json()["Password"]
-            return True
-        return False
+            return 1
+        elif r.status_code == 406:
+            return -1
+        return 0
 
     def login(self, username, password, remember_me=False, remember_login=False):
         if remember_login:
@@ -31,8 +33,10 @@ class Http:
             r = self.send(Http.POST, "remember_login", data=data)
             if r.status_code == 200:
                 self.TOKEN = r.json()["Token"]
-                return True
-            return False
+                return 1
+            elif r.status_code == 406:
+                return -1
+            return 0
         return self.login_signup("login", username, password, remember_me=remember_me)
 
     def register(self, username, password):

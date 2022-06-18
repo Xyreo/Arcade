@@ -125,6 +125,8 @@ def login():
     if len(storedpw):
         if bcrypt.checkpw(password, storedpw[0][0].encode("utf-8")):
             session = auth.add(username)
+            if not session:
+                return jsonify(), 406
             return jsonify({"Token": session, "Password": storedpw[0][0]}), 200
 
     return jsonify("Either username or password is incorrect"), 400
