@@ -589,12 +589,7 @@ class Chess(tk.Toplevel):
             windll.user32.GetWindowTextW(hWnd, buf, length + 1)
             return buf.value if buf.value else None
         else:
-            from AppKit import NSWorkspace
-
-            a = NSWorkspace.sharedWorkspace().frontmostApplication()[
-                "NSApplicationName"
-            ]
-            return a if a else None
+            return None
 
     def chess_notifier(self, opponent, piece, dest, captured=None):
         try:
