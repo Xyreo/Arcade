@@ -192,6 +192,7 @@ class Arcade(tk.Toplevel):
                 target=self.queue_send,
                 args=(msg, (self.sent_time + time_gap - new_time)),
             )
+            t.daemon = True
             t.start()
         else:
             self.queue_send(msg, None)
