@@ -591,7 +591,9 @@ class Chess(tk.Toplevel):
         else:
             from AppKit import NSWorkspace
 
-            a = NSWorkspace.sharedWorkspace().frontmostApplication()['NSApplicationName']
+            a = NSWorkspace.sharedWorkspace().frontmostApplication()[
+                "NSApplicationName"
+            ]
             return a if a else None
 
     def chess_notifier(self, opponent, piece, dest, captured=None):
