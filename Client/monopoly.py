@@ -143,6 +143,11 @@ class Monopoly(tk.Toplevel):
             self.poll(msg[0], msg[2], True)
         elif msg[1] == "JAIL":
             self.out_of_jail(msg[2], True)
+        elif msg[1] == "TRADE":
+            if msg[2] == "ANSWER":
+                pass
+            elif msg[2] == "REQUEST":
+                pass
 
     # region # Create
 
