@@ -101,6 +101,38 @@ class Arcade(tk.Toplevel):
         self.cobj = Client((CLIENT_ADDRESS, 6969), self.event_handler, token)
         self.cobj.send((self.name,))
 
+        style = ttk.Style()
+        if "dummy" not in style.theme_names():
+            style.theme_create(
+                "dummy",
+                parent="xpnative" if os.name == "nt" else "aqua",
+                settings={
+                    "TNotebook": {
+                        "configure": {
+                            "tabmargins": [int(self.screen_width / 2.25), 15, 0, 0],
+                            "background": "blue",
+                        }
+                    },
+                    "TNotebook.Tab": {
+                        "configure": {"padding": [5, 5], "font": "times 15"},
+                        "map": {
+                            "background": [
+                                ("active", "blue"),
+                                ("!active", "black"),
+                                ("selected", "red"),
+                            ],
+                            "foreground": [
+                                ("active", "blue"),
+                                ("!active", "black"),
+                                ("selected", "red"),
+                            ],
+                            "expand": [("selected", [5, 5, 5, 5])],
+                        },
+                    },
+                },
+            )
+        print(style.theme_names())
+        style.theme_use("dummy")
         self.main_notebook = ttk.Notebook(
             self, height=self.screen_height, width=self.screen_width
         )
@@ -117,6 +149,37 @@ class Arcade(tk.Toplevel):
         self.monopoly_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
         self.main_notebook.add(self.monopoly_frame, text="Monopoly")
         self.join_create("MNPLY")
+
+        button_style = ttk.Style()
+        button_style.configure("my.TButton", font=("times", 20))
+
+        self.log_out_button = ttk.Button(
+            self,
+            text="Log Out",
+            style="my.TButton",
+            command=self.log_out,
+        )
+        self.log_out_button.place(relx=0.99, rely=0.01, anchor="ne")
+
+    def log_out(self):
+        HTTP.logout()
+        self.main_notebook.destroy()
+        self.log_out_button.destroy()
+
+        self.screen_width = int(0.9 * self.winfo_screenwidth())
+        self.screen_height = int(self.screen_width / 1.9)
+        self.x_coord = self.winfo_screenwidth() // 2 - self.screen_width // 2
+        self.y_coord = (self.winfo_screenheight() - 70) // 2 - self.screen_height // 2
+
+        self.title("Arcade")
+        self.geometry(
+            f"{self.screen_width//2}x{self.screen_height}+{self.x_coord+self.screen_width//4}+{self.y_coord}"
+        )
+        self.config(bg="white")
+        self.protocol("WM_DELETE_WINDOW", self.exit)
+
+        self.login = Login(self, HTTP, self.initialize)
+        self.login.place(relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n")
 
     def pprint(self, d):
         print(json.dumps(d, indent=4))
@@ -512,18 +575,14 @@ class Login(tk.Frame):
             master.withdraw()
             with open(ASSET + "/remember_login.txt", "r") as f:
                 uname, pwd = eval(f.readlines()[-1])
-                # TODO: Change to Frame
-                if Arcade.show_message(
-                    self,
-                    "Login to Arcade?",
-                    f"Do you wish to login as '{uname}'?",
-                    type="yesno",
-                ):
-                    if self.http.login(uname, pwd, remember_login=True):
-                        master.deiconify()
-                        self.complete(uname, self.http.TOKEN)
-                    else:
-                        print("File has been corrupted")
+                self.check_login = self.http.login(uname, pwd, remember_login=True)
+                if self.check_login != -1:
+                    master.deiconify()
+                    self.complete(uname, self.http.TOKEN)
+                elif self.check_login == -1:
+                    pass
+                else:
+                    print("File has been corrupted")
 
         master.deiconify()
         tk.Label(
@@ -629,17 +688,21 @@ class Login(tk.Frame):
             pwd = ""
             self.prompt(msg)
         else:
-            self.hashed_pass = self.http.login(
+            self.check_login = self.http.login(
                 uname.strip(), pwd.strip(), remember_me=self.remember_me.get()
             )
-            if self.hashed_pass:
-                msg = "Logging in..."
-                self.prompt(msg)
-                if isinstance(self.hashed_pass, str):
-                    self.store_password(uname.strip(), self.hashed_pass)
+            if self.check_login:
+                if self.check_login != -1:
+                    msg = "Logging in..."
+                    self.prompt(msg)
+                    if isinstance(self.check_login, str):
+                        self.store_password(uname.strip(), self.check_login)
+                    else:
+                        self.delete_stored_login()
+                    self.after(1000, lambda: self.complete(uname, self.http.TOKEN))
                 else:
-                    self.delete_stored_login()
-                self.after(1000, lambda: self.complete(uname, self.http.TOKEN))
+                    msg = "User logged in on another device!"
+                    self.prompt(msg)
             else:
                 msg = "Incorrect Username or Password"
                 self.prompt(msg)
