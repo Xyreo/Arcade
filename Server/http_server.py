@@ -142,6 +142,8 @@ def remember_login():
     if len(storedpw):
         if password == storedpw[0][0].encode("utf-8"):
             session = auth.add(username)
+            if not session:
+                return jsonify(), 406
             return jsonify({"Token": session}), 200
 
     return jsonify("Either username or password is incorrect"), 400

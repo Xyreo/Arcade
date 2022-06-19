@@ -1,4 +1,4 @@
-import requests
+import requests, time
 from urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
@@ -14,14 +14,13 @@ class Http:
         self.address = address
         self.TOKEN = None
 
-    def login_signup(self, method, username, password, remember_me=False):
+    def login_send(self, method, username, password, remember_me=False):
         data = {"username": username, "password": password}
         r = self.send(Http.POST, method, data=data)
         if r.status_code == 200:
-            if method == "login":
-                self.TOKEN = r.json()["Token"]
-                if remember_me:
-                    return r.json()["Password"]
+            self.TOKEN = r.json()["Token"]
+            if remember_me:
+                return r.json()["Password"]
             return 1
         elif r.status_code == 406:
             return -1
@@ -29,18 +28,15 @@ class Http:
 
     def login(self, username, password, remember_me=False, remember_login=False):
         if remember_login:
-            data = {"username": username, "password": password}
-            r = self.send(Http.POST, "remember_login", data=data)
-            if r.status_code == 200:
-                self.TOKEN = r.json()["Token"]
-                return 1
-            elif r.status_code == 406:
-                return -1
-            return 0
-        return self.login_signup("login", username, password, remember_me=remember_me)
+            return self.login_send("remember_login", username, password)
+        return self.login_send("login", username, password, remember_me=remember_me)
 
-    def register(self, username, password):
-        return self.login_signup("register", username, password)
+    def register(self, username, password, img):
+        data = {"username": username, "password": password}
+        r = self.send(Http.POST, "register", data=data)
+        if r.status_code == 200:
+            return False
+        return True
 
     def del_user(self):
         path = "delete_user"
@@ -126,9 +122,10 @@ class Response:
 
 
 if __name__ == "__main__":
-    app = Http("http://localhost:5000")
+    app = Http("http://167.71.231.52:5000")
     print(app.login("test", "test"))
     print(app.leaderboard("chess"))
+    print(app.logout())
     # print(app.addgame("chess", 1, {1: 2}, [1, 32]))
     # print(app.stats("monopoly", 1))
     # print(app.del_user())

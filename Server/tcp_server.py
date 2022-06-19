@@ -212,7 +212,7 @@ class Client(threading.Thread):
             self.close()
             return
         except Exception as e:
-            log(f"Load Error: {e}")
+            log(f"Load Error: {type(e)} : {e} ")
 
     def authenticate(self, message, auth=False):
         if auth:
@@ -289,6 +289,9 @@ class Client(threading.Thread):
         if self.uuid in players:
             del players[self.uuid]
         self.conn.close()
+        u = Driver.auth.get_user(self.name)
+        if u:
+            Driver.auth.end_session(u)
         log(
             f"Connection to {self.addr} closed. {threading.active_count() - 2} players connected"
         )
