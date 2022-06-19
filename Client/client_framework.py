@@ -15,8 +15,7 @@ class Client:
         self.connected = True
         self.uuid = None
         self.updater = updater
-        self.listening_thread = threading.Thread(target=self.listener)
-        self.listening_thread.daemon = True
+        self.listening_thread = threading.Thread(target=self.listener, daemon=True)
         self.listening_thread.start()
 
     def send(self, msg):

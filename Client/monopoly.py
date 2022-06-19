@@ -2619,7 +2619,7 @@ class Monopoly(tk.Toplevel):
 
     def quit_game(self):
         if __name__ == "__main__":
-            root.destroy()
+            root.quit()
         else:
             self.destroy()
         try:

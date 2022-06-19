@@ -497,7 +497,7 @@ class Arcade(tk.Toplevel):
 
     def exit(self):
         HTTP.logout()
-        root.destroy()
+        root.quit()
 
 
 class Login(tk.Frame):
