@@ -937,7 +937,6 @@ class Register(tk.Frame):
             self.notif = None
 
 
-<<<<<<< HEAD
 def pfp_send(path):
     a = Image.open(path).resize((64, 64))
     a.save(ASSET + "/temp.png")
@@ -956,8 +955,6 @@ def pfp_make(img):
 # TODO: Exit protocol, leave room
 # TODO: Number of arguments
 # TODO: !! YEEEEEET Previous login if new login
-=======
->>>>>>> bde6200befc44c82d6f61d9fd729fa84c7b9c4cb
 if __name__ == "__main__":
     root = tk.Tk()
     arc = Arcade()
