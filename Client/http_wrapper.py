@@ -1,9 +1,9 @@
-import requests, time, base64, os
+import base64
+import os
 from io import BytesIO
-from PIL import Image
-from urllib3.exceptions import InsecureRequestWarning
 
-requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+import requests
+from PIL import Image
 
 
 class Http:

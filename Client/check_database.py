@@ -5,11 +5,10 @@ db = msc.connect(
     host="167.71.231.52",
     username="project-work",
     password="mySQLpass",
-    database="arcade"
+    database="arcade",
 )
 cursor = db.cursor()
 cursor.execute("select * from user")
-# cursor.execute('drop table monopoly_board_values')
 
 print(tab.tabulate(cursor))
 cursor.close()

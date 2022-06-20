@@ -2685,7 +2685,7 @@ class Monopoly(tk.Toplevel):
         if self.me == player_id:
             self.poll(self.me, ("CREATE", "endgame", True, name))
 
-    def poll(self, user, poll, received=False):  # UTIL
+    def poll(self, user, poll, received=False):  # ? Move To Util region
         if poll[0] == "UPDATE":
             self.collective[poll[1]][user] = poll[2]
             if len(self.collective[poll[1]]) == len(self.player_details):
@@ -2829,7 +2829,7 @@ class Chance:
             37,
             showmove=False,
             endturn=not bool(self.game.doubles_counter),
-        )  # ? Maybe move animation
+        )  # ? Move backward animation
 
     def nearest_prop(self, stuff):
         turn = self.game.turn
@@ -2883,7 +2883,6 @@ class Chance:
     def __call__(self):
         self.game.after(1500, self.options[0])
         if self.text[0] == "Get out of Jail Free.\nThis card maybe used only once.":
-            # TODO add get out of jail back into deck when used
             self.options.remove(self.options[0])
             self.text.remove(self.text[0])
         else:
@@ -2950,7 +2949,7 @@ class Community:
             (1 - players[uuid]["Position"] % 40) % 40,
             showmove=False,
             endturn=not bool(self.game.doubles_counter),
-        )  # ? Maybe move animation
+        )  # ? Move backward animation
 
     def advance_to(self, place):
         uuid = self.game.turn

@@ -31,7 +31,7 @@ class Chess(tk.Toplevel):
         self.side = side
         self.board: dict[int, Piece] = Board()
         self.board_ids: dict = {}
-        self.imgs: dict = {}  # TKINTER SUCKS
+        self.imgs: dict = {}
         self.possible_moves: list = []
         self.initialize_canvas()
         self.initialize_board()
@@ -308,8 +308,6 @@ class Chess(tk.Toplevel):
         else:
             self.state = "PieceSelected"
 
-        # Doing stuff
-
         if self.state == "Nothing":
             if self.selected != None:
                 self.unselect()
@@ -502,7 +500,6 @@ class Chess(tk.Toplevel):
             self.COLOREDSQUARES["check"] = i
 
         if self.check_for_mate(Chess.swap[color]):
-            # TODO GUI part
             if check:
                 print("Checkmate")
                 tk.Label(self, text="Checkmate", font=40).place(
@@ -628,19 +625,19 @@ class Chess(tk.Toplevel):
         j = ord(s[0]) - ord("a")
         return j * 10 + i
 
+    # TODO Draw Game GUI
     def draw_req(self):
         self.poll["DRAW"] = "WAIT"
         self.send(("DRAW", "REQ"))
-        # TODO GUI UPDATE
 
     def draw_ack(self, ack):
         if ack:
-            pass  # TODO end game
+            pass
         else:
-            pass  # TODO restore status quo
+            pass
 
     def draw_reply(self):
-        pass  # TODO yes
+        pass
 
 
 class Piece:
@@ -707,7 +704,6 @@ class Piece:
 
     def gen_moves(self, inCheck=False):
         moves = []
-        # print("Board\n", self.board)
         k = self.pos
         board = self.board
         piece = board[k].piece
@@ -909,9 +905,7 @@ class ChessPiece(Piece):
 
     def createImage(self, canvas: tk.Canvas, key):
         x1, y1, x2, y2 = self.game.grid_to_coords(key)
-        self.i = self.img(
-            self.color, self.piece
-        )  # Tkinter (Garbage Collection) is weird
+        self.i = self.img(self.color, self.piece)
         self.img_id = canvas.create_image(
             (x1 + x2) // 2,
             (y1 + y2) // 2,
