@@ -1,6 +1,7 @@
 import base64
 import os
 from io import BytesIO
+import time
 
 import requests
 from PIL import Image
@@ -33,12 +34,12 @@ class Http:
             return self.login_send("remember_login", username, password)
         return self.login_send("login", username, password, remember_me=remember_me)
 
-    def register(self, username, password, img):
-        data = {"username": username, "password": password}
+    def register(self, username, password, image):
+        data = {"username": username, "password": password, "image": image}
         r = self.send(Http.POST, "register", data=data)
         if r.status_code == 200:
-            return False
-        return True
+            return True
+        return False
 
     def change_password(self, password):
         r = self.auth_send("post", "change_password", {"newpass": password})
@@ -160,12 +161,16 @@ def pfp_make(img):
 
 
 if __name__ == "__main__":
-    app = Http("http://localhost:5000")
-    print(app.login("test", "test1"))
-    print(app.change_password("test"))
+    app = Http("http://167.71.231.52:5000")
+    print(app.register("test1", "test1", pfp_send(ASSET + "/default_pfp.png")))
+    print(app.login("test1", "test1"))
+    # print(app.del_user())
+    print(app.logout())
+    # print(app.login("test", "test1"))
+    # print(app.change_password("test"))
     # print(app.change_pfp(pfp_send(ASSET + "/Spider_Man_Logo.png")))
     # pfp_make(app.fetch_pfp("user2")).save("die.png")
-    print(app.logout())
+    # print(app.logout())
     # print(app.addgame("chess", 1, {1: 2}, [1, 32]))
     # print(app.stats("monopoly", 1))
     # print(app.del_user())

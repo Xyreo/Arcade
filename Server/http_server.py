@@ -26,6 +26,7 @@ class Database:
             username="project-work",
             password=password,
             database="arcade",
+            autocommit=True,
         )
 
     def execute(self, query, multi=False):
@@ -49,6 +50,7 @@ class Database:
                     username="project-work",
                     password=password,
                     database="arcade",
+                    autocommit=True,
                 )
             except Exception as e:
                 print(f'{time.time()}: {e} Avoided, Query was "{query}"')
@@ -123,6 +125,7 @@ def login():
     password = data["password"].encode("utf-8")
 
     storedpw = db.execute(f"SELECT password FROM user where name='{username}'")
+    print(storedpw)
     if len(storedpw):
         if bcrypt.checkpw(password, storedpw[0][0].encode("utf-8")):
             session = auth.add(username)
