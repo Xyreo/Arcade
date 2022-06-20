@@ -5,7 +5,7 @@
 (C) Info, Rules +Arcade
 (Y) Music, Sounds +Arcade #Extra
 (A) Timer @chess
-(A) Winner Frame @chess
+(A) Winner Frame, CheckMate GUI @chess
 (A) Draw, Resign Game @chess
 (A) Exit @chess
 (B) Change Letters Position @chess
@@ -17,7 +17,7 @@
 (B) EndGame Button @monopoly
 (C) Auto Roll/ Auto End @monopoly
 (C) Player Leaves Randomly (Polls, In Debt) @monopoly
-(C) Move Backward @monopoly
+(C) Move Backward Animation @monopoly
 (D) All Rules and Texts @monopoly
 (E) GUI Relative Placing and Sizing @monopoly
 (Z) Auction @monopoly #Extra

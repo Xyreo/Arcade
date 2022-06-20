@@ -27,8 +27,6 @@ from client_framework import Client
 from http_wrapper import Http
 from monopoly import Monopoly
 
-# TODO: Confirmation Popups, Notifier
-
 HTTP = Http("http://167.71.231.52:5000")
 CLIENT_ADDRESS = "167.71.231.52"
 
@@ -88,7 +86,6 @@ class Arcade(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.exit)
 
     def initialize(self, name, token):
-        # self.login.destroy()
         self.geometry(
             f"{self.screen_width}x{self.screen_height}+{self.x_coord}+{self.y_coord}"
         )
@@ -293,7 +290,7 @@ class Arcade(tk.Toplevel):
     def start_arcade(self):
         root.withdraw()
 
-        # TODO: Add Logo, Terms of Use, Credits, date, time, (Greeting)
+        # TODO: Add Logo, Acknowledgement?, date, time, Greeting
         if os.path.exists(ASSET + "/remember_login.txt"):
             self.login = Login(self, HTTP, self.initialize, remember_login=True)
         else:
@@ -451,7 +448,6 @@ class Arcade(tk.Toplevel):
         frame = self.room_frames[game]
         frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        # Back Button
         tk.Button(
             frame,
             text="← BACK",
@@ -466,7 +462,6 @@ class Arcade(tk.Toplevel):
             lambda a: self.leave_room(game, room["id"], delete=hostname == "You"),
         )
 
-        # Room ID
         tk.Label(
             frame,
             text=f"Room ID: {room['id']}",
@@ -475,7 +470,6 @@ class Arcade(tk.Toplevel):
             border=0,
         ).place(relx=0.5, rely=0.05, anchor="center")
 
-        # Host
         tk.Label(
             frame,
             text=f"Host: {hostname}",
@@ -499,7 +493,7 @@ class Arcade(tk.Toplevel):
             border=0,
         ).place(relx=0.5, rely=0.5, anchor="center")
 
-        # print settings here
+        # TODO: Show settings here
         if hostname == "You":
             self.room_start_button = tk.Button(
                 frame,
@@ -941,9 +935,6 @@ class Register(tk.Frame):
             self.notif = None
 
 
-# TODO: Exit protocol, leave room
-# TODO: Number of arguments
-# TODO: !! YEEEEEET Previous login if new login
 if __name__ == "__main__":
     root = tk.Tk()
     arc = Arcade()
