@@ -1,3 +1,5 @@
+import base64
+from io import BytesIO
 import json
 import os
 import threading
@@ -939,6 +941,21 @@ class Register(tk.Frame):
         if self.notif and self.notif[1] == self.notifc:
             self.notif[0].destroy()
             self.notif = None
+
+
+def pfp_send(path):
+    a = Image.open(path).resize((64, 64))
+    a.save(ASSET + "/temp.png")
+    with open(ASSET + "/temp.png", "rb") as f:
+        a = base64.b64encode(f.read()).decode("latin1")
+    os.remove(ASSET + "/temp.png")
+    return a
+
+
+def pfp_make(img):
+    b = base64.b64decode(img.encode("latin1"))
+    c = Image.open(BytesIO(b))
+    return c
 
 
 # TODO: Exit protocol, leave room

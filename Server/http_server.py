@@ -102,6 +102,7 @@ def register():
     data = json.loads(request.data)
     username = data["username"]
     password = data["password"].encode("utf-8")
+    img = data["image"]
     count = db.execute(f"SELECT * FROM user WHERE name = '{username}'")
     if len(count):
         return jsonify("User Already Exists"), 400
@@ -109,7 +110,7 @@ def register():
     password = str(password)[2:-1]
     doj = str(date.today())
     db.data_change(
-        f'INSERT INTO user(name,doj,password) VALUES("{username}","{doj}","{password}")'
+        f'INSERT INTO user(name,doj,password,pfp) VALUES("{username}","{doj}","{password}","{img}")'
     )
 
     return jsonify("Success"), 200
@@ -185,6 +186,33 @@ def delete_user():
 def logout():
     session_id = request.headers.get("Authorization").split()[1]
     auth.end_session(session_id)
+    return jsonify("Success"), 200
+
+
+@req_authorisation.route("/change_password", methods=["POST"])
+def change_password():
+    data = json.loads(request.data)
+    username = auth.get_user(request.headers.get("Authorization").split()[1])
+    new_password = data["newpass"].encode("utf-8")
+    p = str(bcrypt.hashpw(new_password, bcrypt.gensalt(12)))[2:-1]
+    db.data_change(f"UPDATE user SET password='{p}' WHERE name='{username}'")
+    return jsonify("Success"), 200
+
+
+@req_authorisation.route("/fetch_pfp/<string:name>")
+def fetch_pfp(name):
+    pfp = db.execute(f"SELECT pfp FROM user WHERE name='{name}'")
+    if len(pfp) != 1:
+        return jsonify("User Not Found"), 404
+    return jsonify({"image": pfp[0]}), 200
+
+
+@req_authorisation.route("/change_pfp", methods=["POST"])
+def change_pfp():
+    data = json.loads(request.data)
+    username = auth.get_user(request.headers.get("Authorization").split()[1])
+    img = data["image"]
+    db.data_change(f"UPDATE user SET pfp='{img}' WHERE name='{username}'")
     return jsonify("Success"), 200
 
 

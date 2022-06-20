@@ -57,3 +57,4 @@ venv/
 .env
 remember_login.txt
 test.py
+.DS_Store

@@ -1,4 +1,6 @@
-import requests, time
+import requests, time, base64, os
+from io import BytesIO
+from PIL import Image
 from urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
@@ -38,6 +40,11 @@ class Http:
             return False
         return True
 
+    def change_password(self, password):
+        r = self.auth_send("post", "change_password", {"newpass": password})
+        if r.status_code == 200:
+            return True
+
     def del_user(self):
         path = "delete_user"
         r = self.auth_send(Http.DELETE, path)
@@ -63,6 +70,18 @@ class Http:
             return False
         else:
             return r.json()
+
+    def change_pfp(self, img):
+        r = self.auth_send("post", "change_pfp", {"image": img})
+        if r.status_code == 200:
+            return True
+
+    def fetch_pfp(self, name):
+        r = self.auth_send("get", f"fetch_pfp/{name}")
+        if r.status_code == 200:
+            return r.json()["image"][0]
+        elif r.status_code == 404:
+            return False
 
     def addgame(self, game, winner, result, players):
         res = {str(i): str(result[i]) for i in result}
@@ -121,10 +140,31 @@ class Response:
         return self.body
 
 
+ASSET = "Assets/Home_Assets"
+ASSET = ASSET if os.path.exists(ASSET) else "Client/" + ASSET
+
+
+def pfp_send(path):
+    a = Image.open(path).resize((64, 64))
+    a.save(ASSET + "/temp.png")
+    with open(ASSET + "/temp.png", "rb") as f:
+        a = base64.b64encode(f.read()).decode("latin1")
+    os.remove(ASSET + "/temp.png")
+    return a
+
+
+def pfp_make(img):
+    b = base64.b64decode(img.encode("latin1"))
+    c = Image.open(BytesIO(b))
+    return c
+
+
 if __name__ == "__main__":
-    app = Http("http://167.71.231.52:5000")
-    print(app.login("test", "test"))
-    print(app.leaderboard("chess"))
+    app = Http("http://localhost:5000")
+    print(app.login("test", "test1"))
+    print(app.change_password("test"))
+    # print(app.change_pfp(pfp_send(ASSET + "/Spider_Man_Logo.png")))
+    # pfp_make(app.fetch_pfp("user2")).save("die.png")
     print(app.logout())
     # print(app.addgame("chess", 1, {1: 2}, [1, 32]))
     # print(app.stats("monopoly", 1))

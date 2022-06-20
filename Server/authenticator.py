@@ -27,9 +27,9 @@ class Auth:
             self.r.delete(session_id)
 
     def get_user(self, session_id):
-        user = self.r.get(session_id).decode("utf-8")
+        user = self.r.get(session_id)
         if user:
-            return user
+            return user.decode("utf-8")
         else:
             return None
 
