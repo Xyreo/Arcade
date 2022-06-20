@@ -2915,7 +2915,7 @@ class Community:
             self.get_out_of_jail_free,
             self.go_back,
             self.street_repairs,
-            self.pick_chance,
+            lambda: self.bank_transaction(100),
         ]
         text = [
             "Advance to GO.",
@@ -2937,7 +2937,7 @@ class Community:
             "Get out of Jail Free.\nThis card maybe used only once.",
             "Go back to Old Kent Road.",
             "You are assessed for street repairs:\nFor each house pay 40, For each hotel pay 115.",
-            "Pay a fine of 10 or take a Chance.",
+            "Pay your insurance premium worth 100.",
         ]
         self.options = [options[i] for i in order]
         self.text = [text[i] for i in order]
@@ -2981,9 +2981,6 @@ class Community:
                 house += i.houses
         self.game.pay(self.game.turn, house * 40 + hotel * 115)
 
-    def pick_chance(self):
-        pass
-
     def add_back(self):
         if self.get_out_of_jail_free not in self.options:
             self.options.append(self.get_out_of_jail_free)
@@ -2999,11 +2996,6 @@ class Community:
             self.text.append(self.text.pop(0))
         return self.text[-1]
 
-
-# ? Pick Chance or Pay 10
-# TODO: Chaitanya: Winner Frame, Trading, Notifier, Automatic End Turns, Resizing
-# TODO: All Rules & Texts, Update GUI (place relatively)
-# ? (Voice) Chat, Select Colour
 
 if __name__ == "__main__":
     root = tk.Tk()

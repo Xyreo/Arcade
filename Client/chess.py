@@ -43,9 +43,10 @@ class Chess(tk.Toplevel):
         self.COLOREDSQUARES: dict = {"check": None, "move": []}
         self.last_move: list = [-1, -1]
         self.pawn_promotion = None
-        self.update_move = update
+        self.send = update
         self.turn = "WHITE"
         self.debug = debug
+        self.poll = {}
 
         self.lock = threading.Lock()
         self.lock.acquire(blocking=False)
@@ -473,7 +474,7 @@ class Chess(tk.Toplevel):
         # endregion
         sent = (start, end, self.pawn_promotion)
         if not multi or self.debug:
-            self.update_move(("MOVE", sent))
+            self.send(("MOVE", sent))
             self.display_moves(False)
         else:
             self.possible_moves = []
@@ -564,6 +565,11 @@ class Chess(tk.Toplevel):
             pass
         elif msg[0] == "MOVE":
             self.opp_move(msg[1])
+        elif msg[0] == "DRAW":
+            if msg[1] == "REQ":
+                self.draw_reply()
+            elif msg[1] == "ACC":
+                self.draw_ack(msg[2])
         else:
             pass
 
@@ -621,6 +627,20 @@ class Chess(tk.Toplevel):
         i = 8 - int(s[1])
         j = ord(s[0]) - ord("a")
         return j * 10 + i
+
+    def draw_req(self):
+        self.poll["DRAW"] = "WAIT"
+        self.send(("DRAW", "REQ"))
+        # TODO GUI UPDATE
+
+    def draw_ack(self, ack):
+        if ack:
+            pass  # TODO end game
+        else:
+            pass  # TODO restore status quo
+
+    def draw_reply(self):
+        pass  # TODO yes
 
 
 class Piece:
