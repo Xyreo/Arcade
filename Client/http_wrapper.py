@@ -1,7 +1,4 @@
-import requests, time
-from urllib3.exceptions import InsecureRequestWarning
-
-requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+import requests
 
 
 class Http:
