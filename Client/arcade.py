@@ -100,38 +100,6 @@ class Arcade(tk.Toplevel):
         self.cobj = Client((CLIENT_ADDRESS, 6969), self.event_handler, token)
         self.cobj.send((self.name,))
 
-        style = ttk.Style()
-        if "dummy" not in style.theme_names():
-            style.theme_create(
-                "dummy",
-                parent="xpnative" if os.name == "nt" else "aqua",
-                settings={
-                    "TNotebook": {
-                        "configure": {
-                            "tabmargins": [int(self.screen_width / 2.25), 15, 0, 0],
-                            "background": "blue",
-                        }
-                    },
-                    "TNotebook.Tab": {
-                        "configure": {"padding": [5, 5], "font": "times 15"},
-                        "map": {
-                            "background": [
-                                ("active", "blue"),
-                                ("!active", "black"),
-                                ("selected", "red"),
-                            ],
-                            "foreground": [
-                                ("active", "blue"),
-                                ("!active", "black"),
-                                ("selected", "red"),
-                            ],
-                            "expand": [("selected", [5, 5, 5, 5])],
-                        },
-                    },
-                },
-            )
-        print(style.theme_names())
-        style.theme_use("dummy")
         self.main_notebook = ttk.Notebook(
             self, height=self.screen_height, width=self.screen_width
         )
@@ -905,7 +873,11 @@ class Register(tk.Frame):
             msg = "Password does not match"
             self.prompt(msg)
         else:
-            if self.http.register(uname.strip(), pwd.strip()):
+            if self.http.register(
+                uname.strip(),
+                pwd.strip(),
+                "C:/Users/Chaitanya Keyal/OneDrive/Programming/Gr12-CompProject/Client/Assets/Home_Assets/default.png",
+            ):
                 msg = "Registering..."
                 self.prompt(msg)
                 self.after(1000, self.complete)
@@ -952,9 +924,6 @@ def pfp_make(img):
     return c
 
 
-# TODO: Exit protocol, leave room
-# TODO: Number of arguments
-# TODO: !! YEEEEEET Previous login if new login
 if __name__ == "__main__":
     root = tk.Tk()
     arc = Arcade()

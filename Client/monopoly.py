@@ -111,7 +111,7 @@ class Monopoly(tk.Toplevel):
         for i in self.player_details:
             self.player_details[i].update(
                 {
-                    "Money": 100,
+                    "Money": 1500,
                     "Injail": [False, 0],
                     "Position": 0,
                     "Properties": [],
@@ -2563,14 +2563,226 @@ class Monopoly(tk.Toplevel):
             self.update_game("Default")
 
     def trade(self):
-        pass
+        self.trade_frame = tk.Frame(
+            self.action_frame,
+            width=(self.board_side - 2) // 1,
+            height=(self.board_side - 2) // 2.45,
+        )
+        self.trade_frame.place(relx=0, rely=0, anchor="nw")
+
+        tk.Button(
+            self.trade_frame,
+            text="← BACK",
+            font=("times", (self.board_side - 2) // 60),
+            highlightthickness=0,
+            border=0,
+            command=self.trade_frame.destroy,
+        ).place(relx=0.1, rely=0.05, anchor="ne")
+
+        self.bind("<Escape>", lambda a: self.trade_frame.destroy())
+
+        tk.Label(
+            self.trade_frame,
+            text="Select the User: ",
+            font=("times", (self.board_side - 2) // 50),
+        ).place(relx=0.1, rely=0.2, anchor="nw")
+        self.select_user = ttk.Combobox(
+            self.trade_frame,
+            value=[self.player_details[i]["Name"] for i in self.uuids],
+            width=15,
+        )
+        self.select_user.place(relx=0.5, rely=0.2, anchor="nw")
+
+        self.final_trade_button = tk.Button(
+            self.trade_frame,
+            text="OFFER",
+            font=("times", (self.board_side - 2) // 60),
+            command=lambda: self.send_trade(),
+        )
+        self.final_trade_button.place(relx=0.75, rely=0.9, anchor="nw")
+
+        self.clear_trade_button = tk.Button(
+            self.trade_frame,
+            text="CLEAR",
+            font=("times", (self.board_side - 2) // 60),
+            command=lambda: clear_all(True),
+        )
+        self.clear_trade_button.place(relx=0.9, rely=0.9, anchor="nw")
+
+        def clear_all(all):
+            try:
+                for i, j in self.select_prop.items():
+                    j.set("")
+                for i, j in self.select_cash.items():
+                    j.set("")
+            except:
+                pass
+            try:
+                self.final_trade_txt_label.destroy()
+            except:
+                pass
+            if all:
+                self.select_user.set("")
+
+        def selected(event):
+            clear_all(False)
+            offeree = None
+            for i, j in self.player_details.items():
+                if j["Name"] == self.select_user.get():
+                    offeree = i
+            offeree_properties = self.player_details[offeree]["Properties"]
+
+            self.select_prop_label = {}
+            self.select_prop = {}
+            self.select_cash_label = {}
+            self.select_cash = {}
+
+            self.select_prop_label[offeree] = tk.Label(
+                self.trade_frame,
+                text="Select the Property You want to Receive: ",
+                font=("times", (self.board_side - 2) // 50),
+            )
+            self.select_prop_label[offeree].place(relx=0.1, rely=0.35, anchor="nw")
+            self.select_prop[offeree] = ttk.Combobox(
+                self.trade_frame, value=offeree_properties, width=15
+            )
+            self.select_prop[offeree].place(relx=0.5, rely=0.35, anchor="nw")
+
+            self.select_prop_label[self.me] = tk.Label(
+                self.trade_frame,
+                text="Select the Property You want to Give: ",
+                font=("times", (self.board_side - 2) // 50),
+            )
+            self.select_prop_label[self.me].place(relx=0.1, rely=0.35, anchor="nw")
+            self.select_prop[self.me] = ttk.Combobox(
+                self.trade_frame,
+                value=self.player_details[self.me]["Properties"],
+                width=15,
+            )
+            self.select_prop[self.me].place(relx=0.5, rely=0.55, anchor="nw")
+
+            def only_numeric_input(e):
+                if e.isdigit():
+                    return True
+                elif e == "":
+                    return True
+                else:
+                    return False
+
+            c = self.register(only_numeric_input)
+
+            self.select_cash_label[self.me] = tk.Label(
+                self.trade_frame,
+                text="Select the Property You want to Give: ",
+                font=("times", (self.board_side - 2) // 50),
+            )
+            self.select_cash_label[self.me].place(relx=0.1, rely=0.75, anchor="nw")
+            self.select_cash[self.me] = ttk.Entry(
+                self.trade_frame,
+                value=self.houses_list,
+                width=15,
+                validate="key",
+                validatecommand=(c, "%P"),
+            )
+            self.select_cash[self.me].place(relx=0.5, rely=0.75, anchor="nw")
+
+            self.select_cash_label[self.me] = tk.Label(
+                self.trade_frame,
+                text="Select the Property You want to Give: ",
+                font=("times", (self.board_side - 2) // 50),
+            )
+            self.select_cash_label[self.me].place(relx=0.1, rely=0.95, anchor="nw")
+            self.select_cash[self.me] = ttk.Entry(
+                self.trade_frame,
+                value=self.houses_list,
+                width=15,
+                validate="key",
+                validatecommand=(c, "%P"),
+            )
+            self.select_cash[self.me].place(relx=0.5, rely=0.95, anchor="nw")
+
+            for i, j in self.select_cash.items():
+                j.bind(
+                    "<KeyRelease>",
+                    lambda event: final_trade(offeree),
+                )
+            for i, j in self.select_prop.items():
+                j.bind(
+                    "<<ComboboxSelected>>",
+                    lambda event: final_trade(offeree),
+                )
+
+        def final_trade(offeree):
+            p = self.select_prop[offeree].get()
+            q = self.select_cash[offeree].get()
+            r = self.select_prop[self.me].get()
+            s = self.select_cash[self.me].get()
+            finaltxt1 = f"You will receive: " + (p if p else "")
+            finaltxt1 += (
+                ((" &" if finaltxt[-1] else "") + (q if q else "")) if q else ""
+            )
+            if not finaltxt1[-1]:
+                finaltxt1 += "Nothing"
+            finaltxt2 = f"You will send: " + (r if r else "")
+            finaltxt2 += (
+                ((" &" if finaltxt[-1] else "") + (s if s else "")) if q else ""
+            )
+            if not finaltxt2[-1]:
+                finaltxt2 += "Nothing"
+
+            finaltxt = finaltxt1 + "\n" + finaltxt2
+
+            try:
+                self.final_trade_txt_label.destroy()
+            except:
+                pass
+            self.final_trade_txt_label = tk.Label(
+                self.trade_frame,
+                text=finaltxt,
+                font=("times", (self.board_side - 2) // 50),
+            )
+            self.final_trade_txt_label.place(relx=0.5, rely=1, anchor="center")
+
+        self.select_user.bind("<<ComboboxSelected>>", selected)
+        self.select_user.bind("<KeyRelease>", lambda event: search(event, "user"))
+
+        def search(event, combobox, player=None):
+            value = event.widget.get()
+            if combobox == "user":
+                if value:
+                    data = []
+                    for i in [self.owner_detail(i) for i in self.uuids]:
+                        if value.lower() in i.lower():
+                            data.append(i)
+
+                    self.select_user.configure(values=data)
+                else:
+                    self.select_user.configure(
+                        values=[self.owner_detail(i) for i in self.uuids]
+                    )
+            elif combobox == "property":
+                if value:
+                    data = []
+                    for i in [
+                        j.name for j in self.player_details[player]["Properties"]
+                    ]:
+                        if value.lower() in i.lower():
+                            data.append(i)
+
+                    self.select_prop[player].configure(values=data)
+                else:
+                    self.select_prop[player].configure(
+                        values=[
+                            j.name for j in self.player_details[player]["Properties"]
+                        ]
+                    )
 
     def pass_go(self, player):
         self.player_details[player]["Money"] += 200
         self.update_game("You received 200 as salary!")
 
     def pay(self, payer, amt, receiver=None):
-        rollstate = self.roll_button.configure("state")
+        rollstate = str(self.roll_button["state"])
         if self.player_details[payer]["Money"] < amt:
             if self.isBankrupt(amt, payer):
                 self.bankrupt_popup(payer, receiver)
