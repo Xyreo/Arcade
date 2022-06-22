@@ -129,6 +129,7 @@ class Arcade(tk.Toplevel):
         self.log_out_button.place(relx=0.99, rely=0.01, anchor="ne")
 
     def log_out(self):
+        self.send(("GAME", "LEAVE"))
         HTTP.logout()
         self.main_notebook.destroy()
         self.log_out_button.destroy()

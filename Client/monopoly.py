@@ -562,13 +562,10 @@ class Monopoly(tk.Toplevel):
         for i in d:
             if d[i].winfo_exists():
                 d[i].configure(state=state)
-                if i == "trade":
-                    if not self.player_details[self.turn]["Properties"]:
-                        d[i].configure(state="disabled")
                 if i == "end":
                     if str(self.roll_button["state"]) == "normal":
                         d[i].configure(state="disabled")
-                if i == "mortgage":
+                elif i == "mortgage":
                     if not self.player_details[self.turn]["Properties"]:
                         d[i].configure(state="disabled")
                     else:
@@ -579,11 +576,11 @@ class Monopoly(tk.Toplevel):
                         ]
                         if not l:
                             d[i].configure(state="disabled")
-                if i == "build":
+                elif i == "build":
                     my_sets = self.find_my_sets()
                     if not my_sets:
                         d[i].configure(state="disabled")
-                if i == "buy":
+                elif i == "buy":
                     if (
                         not bool(
                             self.properties[
@@ -603,13 +600,13 @@ class Monopoly(tk.Toplevel):
                         )
                     ):
                         d[i].configure(state="disabled")
-                if i == "sell":
+                elif i == "sell":
                     if not any(
                         i.houses > 0
                         for i in self.player_details[self.turn]["Properties"]
                     ):
                         self.sell_button.configure(state="disabled")
-                if i == "unmortgage":
+                elif i == "unmortgage":
                     if not any(
                         i.isMortgaged
                         for i in self.player_details[self.turn]["Properties"]
@@ -2569,11 +2566,11 @@ class Monopoly(tk.Toplevel):
 
     # region # Trade
 
-    def exec_trade(self, offerer, offeree, propertyrecv, propertygive, cash):
-        for i, j in self.properties.items():
+    def exec_trade(self, offeror, offeree, propertyrecv, propertygive, cash):
+        for j in self.properties.values():
             if j.name == propertyrecv:
-                j.owner = offerer
-                l = self.player_details[offerer]["Properties"]
+                j.owner = offeror
+                l = self.player_details[offeror]["Properties"]
                 l.append(j)
                 l.sort(key=lambda y: y.position)
                 for x in range(len(l)):
@@ -2594,17 +2591,23 @@ class Monopoly(tk.Toplevel):
                 for x in range(len(l)):
                     if l[x].colour == "Utility":
                         l.append(l.pop(x))
-                self.player_details[offerer]["Properties"].remove(j)
-        self.pay(offerer, cash, offeree)
+                self.player_details[offeror]["Properties"].remove(j)
+        self.pay(offeree, cash, offeror)
         self.update_game()
 
-    def recv_trade(self, offerer, propertyrecv, propertygive, cash):
+    def recv_trade(self, offeror, propertyrecv, propertygive, cash):
         self.recv_trade_frame = tk.Frame(
             self.action_frame,
             width=(self.board_side - 2) // 1,
             height=(self.board_side - 2) // 2.45,
         )
         self.recv_trade_frame.place(relx=0, rely=0, anchor="nw")
+
+        tk.Label(
+            self.recv_trade_frame,
+            text=f"{self.player_details[offeror]['Name']} has offered a Trade:",
+            font=("times", (self.board_side - 2) // 50),
+        ).place(relx=0.5, rely=0.25, anchor="center")
 
         p = propertygive
         r = propertyrecv
@@ -2614,13 +2617,13 @@ class Monopoly(tk.Toplevel):
             if cash < 0
             else ""
         )
-        if not (p or cash > 0):
+        if not (p or cash < 0):
             finaltxt1 += "Nothing"
         finaltxt2 = f"You will give: " + (r if r else "")
         finaltxt2 += (
             ((" & " if r else "") + str((cash if cash > 0 else ""))) if cash > 0 else ""
         )
-        if not (r or cash < 0):
+        if not (r or cash > 0):
             finaltxt2 += "Nothing"
 
         finaltxt = finaltxt1 + "\n" + finaltxt2
@@ -2640,7 +2643,7 @@ class Monopoly(tk.Toplevel):
             text="YES",
             style="my2.TButton",
             command=lambda: reply(
-                ("TRADE", "ANSWER", True, offerer, propertyrecv, propertygive, cash)
+                ("TRADE", "ANSWER", True, offeror, propertyrecv, propertygive, cash)
             ),
         ).place(relx=0.4, rely=0.75, anchor="center")
 
@@ -2648,11 +2651,18 @@ class Monopoly(tk.Toplevel):
             self.recv_trade_frame,
             text="NO",
             style="my2.TButton",
-            command=lambda: reply(("TRADE", "ANSWER", False, offerer)),
+            command=lambda: reply(
+                ("TRADE", "ANSWER", False, offeror, propertyrecv, propertygive, cash)
+            ),
         ).place(relx=0.6, rely=0.75, anchor="center")
 
         def reply(msg):
             self.send_msg(msg)
+            self.exec_trade(
+                msg[3],
+                self.me,
+                *msg[4:],
+            )
             self.update_game()
 
     def trade(self):
@@ -2713,7 +2723,9 @@ class Monopoly(tk.Toplevel):
                 if j["Name"] == self.select_user.get():
                     offeree = i
             offeree_properties = [
-                k.name for k in self.player_details[offeree]["Properties"]
+                k.name
+                for k in self.player_details[offeree]["Properties"]
+                if k.houses == -1
             ]
 
             self.select_prop = {}
@@ -2732,13 +2744,13 @@ class Monopoly(tk.Toplevel):
                 self.trade_options_frame,
                 text="Property: ",
                 font=("times", (self.board_side - 2) // 50),
-            ).grid(row=1, column=0, sticky="e", padx=10, pady=10)
+            ).grid(row=1, column=0, sticky="e", padx=8, pady=8)
 
             tk.Label(
                 self.trade_options_frame,
                 text="Cash Amount: ",
                 font=("times", (self.board_side - 2) // 50),
-            ).grid(row=2, column=0, sticky="e", padx=10, pady=10)
+            ).grid(row=2, column=0, sticky="e", padx=8, pady=8)
 
             def clear_prop(offeree):
                 for i in self.select_prop.values():
@@ -2755,41 +2767,45 @@ class Monopoly(tk.Toplevel):
                 text="CLEAR",
                 font=("times", (self.board_side - 2) // 60),
                 command=lambda: clear_prop(offeree),
-            ).grid(row=1, column=3, sticky="nsew", padx=2, pady=10)
+            ).grid(row=1, column=3, sticky="nsew", padx=2, pady=8)
 
             tk.Button(
                 self.trade_options_frame,
                 text="CLEAR",
                 font=("times", (self.board_side - 2) // 60),
                 command=lambda: clear_cash(offeree),
-            ).grid(row=2, column=3, sticky="nsew", padx=2, pady=10)
+            ).grid(row=2, column=3, sticky="nsew", padx=2, pady=8)
 
             tk.Label(
                 self.trade_options_frame,
                 text="RECEIVE",
                 font=("times", (self.board_side - 2) // 50, "underline"),
-            ).grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+            ).grid(row=0, column=1, sticky="nsew", padx=8, pady=8)
 
             tk.Label(
                 self.trade_options_frame,
                 text="GIVE",
                 font=("times", (self.board_side - 2) // 50, "underline"),
-            ).grid(row=0, column=2, sticky="nsew", padx=10, pady=10)
+            ).grid(row=0, column=2, sticky="nsew", padx=8, pady=8)
 
             self.select_prop[offeree] = ttk.Combobox(
                 self.trade_options_frame, value=offeree_properties, width=15
             )
             self.select_prop[offeree].grid(
-                row=1, column=1, sticky="nsew", padx=10, pady=10
+                row=1, column=1, sticky="nsew", padx=8, pady=8
             )
 
             self.select_prop[self.me] = ttk.Combobox(
                 self.trade_options_frame,
-                value=[i.name for i in self.player_details[self.me]["Properties"]],
+                value=[
+                    i.name
+                    for i in self.player_details[self.me]["Properties"]
+                    if i.houses == -1
+                ],
                 width=15,
             )
             self.select_prop[self.me].grid(
-                row=1, column=2, sticky="nsew", padx=10, pady=10
+                row=1, column=2, sticky="nsew", padx=8, pady=8
             )
 
             def only_numeric_input(e, player):
@@ -2814,7 +2830,7 @@ class Monopoly(tk.Toplevel):
                 ),
             )
             self.select_cash[offeree].grid(
-                row=2, column=1, sticky="nsew", padx=10, pady=10
+                row=2, column=1, sticky="nsew", padx=8, pady=8
             )
 
             self.select_cash[self.me] = ttk.Entry(
@@ -2827,7 +2843,7 @@ class Monopoly(tk.Toplevel):
                 ),
             )
             self.select_cash[self.me].grid(
-                row=2, column=2, sticky="nsew", padx=10, pady=10
+                row=2, column=2, sticky="nsew", padx=8, pady=8
             )
 
             for i in self.select_cash.values():
@@ -2947,7 +2963,9 @@ class Monopoly(tk.Toplevel):
                 if value:
                     data = []
                     for i in [
-                        j.name for j in self.player_details[player]["Properties"]
+                        j.name
+                        for j in self.player_details[player]["Properties"]
+                        if j.houses == -1
                     ]:
                         if value.lower() in i.lower():
                             data.append(i)
@@ -2956,7 +2974,9 @@ class Monopoly(tk.Toplevel):
                 else:
                     self.select_prop[player].configure(
                         values=[
-                            j.name for j in self.player_details[player]["Properties"]
+                            j.name
+                            for j in self.player_details[player]["Properties"]
+                            if j.houses == -1
                         ]
                     )
 
@@ -2970,7 +2990,7 @@ class Monopoly(tk.Toplevel):
         rollstate = str(self.roll_button["state"])
         if self.player_details[payer]["Money"] < amt:
             if self.isBankrupt(amt, payer):
-                self.bankrupt_popup(payer, receiver)
+                self.player_leave(payer, receiver)
             else:
                 self.isInDebt = True
                 self.roll_button.configure(state="disabled")
@@ -3037,10 +3057,22 @@ class Monopoly(tk.Toplevel):
                 type="okcancel",
             ):
                 self.leave_room_msg()
+                if len(self.player_details) == 2:
+                    self.end_game(
+                        winner=[i for i in self.player_details if i != player_id][0]
+                    )
+                    return
             else:
+                return
+        else:
+            if len(self.player_details) == 2:
+                self.end_game(
+                    winner=[i for i in self.player_details if i != player_id][0]
+                )
                 return
         if self.me == player_id:
             if not quitting:
+                self.poll(self.me, ("CREATE", "endgame", True, name))
                 if self.show_message(
                     "You are bankrupt!",
                     "Unfortunately, you have lost this game, Do you want to watch the other players play?",
@@ -3048,20 +3080,21 @@ class Monopoly(tk.Toplevel):
                 ):
                     watch = True
             else:
-                self.poll(self.me, ("CREATE", "endgame", True, name))
                 self.leave_room_msg()
+
         for i in self.player_details[player_id]["Properties"]:
             i.owner = debtee
-            l = self.player_details[debtee]["Properties"]
-            l.append(i)
-            l.sort(key=lambda i: i.position)
-            for i in range(len(l)):
-                if l[i].colour == "Station":
-                    l.append(l.pop(i))
-            for i in range(len(l)):
-                if l[i].colour == "Utility":
-                    l.append(l.pop(i))
-            if not debtee:
+            if debtee:
+                l = self.player_details[debtee]["Properties"]
+                l.append(i)
+                l.sort(key=lambda i: i.position)
+                for i in range(len(l)):
+                    if l[i].colour == "Station":
+                        l.append(l.pop(i))
+                for i in range(len(l)):
+                    if l[i].colour == "Utility":
+                        l.append(l.pop(i))
+            else:
                 i.houses = -1
                 i.isMortgaged = False
         if debtee:
@@ -3089,12 +3122,6 @@ class Monopoly(tk.Toplevel):
 
         self.update_game(playerleft=name)
 
-    def bankrupt_popup(self, player_id, debtee):
-        name = self.player_details[player_id]["Name"]
-        self.player_leave(player_id, debtee)
-        if self.me == player_id:
-            self.poll(self.me, ("CREATE", "endgame", True, name))
-
     def poll(self, user, poll, received=False):  # ? Move To Util region
         if poll[0] == "UPDATE":
             self.collective[poll[1]][user] = poll[2]
@@ -3110,11 +3137,16 @@ class Monopoly(tk.Toplevel):
             del self.collective[poll[1]]
 
         elif poll[0] == "CREATE":
-            self.collective[poll[1]] = {user: True}
-            self.get_input(poll[2], poll[3])
-
-        if not received:
-            self.send_msg(("POLL", ("CREATE", "endgame", poll[2], poll[3])))
+            if poll[3]:
+                self.collective[poll[1]] = {}
+                if user != self.me:
+                    self.get_input(poll[2], poll[3])
+            else:
+                self.collective[poll[1]] = {user: True}
+                if user != self.me:
+                    self.get_input(poll[2], poll[3])
+            if not received:
+                self.send_msg(("POLL", ("CREATE", "endgame", poll[2], poll[3])))
 
     def get_input(self, bankrupt, ender):
         self.endgame_frame = tk.Frame(self, background="white")
@@ -3153,7 +3185,7 @@ class Monopoly(tk.Toplevel):
             command=lambda: self.send_msg(("POLL", ("UPDATE", "endgame", False))),
         ).place(relx=0.6, rely=0.75, anchor="center")
 
-    def end_game(self):
+    def end_game(self, winner=None):
         print("Game Ended")
 
     # endregion
