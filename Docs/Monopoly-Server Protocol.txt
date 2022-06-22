@@ -22,9 +22,13 @@ End Turn:
 Leave Game:
     (LEAVE)
 
+Jail:
+    (JAIL, method - (GOJF or PAY))
+
+Trade:
+    (TRADE, REQUEST, offeree, propertyrecv, propertygive, cash)
+    (TRADE, ANSWER, bool, offeror, propertyrecv, propertygive, cash)
+
 Poll EndGame:
     (POLL, (CREATE, endgame, bool: bankrupt, ender)
     (POLL, (UPDATE, endgame, bool: Yes or No)
-
-Jail:
-    (JAIL, method - (GOJF or PAY))

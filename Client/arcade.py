@@ -1,11 +1,11 @@
 import base64
-from io import BytesIO
 import json
 import os
 import threading
 import time
 import tkinter as tk
 import tkinter.ttk as ttk
+from io import BytesIO
 from tkinter import messagebox as msgb
 
 ASSET = "Assets/Home_Assets"
