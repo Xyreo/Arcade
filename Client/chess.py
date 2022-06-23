@@ -58,10 +58,10 @@ class Chess(tk.Toplevel):
         x_coord = self.winfo_screenwidth() // 2 - screen_width // 2
         y_coord = (self.winfo_screenheight() - 70) // 2 - screen_height // 2
         self.geometry(f"{screen_width}x{screen_height}+{x_coord}+{y_coord}")
+        self.protocol('WM_DELETE_WINDOW',self.quit)
         self.title("Chess")
         self.canvas = tk.Canvas(
             self,
-            highlightthickness=1,
             height=Chess.size,
             width=Chess.size,
         )
@@ -147,14 +147,23 @@ class Chess(tk.Toplevel):
             x2, y2 = x2 + Chess.size // 8, y2 + Chess.size // 8
             font = "Helvetica 14 bold"
             self.canvas.create_text(
-                x1 + adj, y1 + adj, text=f"{8-i}", anchor=tk.NW, fill="black", font=font
+                x1 + adj,
+                y1 + adj,
+                text=f"{8-i}",
+                anchor=tk.NW,
+                fill=f"{Chess.color['black']}"
+                if ((8 - i) % 2 if self.side == "WHITE" else not (8 - i) % 2)
+                else f"{Chess.color['white']}",
+                font=font,
             )
             self.canvas.create_text(
                 x2 - adj,
                 y2 - adj,
                 text=chr(ord("a") + i),
                 anchor=tk.SE,
-                fill="black",
+                fill=f"{Chess.color['white']}"
+                if ((8 - i) % 2 if self.side == "WHITE" else not (8 - i) % 2)
+                else f"{Chess.color['black']}",
                 font=font,
             )
         # endregion
@@ -300,11 +309,14 @@ class Chess(tk.Toplevel):
             self.start_move(self.selected, k)
             self.state = "Move"
 
-        elif self.board[k] == None or (
-            (not self.debug and self.board[k].color != self.side)
-        ):
+        elif not self.board[k]:
             pass
 
+        elif self.board[k].color != self.side:
+            if self.debug:
+                self.state = "PieceSelected"
+            else:
+                pass
         else:
             self.state = "PieceSelected"
 
@@ -319,7 +331,7 @@ class Chess(tk.Toplevel):
                     self.unselect()
 
                 self.selected = k
-                if self.side == self.turn:
+                if self.side == self.turn or self.debug:
                     self.display_moves()
                     self.set(k, "select")
                     self.set(k, "button")
@@ -431,7 +443,9 @@ class Chess(tk.Toplevel):
         )
 
     def start_move(self, start, end, multi=False, snap=False):
-        t = threading.Thread(target=self.move, args=(start, end, multi, snap))
+        t = threading.Thread(
+            target=self.move, args=(start, end, multi, snap), daemon=True
+        )
         t.start()
 
     def move(self, start, end, multi, snap):
@@ -453,7 +467,9 @@ class Chess(tk.Toplevel):
             self.move_obj(self.board[end], (x1 + x2) // 2, (y1 + y2) // 2)
             self.oldimg = None
         else:
-            thr = threading.Thread(target=self.moveanimation, args=(start, end))
+            thr = threading.Thread(
+                target=self.moveanimation, args=(start, end), daemon=True
+            )
             thr.start()
             self.lock.acquire()
 
@@ -925,7 +941,9 @@ class ChessPiece(Piece):
                 else:
                     move = (pos - 20, pos + 10)
                 t = threading.Thread(
-                    target=self.game.moveanimation, args=(move[0], move[1], True)
+                    target=self.game.moveanimation,
+                    args=(move[0], move[1], True),
+                    daemon=True,
                 )
                 t.start()
 

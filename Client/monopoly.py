@@ -120,8 +120,7 @@ class Monopoly(tk.Toplevel):
             )  # Properties will store obj from properties dict
 
         if os.name == "nt":
-            self.cli_thread = threading.Thread(target=self.CLI)
-            self.cli_thread.daemon = True
+            self.cli_thread = threading.Thread(target=self.CLI, daemon=True)
             self.cli_thread.start()
 
     def event_handler(self, msg):
@@ -2658,11 +2657,12 @@ class Monopoly(tk.Toplevel):
 
         def reply(msg):
             self.send_msg(msg)
-            self.exec_trade(
-                msg[3],
-                self.me,
-                *msg[4:],
-            )
+            if msg[2]:
+                self.exec_trade(
+                    msg[3],
+                    self.me,
+                    *msg[4:],
+                )
             self.update_game()
 
     def trade(self):
