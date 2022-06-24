@@ -1,4 +1,4 @@
-pillow>=9.1.0
+pillow>=8
 plyer>=2.0.0
 pygame>=2.1.2
 requests>=2.27.1
