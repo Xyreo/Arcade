@@ -2,9 +2,13 @@ import os
 import threading
 import time
 import tkinter as tk
+import tkinter.ttk as ttk
+from tkinter import messagebox as msgb
 
 from PIL import Image, ImageOps, ImageTk
 from plyer import notification as noti
+
+from http_wrapper import Http
 
 ASSET_PATH = "Assets"
 ASSET_PATH = ASSET_PATH if os.path.exists(ASSET_PATH) else "Client/" + ASSET_PATH
@@ -26,7 +30,7 @@ class Chess(tk.Toplevel):
     size = None
     swap = {"WHITE": "BLACK", "BLACK": "WHITE"}
 
-    def __init__(self, side, update, debug=False):
+    def __init__(self, side, update, http, debug=False):
         super().__init__()
         self.side = side
         self.board: dict[int, Piece] = Board()
@@ -47,25 +51,40 @@ class Chess(tk.Toplevel):
         self.turn = "WHITE"
         self.debug = debug
         self.poll = {}
+        self.http = http
 
         self.lock = threading.Lock()
         self.lock.acquire(blocking=False)
 
     def initialize_canvas(self):
-        Chess.size = int(self.winfo_screenheight() * 3.5) // 5
+        Chess.size = int(self.winfo_screenheight() * 4) // 5
         screen_width = int(0.9 * self.winfo_screenwidth())
         screen_height = int(screen_width / 1.9)
         x_coord = self.winfo_screenwidth() // 2 - screen_width // 2
         y_coord = (self.winfo_screenheight() - 70) // 2 - screen_height // 2
         self.geometry(f"{screen_width}x{screen_height}+{x_coord}+{y_coord}")
-        self.protocol('WM_DELETE_WINDOW',self.quit)
+        self.protocol("WM_DELETE_WINDOW", self.quit_game)
         self.title("Chess")
         self.canvas = tk.Canvas(
             self,
             height=Chess.size,
             width=Chess.size,
         )
-        self.canvas.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        self.canvas.place(relx=0.1, rely=0.5, anchor="w")
+        self.main_frame = tk.Frame(
+            self, height=Chess.size, width=Chess.size // 2, bg="grey"
+        )
+        self.main_frame.place(relx=0.9, rely=0.5, anchor="e")
+        tk.Button(
+            self,
+            text="← QUIT",
+            font=("times", (self.board_side - 2) // 60),
+            highlightthickness=0,
+            border=0,
+            command=self.quit_game,
+            bg="white",
+        ).place(relx=0.01, rely=0.0125, anchor="nw")
+
         for i in range(8):
             for j in range(8):
                 s = os.path.join(ASSET_PATH, "Chess_Assets", "circle.png")
@@ -517,12 +536,9 @@ class Chess(tk.Toplevel):
 
         if self.check_for_mate(Chess.swap[color]):
             if check:
-                print("Checkmate")
-                tk.Label(self, text="Checkmate", font=40).place(
-                    relx=0.5, rely=0.5, anchor=tk.CENTER, relheight=1, relwidth=1
-                )
+                self.show_checkmate(True)
             else:
-                print("Stalemate")
+                self.show_checkmate(False)
 
     def enable_canvas(self):
         self.canvas.bind("<Button-1>", self.clicked)
@@ -611,7 +627,7 @@ class Chess(tk.Toplevel):
             return None
 
     def chess_notifier(self, opponent, piece, dest, captured=None):
-        try:
+        if os.name == "nt":
             message = f"{opponent} played {piece.title()} to {dest.upper()}"
             if captured:
                 message += f", capturing your {captured.piece.title()}"
@@ -623,8 +639,6 @@ class Chess(tk.Toplevel):
                     message=message,
                     timeout=5,
                 )
-        except NotImplementedError:
-            print("mac is weird")
 
     @staticmethod
     def grid_to_square(k):
@@ -642,6 +656,39 @@ class Chess(tk.Toplevel):
         return j * 10 + i
 
     # TODO Draw Game GUI
+
+    def show_checkmate(self,check):
+        if check:
+            txt = 'Checkmate'
+        else:
+            txt = 'Stalemate'
+        
+        tk.Label(self, text=txt, font=40).place(
+                relx=0.5, rely=0.5, anchor=tk.CENTER, relheight=1, relwidth=1
+            )
+        self.quit_game(True)
+
+    def show_message(self, title, message, type="info", timeout=0):
+        self.mbwin = tk.Toplevel(self)
+        self.mbwin.withdraw()
+        try:
+            if timeout:
+                self.mbwin.after(timeout, self.mbwin.destroy)
+            if type == "info":
+                msgb.showinfo(title, message, master=self.mbwin)
+            elif type == "warning":
+                msgb.showwarning(title, message, master=self.mbwin)
+            elif type == "error":
+                msgb.showerror(title, message, master=self.mbwin)
+            elif type == "okcancel":
+                okcancel = msgb.askokcancel(title, message, master=self.mbwin)
+                return okcancel
+            elif type == "yesno":
+                yesno = msgb.askyesno(title, message, master=self.mbwin)
+                return yesno
+        except:
+            print("Error")
+
     def draw_req(self):
         self.poll["DRAW"] = "WAIT"
         self.send(("DRAW", "REQ"))
@@ -654,6 +701,23 @@ class Chess(tk.Toplevel):
 
     def draw_reply(self):
         pass
+
+    def quit_game(self,check=False):
+        if __name__ == "__main__":
+            self.http.logout()
+            app.quit()
+        else:
+            if not check:
+                if self.show_message(
+                "Quit Game?",
+                "Are you sure you wish to leave this game? This will imply you are forfeiting and will lose!",
+                type="okcancel",
+            ):
+                    self.destroy() #Leave room Stuff
+                else:
+                    return
+            else:
+                pass #stuff
 
 
 class Piece:
@@ -1211,5 +1275,7 @@ class Board:
 if __name__ == "__main__":
     app = tk.Tk()
     app.withdraw()
-    chess = Chess("WHITE", print, debug=True)
+    hobj = Http("http://167.71.231.52:5000")
+    hobj.login("test", "test")
+    chess = Chess("WHITE", print, hobj, debug=True)
     app.mainloop()

@@ -469,7 +469,7 @@ class Monopoly(tk.Toplevel):
     # region # Util
 
     def show_message(self, title, message, type="info", timeout=0):
-        self.mbwin = tk.Tk()
+        self.mbwin = tk.Toplevel(self)
         self.mbwin.withdraw()
         try:
             if timeout:
@@ -3040,10 +3040,6 @@ class Monopoly(tk.Toplevel):
             root.quit()
         else:
             self.destroy()
-        try:
-            self.mbwin.destroy()
-        except:
-            pass
 
     def player_leave(self, player_id, debtee=None, quitting=False):
         name = self.player_details[player_id]["Name"]
