@@ -8,6 +8,8 @@ import tkinter.ttk as ttk
 from io import BytesIO
 from tkinter import messagebox as msgb
 
+from plyer import notification as noti
+
 ASSET = "Assets/Home_Assets"
 ASSET = ASSET if os.path.exists(ASSET) else "Client/" + ASSET
 

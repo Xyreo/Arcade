@@ -8,6 +8,7 @@ from time import sleep
 from tkinter import messagebox as msgb
 
 from PIL import Image, ImageOps, ImageTk
+from plyer import notification as noti
 
 from http_wrapper import Http
 

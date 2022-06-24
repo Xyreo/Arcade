@@ -1,5 +1,6 @@
 (A) Stats Add Game @arcade
 (A) Leaderboard, Stats GUI @arcade
+(A) Session Expiry For Games (1 hr) and Lobby (20 mins) @arcade @ProAltro
 (A) Timer @chess @Chaitanya-Keyal
 (A) Winner Frame, CheckMate GUI @chess @Chaitanya-Keyal
 (A) Draw, Resign Game @chess @Chaitanya-Keyal

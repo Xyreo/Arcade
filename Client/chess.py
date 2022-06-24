@@ -1,8 +1,8 @@
 import os
 import threading
-import time
 import tkinter as tk
 import tkinter.ttk as ttk
+from time import sleep
 from tkinter import messagebox as msgb
 
 from PIL import Image, ImageOps, ImageTk
@@ -314,7 +314,7 @@ class Chess(tk.Toplevel):
         for i in range(1, n + 1):
             start = int(x + (i / n) * x1)
             end = int(y + (i / n) * y1)
-            time.sleep(t / n)
+            sleep(t / n)
             self.move_obj(self.board[e], start, end)
         self.oldimg = None
         if not simul:
