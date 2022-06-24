@@ -1,28 +1,26 @@
-(A) Timer @chess
-(A) Winner Frame, CheckMate GUI @chess
 (A) Stats Add Game @arcade
 (A) Leaderboard, Stats GUI @arcade
-(A) Draw, Resign Game @chess @ProAltro
-(A) Exit @chess @ProAltro
+(A) Timer @chess @Chaitanya-Keyal
+(A) Winner Frame, CheckMate GUI @chess @Chaitanya-Keyal
+(A) Draw, Resign Game @chess @Chaitanya-Keyal
+(A) Exit @chess @Chaitanya-Keyal
 (A) EndGame Poll @monopoly @ProAltro 
 (B) Icons +Arcade
 (B) Window Titles +Arcade
 (B) Resize Windows +Arcade
 (B) Notifier +Arcade
-(B) Change Letters Position @chess
-(B) Winner Frame, Networth @monopoly
 (B) End Turn Timer @monopoly
-(B) EndGame Button @monopoly
 (B) Choose Color/Shuffle Color @monopoly
-(B) Profile Picture @arcade
+(B) Winner Frame, Networth @monopoly @Chaitanya-Keyal
+(B) EndGame Button @monopoly @Chaitanya-Keyal
+(B) Profile Picture @arcade @Chaitanya-Keyal
 (C) Info, Rules +Arcade
-(C) Auto Roll/ Auto End @monopoly
+(C) Auto Leave if not alive/ Auto End Turn @monopoly
 (C) Move Backward Animation @monopoly
 (C) Confirmation Popups @arcade
 (C) Can't Join Room when in A Room @arcade
 (C) Change Password #Account @arcade  
 (C) Change Profile Picture #Account  @arcade
-(C) Logout #Account  @arcade
 (C) Player Leaves Randomly (Polls, In Debt) @monopoly @ProAltro 
 (D) All Rules and Texts @monopoly
 (D) Logo @arcade
@@ -31,7 +29,6 @@
 (D) Game Settings @arcade
 (E) GUI Relative Placing and Sizing @monopoly
 (E) Add Hilarious Trade Meme @monopoly
-remove login after logout
 (Y) Music, Sounds +Arcade #Extra
 (Z) TakeBack @chess #Extra
 (Z) Auction @monopoly #Extra

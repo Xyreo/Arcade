@@ -131,6 +131,11 @@ class Arcade(tk.Toplevel):
     def log_out(self):
         self.send(("GAME", "LEAVE"))
         HTTP.logout()
+        # TODO: Uncomment this when done with project because testing on same system will keep deleting file
+        # try:
+        #     os.remove(ASSET + "/remember_login.txt")
+        # except FileNotFoundError:
+        #     pass
         self.main_notebook.destroy()
         self.log_out_button.destroy()
 
