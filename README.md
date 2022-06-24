@@ -1,7 +1,7 @@
-# Gr12-CompProject
+# Arcade
 
-Arcade (Monopoly, Chess <& Scrabble>)
+Monopoly, Chess <& Scrabble>
 
-Run 'The Arcade' to play.
+Run Client/arcade.py to play.
 
-@Xyreo did not work on this.
+@Xyreo has not worked on this.
