@@ -51,6 +51,10 @@ class Rooms(dict):
     def remove_room(self, game, id):
         del self[game][id]
 
+    def change_settings(self, rid, settings):
+        key = "CHESS" if rid in self["CHESS"] else "MNPLY"
+        self[key][rid]["settings"].update(settings)
+
     def get_rooms(self) -> dict:
         d = {}
         d.update(self["CHESS"])
@@ -88,6 +92,8 @@ class Arcade(tk.Toplevel):
         )
         self.config(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.exit)
+        self.thr = threading.Thread(target=self.CLI, daemon=True)
+        self.thr.start()
 
     def initialize(self, name, token):
         self.geometry(
@@ -182,7 +188,9 @@ class Arcade(tk.Toplevel):
                     self.rooms.add_player(msg[4], msg[3])
                 elif msg[2] == "REMOVE":
                     self.rooms.remove_player(msg[4], msg[3])
-            self.update_lobby(dest)
+            elif msg[1] == "SETTINGS":
+                self.rooms.change_settings(msg[3], msg[2])
+            self.update_lobby(dest)  # TODO gui for this
 
         elif dest == "ROOM":
             self.rooms.add_room(msg[1], msg[2])
@@ -196,6 +204,10 @@ class Arcade(tk.Toplevel):
                 elif msg[2] == "REMOVE":
                     self.rooms.remove_player(dest, msg[3])
                 self.update_room(game, self.rooms[game][dest])
+
+            elif msg[1] == "SETTINGS":
+                self.rooms.change_settings(dest, msg[2])
+                self.update_room(game, self.rooms[game][dest])  # TODO gui for this
 
             elif msg[1] == "ROOM":
                 self.room_frames[game].destroy()
@@ -405,13 +417,13 @@ class Arcade(tk.Toplevel):
         settings = {}
         if game == "CHESS":
             settings = {
-                "INITAL_STATUS": "OPEN",
+                "STATUS": "PUBLIC",
                 "MAX_PLAYERS": 2,
                 "TIME": 10,
                 "HOST_SIDE": "BLACK",
             }
         if game == "MNPLY":
-            settings = {"INITAL_STATUS": "OPEN", "MAX_PLAYERS": 4}
+            settings = {"STATUS": "PUBLIC", "MAX_PLAYERS": 4}
         # TODO: Select Settings
         self.send((game, "CREATE", settings))
 
@@ -542,6 +554,25 @@ class Arcade(tk.Toplevel):
     def exit(self):
         HTTP.logout()
         root.quit()
+
+    def CLI(self):
+        while True:
+            t = tuple(i for i in input().split())
+            if t:
+                if t[0] == "cs":
+                    self.send(
+                        (
+                            self.current_room,
+                            "SETTINGS",
+                            {"STATUS": "PRIVATE" if t[1] == "p" else "PUBLIC"},
+                        )
+                    )
+
+                else:
+                    print("Die")
+            else:
+                print("Closed CLI Thread")
+                break
 
 
 class Login(tk.Frame):

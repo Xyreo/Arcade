@@ -4,7 +4,6 @@ import random
 import secrets
 import socket
 import threading
-from xml.dom import InuseAttributeErr
 
 from authenticator import Auth
 
@@ -72,7 +71,7 @@ class Lobby(Channels):
         super().broadcast_to_members((self.uuid,) + msg, exclude)
 
     def details(self):
-        lobby = [room.details() for room in self.rooms if room.status == "OPEN"]
+        lobby = [room.details() for room in self.rooms if room.status == "PUBLIC"]
         return lobby
 
 
@@ -82,7 +81,7 @@ class Room(Channels):
         rooms[self.uuid] = self
         self.host: Client = host
         self.settings = settings
-        self.status = self.settings["INITAL_STATUS"]
+        self.status = self.settings["STATUS"]
         self.game = game
         super().join(host)
         host.send_instruction(("ROOM", self.game, self.details()))
@@ -108,7 +107,7 @@ class Room(Channels):
         player.send_instruction(("ROOM", self.game, self.details()))
 
     def leave(self, player):
-        if self.status in ["OPEN", "PRIVATE"]:
+        if self.status in ["PUBLIC", "PRIVATE"]:
             if player.uuid == self.host.uuid:
                 self.delete()
             else:
@@ -175,13 +174,17 @@ class Room(Channels):
         return room
 
     def change_settings(self, settings):
-        old_status = self.settings["INITAL_STATUS"]
+
+        old_status = self.settings["STATUS"]
         self.settings.update(settings)
-        new_status = self.settings["INITAL_STATUS"]
-        if old_status == "OPEN" and new_status == "PRIVATE":
+        new_status = self.settings["STATUS"]
+        self.broadcast_to_members(("SETTINGS", settings))
+        if old_status == "PUBLIC" and new_status == "PRIVATE":
             lobbies[self.game].broadcast_to_members(("ROOM", "REMOVE", self.uuid))
-        if new_status == "OPEN" and old_status == "PRIVATE":
+        elif new_status == "PUBLIC" and old_status == "PRIVATE":
             lobbies[self.game].broadcast_to_members(("ROOM", "ADD", self.details()))
+        else:
+            lobbies[self.game].broadcast_to_members(("SETTINGS", settings, self.uuid))
 
     def msg(self, m, ex):
         if self.game == "CHESS":
