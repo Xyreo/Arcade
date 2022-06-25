@@ -34,3 +34,4 @@
 (Z) TakeBack @chess #Extra
 (Z) Auction @monopoly #Extra
 (Z) Voice Chat @arcade #Extra
+(Z) Speed Game @monopoly #Extra
