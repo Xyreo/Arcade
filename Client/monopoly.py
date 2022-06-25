@@ -125,7 +125,6 @@ class Monopoly(tk.Toplevel):
             self.cli_thread.start()
 
     def event_handler(self, msg):
-        print(msg)
         if msg[1] == "ROLL":
             self.roll_dice(msg[2], True)
         elif msg[1] == "BUY":
@@ -3134,14 +3133,12 @@ class Monopoly(tk.Toplevel):
                 else:
                     self.endgame_frame.destroy()
                 del self.collective[thing]
-            print(self.collective)
             if not received:
                 self.send_msg(("POLL", ("UPDATE", "endgame", res)))
 
         elif poll[0] == "CREATE":
             inst, thing, bankr, name = poll
             # (self.me, ("CREATE", "endgame", True, name))
-            print(poll)
             if bankr:
                 self.collective[thing] = {}
                 if user != self.me:
@@ -3152,9 +3149,9 @@ class Monopoly(tk.Toplevel):
                     self.get_input(poll[2], poll[3])
             if not received:
                 self.send_msg(("POLL", ("CREATE", "endgame", bankr, name)))
-            print(self.collective, "Create")
 
     # TODO: dont show poll if bankrupt
+    # TODO: remove get_input frame after poll completes
     def get_input(self, bankrupt, ender):
         self.endgame_frame = tk.Frame(self, background="white")
         self.endgame_frame.place(
@@ -3182,14 +3179,14 @@ class Monopoly(tk.Toplevel):
             self.endgame_frame,
             text="YES",
             style="my.TButton",
-            command=lambda: self.send_msg(("POLL", ("UPDATE", "endgame", True))),
+            command=lambda: self.poll(self.me, ("UPDATE", "endgame", True)),
         ).place(relx=0.4, rely=0.75, anchor="center")
 
         ttk.Button(
             self.endgame_frame,
             text="NO",
             style="my.TButton",
-            command=lambda: self.send_msg(("POLL", ("UPDATE", "endgame", False))),
+            command=lambda: self.poll(self.me, ("UPDATE", "endgame", False)),
         ).place(relx=0.6, rely=0.75, anchor="center")
 
     def end_game(self, winner=None):
