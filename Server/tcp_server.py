@@ -4,6 +4,7 @@ import random
 import secrets
 import socket
 import threading
+from xml.dom import InuseAttributeErr
 
 from authenticator import Auth
 
@@ -123,12 +124,12 @@ class Room(Channels):
         p = {}
         for i in self.members:
             if i.uuid == self.host.uuid:
-                p[i.uuid] = {"Name": i.name, "Side": self.setting["host_side"]}
+                p[i.uuid] = {"Name": i.name, "side": self.settings["HOST_SIDE"]}
             else:
                 p[i.uuid] = {
                     "name": i.name,
                     "side": "BLACK"
-                    if self.setting["HOST_SIDE"] == "WHITE"
+                    if self.settings["HOST_SIDE"] == "WHITE"
                     else "WHITE",
                 }
 
