@@ -3121,30 +3121,40 @@ class Monopoly(tk.Toplevel):
 
     def poll(self, user, poll, received=False):  # ? Move To Util region
         if poll[0] == "UPDATE":
-            self.collective[poll[1]][user] = poll[2]
-            if len(self.collective[poll[1]]) == len(self.player_details):
+            inst, thing, res = poll
+            self.collective[thing][user] = res
+
+            if len(self.collective[thing]) == len(self.player_details):
                 c = 0
-                for i in self.collective[poll[1]].values():
+                for i in self.collective[thing].values():
                     if i:
                         c += 1
                 if c > len(self.player_details) // 2:
                     self.end_game()
                 else:
                     self.endgame_frame.destroy()
-            del self.collective[poll[1]]
+                del self.collective[thing]
+            print(self.collective)
+            if not received:
+                self.send_msg(("POLL", ("UPDATE", "endgame", res)))
 
         elif poll[0] == "CREATE":
-            if poll[3]:
-                self.collective[poll[1]] = {}
+            inst, thing, bankr, name = poll
+            # (self.me, ("CREATE", "endgame", True, name))
+            print(poll)
+            if bankr:
+                self.collective[thing] = {}
                 if user != self.me:
-                    self.get_input(poll[2], poll[3])
+                    self.get_input(bankr, name)
             else:
                 self.collective[poll[1]] = {user: True}
                 if user != self.me:
                     self.get_input(poll[2], poll[3])
             if not received:
-                self.send_msg(("POLL", ("CREATE", "endgame", poll[2], poll[3])))
+                self.send_msg(("POLL", ("CREATE", "endgame", bankr, name)))
+            print(self.collective, "Create")
 
+    # TODO: dont show poll if bankrupt
     def get_input(self, bankrupt, ender):
         self.endgame_frame = tk.Frame(self, background="white")
         self.endgame_frame.place(
