@@ -1280,5 +1280,18 @@ if __name__ == "__main__":
     app.withdraw()
     hobj = Http("http://167.71.231.52:5000")
     hobj.login("test", "test")
-    chess = Chess("WHITE", print, hobj, debug=True)
+    chess = Chess(
+        {
+            "me": "123456",
+            "players": {
+                "123456": {"name": "gay", "side": "BLACK"},
+                "456789": {"name": "straight", "side": "WHITE"},
+            },
+            "time": 10,  # minutes
+            "add_time": 5,  # seconds
+        },
+        print,
+        hobj,
+        debug=True,
+    )
     app.mainloop()
