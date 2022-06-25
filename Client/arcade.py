@@ -402,7 +402,16 @@ class Arcade(tk.Toplevel):
         self.send((game, "JOIN", room[0]))
 
     def create_room(self, game):
-        settings = {"INITAL_STATUS": "OPEN", "MAX_PLAYERS": 2 if game == "CHESS" else 4}
+        settings = {}
+        if game == "CHESS":
+            settings = {
+                "INITAL_STATUS": "OPEN",
+                "MAX_PLAYERS": 2,
+                "TIME": 10,
+                "HOST_SIDE": "BLACK",
+            }
+        if game == "MNPLY":
+            settings = {"INITAL_STATUS": "OPEN", "MAX_PLAYERS": 4}
         # TODO: Select Settings
         self.send((game, "CREATE", settings))
 

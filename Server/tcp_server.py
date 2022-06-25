@@ -120,11 +120,27 @@ class Room(Channels):
         super().leave(player)
 
     def chess_start(self):
+        p = {}
         for i in self.members:
             if i.uuid == self.host.uuid:
-                i.send_instruction((self.uuid, "ROOM", "START", "WHITE"))
+                p[i.uuid] = {"Name": i.name, "Side": self.setting["host_side"]}
             else:
-                i.send_instruction((self.uuid, "ROOM", "START", "BLACK"))
+                p[i.uuid] = {
+                    "name": i.name,
+                    "side": "BLACK"
+                    if self.setting["HOST_SIDE"] == "WHITE"
+                    else "WHITE",
+                }
+
+        for i in self.members:
+            i.send_instruction(
+                (
+                    self.uuid,
+                    "ROOM",
+                    "START",
+                    {"me": i.uuid, "players": p, "time": self.settings["TIME"]},
+                )
+            )
 
     def mnply_start(self):
         p = {}
@@ -156,6 +172,15 @@ class Room(Channels):
             "members": [member.details() for member in self.members],
         }
         return room
+
+    def change_settings(self, settings):
+        old_status = self.settings["INITAL_STATUS"]
+        self.settings.update(settings)
+        new_status = self.settings["INITAL_STATUS"]
+        if old_status == "OPEN" and new_status == "PRIVATE":
+            lobbies[self.game].broadcast_to_members(("ROOM", "REMOVE", self.uuid))
+        if new_status == "OPEN" and old_status == "PRIVATE":
+            lobbies[self.game].broadcast_to_members(("ROOM", "ADD", self.details()))
 
     def msg(self, m, ex):
         if self.game == "CHESS":
@@ -216,7 +241,7 @@ class Client(threading.Thread):
 
     def authenticate(self, message, auth=False):
         if auth:
-            if Driver.auth(message[0]):
+            if Driver.auth(message[0], 60):
                 self.instruction_handler(message[1:])
             else:
                 self.send_instruction(("GAME", "SESSION_EXP"))
@@ -261,6 +286,8 @@ class Client(threading.Thread):
             rooms[room].start(self)
         elif action == "LEAVE":
             rooms[room].leave(self)
+        elif action == "SETTINGS":
+            rooms[room].change_settings(msg[1])
         elif action == "MSG":
             rooms[room].msg(("MSG", msg[1]), self.uuid)
 

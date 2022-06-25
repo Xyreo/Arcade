@@ -137,6 +137,7 @@ class Monopoly(tk.Toplevel):
             self.final_mortgage(msg[2], msg[3], True)
         elif msg[1] == "LEAVE":
             if msg[0] in self.player_details:
+                self.pre_leave(msg[0])
                 self.player_leave(msg[0])
         elif msg[1] == "POLL":
             self.poll(msg[0], msg[2], True)
@@ -3041,6 +3042,11 @@ class Monopoly(tk.Toplevel):
         else:
             self.destroy()
 
+    def pre_leave(self, usr):
+        if "endgame" in self.collective:
+            if usr in self.collective["endgame"]:
+                self.poll(usr, ("UPDATE", "endgame", -1))
+
     def player_leave(self, player_id, debtee=None, quitting=False):
         name = self.player_details[player_id]["Name"]
         if self.turn == player_id:
@@ -3121,7 +3127,10 @@ class Monopoly(tk.Toplevel):
     def poll(self, user, poll, received=False):  # ? Move To Util region
         if poll[0] == "UPDATE":
             inst, thing, res = poll
-            self.collective[thing][user] = res
+            if res == -1:
+                del self.collective[thing][user]
+            else:
+                self.collective[thing][user] = res
 
             if len(self.collective[thing]) == len(self.player_details):
                 c = 0
@@ -3133,6 +3142,7 @@ class Monopoly(tk.Toplevel):
                 else:
                     self.endgame_frame.destroy()
                 del self.collective[thing]
+
             if not received:
                 self.send_msg(("POLL", ("UPDATE", "endgame", res)))
 
@@ -3144,9 +3154,9 @@ class Monopoly(tk.Toplevel):
                 if user != self.me:
                     self.get_input(bankr, name)
             else:
-                self.collective[poll[1]] = {user: True}
+                self.collective[thing] = {user: True}
                 if user != self.me:
-                    self.get_input(poll[2], poll[3])
+                    self.get_input(bankr, name)
             if not received:
                 self.send_msg(("POLL", ("CREATE", "endgame", bankr, name)))
 

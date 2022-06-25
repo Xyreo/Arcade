@@ -3,7 +3,7 @@ from datetime import timedelta
 
 import redis
 
-time = 30
+time = 20
 
 
 class Auth:
@@ -33,10 +33,10 @@ class Auth:
         else:
             return None
 
-    def __call__(self, session_id):
+    def __call__(self, session_id, expire=time):
         if self.r.exists(session_id):
-            self.r.expire(name=session_id, time=timedelta(minutes=time))
-            self.r.expire(name=self.r.get(session_id), time=timedelta(minutes=time))
+            self.r.expire(name=session_id, time=timedelta(minutes=expire))
+            self.r.expire(name=self.r.get(session_id), time=timedelta(minutes=expire))
             return True
         return False
 

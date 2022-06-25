@@ -30,9 +30,13 @@ class Chess(tk.Toplevel):
     size = None
     swap = {"WHITE": "BLACK", "BLACK": "WHITE"}
 
-    def __init__(self, side, update, http, debug=False):
+    def __init__(self, initialize, update, http, debug=False):
         super().__init__()
-        self.side = side
+        self.me = initialize["me"]
+        self.players = initialize["players"]
+        self.side = self.players[self.me]["side"]
+        self.time = initialize["time"]  # TODO Timer
+
         self.board: dict[int, Piece] = Board()
         self.board_ids: dict = {}
         self.imgs: dict = {}

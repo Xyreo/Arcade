@@ -40,6 +40,13 @@ Join Room:
     (<Lobby>, PLAYER, ADD, <Room ID>,<Player Details>) - to members of lobby
     (<Room ID>,PLAYER,ADD,<Player Details>) - to members of room
 
+Change Settings:
+    (<Room ID>,SETTINGS,<New Settings>)
+
+    Response: 
+    If room is set to private or open then,
+    (<Lobby>, ROOM, ADD/REMOVE, <Room ID>)
+
 Leave Room:
     (<Room ID>, LEAVE) - Leaves room
 

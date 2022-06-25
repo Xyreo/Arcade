@@ -5,22 +5,36 @@ Initializing requires base url path passed in.
 Methods:
 
 1. obj.login(str:username, str:password):
-    Returns 1 if successful, 0 if unsuccessful and -1 if user already logged in. Adds the token automatically if successful.
+    Logs the user in. 
+    Returns 1 if successful, 0 if unsuccessful and -1 if user already logged in. Caches the token automatically if successful.
 
-2. obj.register(str:username, str:password):
+2. obj.register(str:username, str:password, str:img_representation):
+    Registers the user with the specified details.
     Returns True if successful, else returns False. False implies that a user with the same name already exists.
+    The img_representation is made using a helpfer function - pfp_make().
 
-3. obj.del_user():
+3. obj.change_password(str:new_password):
+    Changes logged in user's password.
+
+4. obj.del_user():
+    Deletes the logged in user. 
     Returns True if successful, else returns False.
 
-4. obj.logout():
+5. obj.logout():
+    Logs out the logged in user. 
     Returns True if successful, else returns False.
 
-5. obj.mply_details(optional: int:position):
-    Returns the values requested if valid position, else returns -1. Returns False if authorization error.
+6. change_pfp(str:img_representation):
+    Changes the pfp of user.
 
-6. obj.stats(str:game, int:user_id):
+7. fetch_pfp(str:user_name):
+    Returns the image representation of the pfp of user.
+
+8. obj.mply_details(optional: int:position):
+    Returns the values requested if valid position, else returns -1.
+
+9. obj.stats(str:game, int:user_id):
     Returns the list of games played by user user_id.
 
-7. obj.addgame(str:game, int:winner_uuid, dict:results, list[int]:player_uuids):
+10. obj.addgame(str:game, int:winner_uuid, dict:results, list[int]:player_uuids):
     Adds game to the database.
