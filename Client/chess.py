@@ -30,12 +30,14 @@ class Chess(tk.Toplevel):
     size = None
     swap = {"WHITE": "BLACK", "BLACK": "WHITE"}
 
-    def __init__(self, initialize, update, http, debug=False):
+    def __init__(self, initialize, update, http:Http, debug=False, original_frame=None):
         super().__init__()
         self.me = initialize["me"]
         self.players = initialize["players"]
         self.side = self.players[self.me]["side"]
         self.time = initialize["time"]  # TODO Timer
+        self.add_time = initialize["add_time"]
+        self.arcade = original_frame
 
         self.board: dict[int, Piece] = Board()
         self.board_ids: dict = {}
@@ -43,6 +45,7 @@ class Chess(tk.Toplevel):
         self.possible_moves: list = []
         self.initialize_canvas()
         self.initialize_board()
+        self.timer_buttons()
         self.selected: int = None
         self.hover: int = None
         self.state: str = "Nothing"
@@ -67,7 +70,7 @@ class Chess(tk.Toplevel):
         x_coord = self.winfo_screenwidth() // 2 - screen_width // 2
         y_coord = (self.winfo_screenheight() - 70) // 2 - screen_height // 2
         self.geometry(f"{screen_width}x{screen_height}+{x_coord}+{y_coord}")
-        self.protocol("WM_DELETE_WINDOW", self.quit_game)
+        self.protocol("WM_DELETE_WINDOW", self.resign)
         self.title("Chess")
         self.canvas = tk.Canvas(
             self,
@@ -85,7 +88,7 @@ class Chess(tk.Toplevel):
             font=("times", (Chess.size - 2) // 60),
             highlightthickness=0,
             border=0,
-            command=self.quit_game,
+            command=self.resign,
         ).place(relx=0.01, rely=0.0125, anchor="nw")
 
         for i in range(8):
@@ -224,6 +227,26 @@ class Chess(tk.Toplevel):
             state=tk.HIDDEN,
         )
         # endregion
+
+    def timer_buttons(self):
+        button_style = ttk.Style()
+        button_style.configure("my.TButton", font=("times", 20))
+
+        resign = ttk.Button(
+            self.main_frame,
+            text="Resign",
+            style="my.TButton",
+            command=self.resign,
+        )
+        resign.place(relx=0.5, rely=0.4, anchor="center")
+
+        draw = ttk.Button(
+            self.main_frame,
+            text="Offer Draw",
+            style="my.TButton",
+            command=self.draw_req,
+        )
+        draw.place(relx=0.5, rely=0.6, anchor="center")
 
     def set(self, id: int, state: str, preserve_select=False, overide=False):
 
@@ -669,7 +692,8 @@ class Chess(tk.Toplevel):
         tk.Label(self, text=txt, font=40).place(
             relx=0.5, rely=0.5, anchor=tk.CENTER, relheight=1, relwidth=1
         )
-        self.quit_game(True)
+        sleep(2)  # Winner Frame
+        self.quit_game()
 
     def show_message(self, title, message, type="info", timeout=0):
         self.mbwin = tk.Toplevel(self)
@@ -705,22 +729,26 @@ class Chess(tk.Toplevel):
     def draw_reply(self):
         pass
 
-    def quit_game(self, check=False):
+    def resign(self):
+        if self.show_message(
+            "Quit Game?",
+            "Are you sure you wish to leave this game? This will imply you are forfeiting and will lose!",
+            type="okcancel",
+        ):
+            self.quit_game()  # Winner Frame
+        else:
+            return
+
+    def quit_game(self):
         if __name__ == "__main__":
             self.http.logout()
             app.quit()
         else:
-            if not check:
-                if self.show_message(
-                    "Quit Game?",
-                    "Are you sure you wish to leave this game? This will imply you are forfeiting and will lose!",
-                    type="okcancel",
-                ):
-                    self.destroy()  # Leave room Stuff
-                else:
-                    return
-            else:
-                pass  # stuff
+            self.destroy()
+            try:
+                self.arcade.deiconify()
+            except:
+                pass
 
 
 class Piece:

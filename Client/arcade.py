@@ -218,7 +218,7 @@ class Arcade(tk.Toplevel):
                     self.withdraw()
                     if game == "CHESS":
                         self.game = Chess(
-                            msg[3], lambda move: self.send((dest, "MSG", move)), HTTP
+                            msg[3], lambda move: self.send((dest, "MSG", move)), HTTP,original_frame=self
                         )
                     elif game == "MNPLY":
                         details = msg[3]

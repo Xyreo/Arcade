@@ -2,8 +2,7 @@
 (A) Leaderboard, Stats GUI @arcade
 (A) Timer @chess @Chaitanya-Keyal
 (A) Winner Frame, CheckMate GUI @chess @Chaitanya-Keyal
-(A) Draw, Resign Game @chess @Chaitanya-Keyal
-(A) Exit @chess @Chaitanya-Keyal
+(A) Draw @chess @Chaitanya-Keyal
 (B) Icons +Arcade
 (B) Window Titles +Arcade
 (B) Resize Windows +Arcade
