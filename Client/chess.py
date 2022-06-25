@@ -78,11 +78,10 @@ class Chess(tk.Toplevel):
         tk.Button(
             self,
             text="← QUIT",
-            font=("times", (self.board_side - 2) // 60),
+            font=("times", (Chess.size - 2) // 60),
             highlightthickness=0,
             border=0,
             command=self.quit_game,
-            bg="white",
         ).place(relx=0.01, rely=0.0125, anchor="nw")
 
         for i in range(8):
@@ -657,15 +656,15 @@ class Chess(tk.Toplevel):
 
     # TODO Draw Game GUI
 
-    def show_checkmate(self,check):
+    def show_checkmate(self, check):
         if check:
-            txt = 'Checkmate'
+            txt = "Checkmate"
         else:
-            txt = 'Stalemate'
-        
+            txt = "Stalemate"
+
         tk.Label(self, text=txt, font=40).place(
-                relx=0.5, rely=0.5, anchor=tk.CENTER, relheight=1, relwidth=1
-            )
+            relx=0.5, rely=0.5, anchor=tk.CENTER, relheight=1, relwidth=1
+        )
         self.quit_game(True)
 
     def show_message(self, title, message, type="info", timeout=0):
@@ -702,22 +701,22 @@ class Chess(tk.Toplevel):
     def draw_reply(self):
         pass
 
-    def quit_game(self,check=False):
+    def quit_game(self, check=False):
         if __name__ == "__main__":
             self.http.logout()
             app.quit()
         else:
             if not check:
                 if self.show_message(
-                "Quit Game?",
-                "Are you sure you wish to leave this game? This will imply you are forfeiting and will lose!",
-                type="okcancel",
-            ):
-                    self.destroy() #Leave room Stuff
+                    "Quit Game?",
+                    "Are you sure you wish to leave this game? This will imply you are forfeiting and will lose!",
+                    type="okcancel",
+                ):
+                    self.destroy()  # Leave room Stuff
                 else:
                     return
             else:
-                pass #stuff
+                pass  # stuff
 
 
 class Piece:
