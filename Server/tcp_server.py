@@ -138,7 +138,12 @@ class Room(Channels):
                     self.uuid,
                     "ROOM",
                     "START",
-                    {"ME": i.uuid, "PLAYERS": p, "TIME": self.settings["TIME"]},
+                    {
+                        "ME": i.uuid,
+                        "PLAYERS": p,
+                        "TIME": self.settings["TIME"],
+                        "ADD_TIME": self.settings["ADD_TIME"],
+                    },
                 )
             )
 

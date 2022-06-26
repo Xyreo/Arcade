@@ -229,7 +229,7 @@ class Arcade(tk.Toplevel):
                             msg[3],
                             lambda move: self.send((dest, "MSG", move)),
                             HTTP,
-                            original_frame=self,
+                            back=self.end_game,
                         )
                     elif game == "MNPLY":
                         details = msg[3]
@@ -239,7 +239,7 @@ class Arcade(tk.Toplevel):
                             lambda msg: self.send((dest, *msg)),
                             HTTP,
                             details[2],
-                            original_frame=self,
+                            back=self.end_game,
                         )
 
             elif msg[1] == "MSG":
@@ -597,6 +597,10 @@ class Arcade(tk.Toplevel):
 
     def start_room(self, game, room):
         self.send((room, "START"))
+
+    def end_game(self):
+        self.deiconify()
+        self.cuurent_room = None
 
     def exit(self):
         HTTP.logout()

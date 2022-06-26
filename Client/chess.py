@@ -30,16 +30,14 @@ class Chess(tk.Toplevel):
     size = None
     swap = {"WHITE": "BLACK", "BLACK": "WHITE"}
 
-    def __init__(
-        self, initialize, update, http: Http, debug=False, original_frame=None
-    ):
+    def __init__(self, initialize, update, http: Http, debug=False, back=None):
         super().__init__()
         self.me = initialize["ME"]
         self.players = initialize["PLAYERS"]
         self.side = self.players[self.me]["SIDE"]
         self.time = initialize["TIME"]  # TODO Timer
         self.add_time = initialize["ADD_TIME"]
-        self.arcade = original_frame
+        self.back_to_arcade = back
 
         self.board: dict[int, Piece] = Board()
         self.board_ids: dict = {}
@@ -496,6 +494,16 @@ class Chess(tk.Toplevel):
         t.start()
 
     def move(self, start, end, multi, snap):
+        if "DRAW" in self.poll:
+            if self.poll["DRAW"] == "ACK":
+                self.draw_frame.destroy()
+                self.send(("DRAW", "ACK", False))
+                del self.poll["DRAW"]
+
+            if self.poll["DRAW"] == "REQ":
+                self.send(("DRAW", "DENY"))
+                self.draw_ack(False)
+
         self.last_move = [start, end]
         self.board[start].moved(end)
         self.oldimg = self.board[start]
@@ -631,6 +639,9 @@ class Chess(tk.Toplevel):
                 self.draw_reply()
             elif msg[1] == "ACK":
                 self.draw_ack(msg[2])
+            elif msg[1] == "DENY":
+                self.draw_frame.destroy()
+                del self.poll["DRAW"]
         else:
             pass
 
@@ -723,7 +734,7 @@ class Chess(tk.Toplevel):
             print("Error")
 
     def draw_req(self):
-        self.poll["DRAW"] = "WAIT"
+        self.poll["DRAW"] = "REQ"
         self.send(("DRAW", "REQ"))
         self.draw_frame = tk.Frame(
             self.main_frame, height=Chess.size, width=Chess.size // 2
@@ -746,7 +757,7 @@ class Chess(tk.Toplevel):
         del self.poll["DRAW"]
 
     def draw_reply(self):
-        self.poll["DRAW"] = "WAIT"
+        self.poll["DRAW"] = "ACK"
         self.draw_frame = tk.Frame(
             self.main_frame, height=Chess.size, width=Chess.size // 2
         )
@@ -766,7 +777,7 @@ class Chess(tk.Toplevel):
             self.draw_frame.destroy()
             if accept:
                 self.send(("DRAW", "ACK", True))
-                print('Game Draw')
+                print("Game Draw")
             else:
                 self.send(("DRAW", "ACK", False))
             del self.poll["DRAW"]
@@ -803,7 +814,7 @@ class Chess(tk.Toplevel):
             self.send(("LEAVE", reason))
             self.destroy()
             try:
-                self.arcade.deiconify()
+                self.back_to_arcade()
             except:
                 pass
 

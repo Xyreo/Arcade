@@ -75,10 +75,10 @@ class Property:
 
 class Monopoly(tk.Toplevel):
     def __init__(
-        self, playerdetails, me, send, hobj: Http, order=None, original_frame=None
+        self, playerdetails, me, send, hobj: Http, order=None, back=None
     ):
         super().__init__()
-        self.arcade = original_frame
+        self.back_to_arcade = back
         self.player_details = dict(
             sorted(playerdetails.items(), key=lambda i: i[1]["Name"])
         )
@@ -3135,7 +3135,7 @@ class Monopoly(tk.Toplevel):
         if self.me == player_id and not watch:
             self.quit_game()
             try:
-                self.arcade.deiconify()
+                self.back_to_arcade()
             except:
                 pass
 
