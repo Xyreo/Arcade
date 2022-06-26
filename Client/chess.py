@@ -500,7 +500,7 @@ class Chess(tk.Toplevel):
                 self.send(("DRAW", "ACK", False))
                 del self.poll["DRAW"]
 
-            if self.poll["DRAW"] == "REQ":
+            elif self.poll["DRAW"] == "REQ":
                 self.send(("DRAW", "DENY"))
                 self.draw_ack(False)
 
