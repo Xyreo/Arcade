@@ -600,7 +600,7 @@ class Arcade(tk.Toplevel):
 
     def end_game(self):
         self.deiconify()
-        self.cuurent_room = None
+        self.current_room = None
 
     def exit(self):
         HTTP.logout()
