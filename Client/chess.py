@@ -622,7 +622,7 @@ class Chess(tk.Toplevel):
             if msg[1] == "CONN_ERR":
                 pass  # TODO Left due to connection problems
             else:
-                pass  # TODO Left due to resignation
+                print("You win")  # TODO Left due to resignation
 
         elif msg[0] == "MOVE":
             self.opp_move(msg[1])
@@ -725,21 +725,65 @@ class Chess(tk.Toplevel):
     def draw_req(self):
         self.poll["DRAW"] = "WAIT"
         self.send(("DRAW", "REQ"))
-        # TODO update the frame to say "Waiting for opponent to respond"
+        self.draw_frame = tk.Frame(
+            self.main_frame, height=Chess.size, width=Chess.size // 2
+        )
+        self.draw_frame.place(
+            relx=0.5, rely=0.5, anchor="center", relwidth=1, relheight=0.3
+        )
+        tk.Label(
+            self.draw_frame,
+            text="Waiting for opponent to respond",
+            font=20,
+        ).place(relx=0.5, rely=0.5, anchor="center")
 
     def draw_ack(self, ack):
+        self.draw_frame.destroy()
         if ack:
-            pass
+            print("Game Draw")  # Frame
         else:
-            pass
+            print("Draw offer Declined")
         del self.poll["DRAW"]
 
     def draw_reply(self):
-        self.poll["DRAW"] = "WAIT"  # This HAS to be the first line here
-        if False:
-            self.send("DRAW", "ACK", False)
-            self.send("DRAW", "ACK", True)
-            del self.poll["DRAW"]  # This HAS to be called after user responds
+        self.poll["DRAW"] = "WAIT"
+        self.draw_frame = tk.Frame(
+            self.main_frame, height=Chess.size, width=Chess.size // 2
+        )
+        self.draw_frame.place(
+            relx=0.5, rely=0.5, anchor="center", relwidth=1, relheight=0.3
+        )
+        tk.Label(
+            self.draw_frame,
+            text="Opponent wants to draw the match!",
+            font=20,
+        ).place(relx=0.5, rely=0.25, anchor="center")
+
+        button_style = ttk.Style()
+        button_style.configure("my.TButton", font=("times", 15))
+
+        def rep(accept):
+            self.draw_frame.destroy()
+            if accept:
+                self.send(("DRAW", "ACK", True))
+                print('Game Draw')
+            else:
+                self.send(("DRAW", "ACK", False))
+            del self.poll["DRAW"]
+
+        ttk.Button(
+            self.draw_frame,
+            text="Accept",
+            style="my.TButton",
+            command=lambda: rep(True),
+        ).place(relx=0.25, rely=0.75, anchor="center")
+
+        ttk.Button(
+            self.draw_frame,
+            text="Decline",
+            style="my.TButton",
+            command=lambda: rep(False),
+        ).place(relx=0.75, rely=0.75, anchor="center")
 
     def resign(self):
         if self.show_message(

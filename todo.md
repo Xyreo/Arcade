@@ -2,7 +2,7 @@
 (A) Leaderboard, Stats GUI @arcade
 (A) Timer @chess @Chaitanya-Keyal
 (A) Winner Frame, CheckMate GUI @chess @Chaitanya-Keyal
-(A) Draw @chess @Chaitanya-Keyal
+(A) Decline draw offer if a move is played @chess @ProAltro
 (B) Icons +Arcade
 (B) Window Titles +Arcade
 (B) Resize Windows +Arcade
@@ -15,10 +15,8 @@
 (C) Info, Rules +Arcade
 (C) Change Password #Account @arcade
 (C) Change Profile Picture #Account  @arcade
-(C) Confirmation Popups (Leaving Room) @arcade @ProAltro
 (C) Can't Join Room when in A Room @arcade @ProAltro
 (C) Close Account Frame when clicking anywhere else #Account @arcade @ProAltro
-(C) Player Leaves Randomly (Trade, In Debt) @monopoly @ProAltro
 (D) Logo @arcade
 (D) Custom Notebook @arcade
 (D) Private Room @arcade
