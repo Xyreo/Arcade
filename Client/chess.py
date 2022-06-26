@@ -30,13 +30,15 @@ class Chess(tk.Toplevel):
     size = None
     swap = {"WHITE": "BLACK", "BLACK": "WHITE"}
 
-    def __init__(self, initialize, update, http:Http, debug=False, original_frame=None):
+    def __init__(
+        self, initialize, update, http: Http, debug=False, original_frame=None
+    ):
         super().__init__()
-        self.me = initialize["me"]
-        self.players = initialize["players"]
-        self.side = self.players[self.me]["side"]
-        self.time = initialize["time"]  # TODO Timer
-        self.add_time = initialize["add_time"]
+        self.me = initialize["ME"]
+        self.players = initialize["PLAYERS"]
+        self.side = self.players[self.me]["SIDE"]
+        self.time = initialize["TIME"]  # TODO Timer
+        self.add_time = initialize["ADD_TIME"]
         self.arcade = original_frame
 
         self.board: dict[int, Piece] = Board()
@@ -617,13 +619,17 @@ class Chess(tk.Toplevel):
 
     def event_handler(self, msg):
         if msg[0] == "LEAVE":
-            pass
+            if msg[1] == "CONN_ERR":
+                pass  # TODO Left due to connection problems
+            else:
+                pass  # TODO Left due to resignation
+
         elif msg[0] == "MOVE":
             self.opp_move(msg[1])
         elif msg[0] == "DRAW":
             if msg[1] == "REQ":
                 self.draw_reply()
-            elif msg[1] == "ACC":
+            elif msg[1] == "ACK":
                 self.draw_ack(msg[2])
         else:
             pass
@@ -719,31 +725,38 @@ class Chess(tk.Toplevel):
     def draw_req(self):
         self.poll["DRAW"] = "WAIT"
         self.send(("DRAW", "REQ"))
+        # TODO update the frame to say "Waiting for opponent to respond"
 
     def draw_ack(self, ack):
         if ack:
             pass
         else:
             pass
+        del self.poll["DRAW"]
 
     def draw_reply(self):
-        pass
+        self.poll["DRAW"] = "WAIT"  # This HAS to be the first line here
+        if False:
+            self.send("DRAW", "ACK", False)
+            self.send("DRAW", "ACK", True)
+            del self.poll["DRAW"]  # This HAS to be called after user responds
 
     def resign(self):
         if self.show_message(
-            "Quit Game?",
-            "Are you sure you wish to leave this game? This will imply you are forfeiting and will lose!",
+            "Resign the Game?",
+            "Are you sure you wish to resign? This will cause your opponent to win by default",
             type="okcancel",
         ):
-            self.quit_game()  # Winner Frame
+            self.quit_game("Resign")  # Winner Frame
         else:
             return
 
-    def quit_game(self):
+    def quit_game(self, reason=None):
         if __name__ == "__main__":
             self.http.logout()
             app.quit()
         else:
+            self.send(("LEAVE", reason))
             self.destroy()
             try:
                 self.arcade.deiconify()

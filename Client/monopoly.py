@@ -88,7 +88,7 @@ class Monopoly(tk.Toplevel):
         Monopoly.http = hobj
         print(self.player_details[self.me])
         self.send_msg = lambda msg: send(("MSG", msg))
-        self.leave_room_msg = lambda: send(("LEAVE",))
+        self.leave_room_msg = lambda reason: send(("LEAVE", reason))
         self.create_window()
         self.create_gui_divisions()
         self.initialise()
@@ -137,8 +137,8 @@ class Monopoly(tk.Toplevel):
             self.final_mortgage(msg[2], msg[3], True)
         elif msg[1] == "LEAVE":
             if msg[0] in self.player_details:
-                self.pre_leave(msg[0])
                 self.player_leave(msg[0])
+                self.post_leave(msg[0])
         elif msg[1] == "POLL":
             self.poll(msg[0], msg[2], True)
         elif msg[1] == "JAIL":
@@ -150,6 +150,7 @@ class Monopoly(tk.Toplevel):
                 else:
                     if msg[4] == self.me:
                         self.update_game("Your Trade Offer was declined!")
+                del self.collective["TRADE"]
             elif msg[2] == "REQUEST":
                 if msg[3] == self.me:
                     self.recv_trade(msg[0], *msg[4:7])
@@ -2596,6 +2597,7 @@ class Monopoly(tk.Toplevel):
         self.update_game()
 
     def recv_trade(self, offeror, propertyrecv, propertygive, cash):
+        self.collective["TRADE"] = ("RECV", offeror)
         self.recv_trade_frame = tk.Frame(
             self.action_frame,
             width=(self.board_side - 2) // 1,
@@ -2658,6 +2660,7 @@ class Monopoly(tk.Toplevel):
 
         def reply(msg):
             self.send_msg(msg)
+            del self.collective["TRADE"]
             if msg[2]:
                 self.exec_trade(
                     msg[3],
@@ -2883,6 +2886,7 @@ class Monopoly(tk.Toplevel):
                     self.send_msg(
                         ("TRADE", "REQUEST", offeree, propertyrecv, propertygive, cash)
                     )
+                    self.collective["TRADE"] = ("SEND", offeree)
                 else:
                     self.toggle_action_buttons(True)
                     return
@@ -3042,10 +3046,19 @@ class Monopoly(tk.Toplevel):
         else:
             self.destroy()
 
-    def pre_leave(self, usr):
+    def post_leave(self, usr):
         if "endgame" in self.collective:
             if usr in self.collective["endgame"]:
                 self.poll(usr, ("UPDATE", "endgame", -1))
+
+        if "TRADE" in self.collective:
+            if self.collective["TRADE"][0] == "SEND":
+                self.update_game(
+                    "Your trade offer has been declined as the offeree left"
+                )
+            else:
+                self.update_game("Offeror has left")
+            del self.collective["TRADE"]
 
     def player_leave(self, player_id, debtee=None, quitting=False):
         name = self.player_details[player_id]["Name"]
@@ -3058,7 +3071,7 @@ class Monopoly(tk.Toplevel):
                 "Are you sure you wish to leave this game? This will imply you are forfeiting and will be bankrupt!",
                 type="okcancel",
             ):
-                self.leave_room_msg()
+                self.leave_room_msg("Forfeit")
                 if len(self.player_details) == 2:
                     self.end_game(
                         winner=[i for i in self.player_details if i != player_id][0]
@@ -3082,7 +3095,7 @@ class Monopoly(tk.Toplevel):
                 ):
                     watch = True
             else:
-                self.leave_room_msg()
+                self.leave_room_msg("Bankrupt")
 
         for i in self.player_details[player_id]["Properties"]:
             i.owner = debtee

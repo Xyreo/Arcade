@@ -39,6 +39,11 @@ class Rooms(dict):
     def __init__(self):
         super().__init__({"CHESS": {}, "MNPLY": {}})
 
+    def __contains__(self, val):
+        if val in self["CHESS"] or val in self["MNPLY"]:
+            return True
+        return False
+
     def initialize(self, game, rooms):
         self[game] = {}
         for room in rooms:
@@ -94,6 +99,8 @@ class Arcade(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.exit)
         self.thr = threading.Thread(target=self.CLI, daemon=True)
         self.thr.start()
+
+        self.current_room = None
 
     def initialize(self, name, token):
         self.geometry(
@@ -194,7 +201,7 @@ class Arcade(tk.Toplevel):
 
         elif dest == "ROOM":
             self.rooms.add_room(msg[1], msg[2])
-            self.join_room(msg[1], msg[2]["id"])
+            self.join_room(msg[2]["id"], msg[1])
 
         elif dest == self.current_room:
             game = "CHESS" if dest in self.rooms["CHESS"] else "MNPLY"
@@ -203,11 +210,11 @@ class Arcade(tk.Toplevel):
                     self.rooms.add_player(dest, msg[3])
                 elif msg[2] == "REMOVE":
                     self.rooms.remove_player(dest, msg[3])
-                self.update_room(game, self.rooms[game][dest])
+                self.update_room(self.rooms[game][dest])
 
             elif msg[1] == "SETTINGS":
                 self.rooms.change_settings(dest, msg[2])
-                self.update_room(game, self.rooms[game][dest])  # TODO gui for this
+                self.update_room(self.rooms[game][dest])  # TODO gui for this
 
             elif msg[1] == "ROOM":
                 self.room_frames[game].destroy()
@@ -218,7 +225,10 @@ class Arcade(tk.Toplevel):
                     self.withdraw()
                     if game == "CHESS":
                         self.game = Chess(
-                            msg[3], lambda move: self.send((dest, "MSG", move)), HTTP,original_frame=self
+                            msg[3],
+                            lambda move: self.send((dest, "MSG", move)),
+                            HTTP,
+                            original_frame=self,
                         )
                     elif game == "MNPLY":
                         details = msg[3]
@@ -344,7 +354,7 @@ class Arcade(tk.Toplevel):
             frame,
             text="Join",
             font=("times", 13),
-            command=lambda: self.join_selected_room(game, tree.selection()),
+            command=lambda: self.join_selected_room(tree.selection(), game),
         )
         self.join_select_room_button.place(relx=0.96, rely=1, anchor="se")
 
@@ -353,7 +363,7 @@ class Arcade(tk.Toplevel):
             "#0",
             width=10,
         )
-        tree.bind("<Return>", lambda a: self.join_selected_room(game, tree.selection()))
+        tree.bind("<Return>", lambda a: self.join_selected_room(tree.selection(), game))
 
         tree.column(
             "Room",
@@ -407,27 +417,52 @@ class Arcade(tk.Toplevel):
         self.unbind("<Escape>")
         self.send(("0", "LEAVE", game.upper()))
 
-    def join_selected_room(self, game, room):
+    def join_selected_room(self, room, game=None):
+        if room in self.rooms:
+            game = "CHESS" if room in self.rooms["CHESS"] else "MNPLY"
         if len(room) != 1:
             return
+        if self.current_room:
+            if self.show_message(
+                "Room Already Joined!",
+                "Do you want to leave the previous room and join here?",
+                "yesno",
+            ):
+                self.leave_room(self.current_room, confirm=False)
+            else:
+                return
+
         self.leave_lobby(game, frame_preserve=True)
         self.send((game, "JOIN", room[0]))
 
     def create_room(self, game):
         settings = {}
+        if self.current_room:
+            if self.show_message(
+                "Room Already Joined!",
+                "Do you want to leave the previous room and create a new one?",
+                "yesno",
+            ):
+                self.leave_room(self.current_room, confirm=False)
+            else:
+                return
         if game == "CHESS":
             settings = {
                 "STATUS": "PUBLIC",
                 "MAX_PLAYERS": 2,
                 "TIME": 10,
                 "HOST_SIDE": "BLACK",
+                "ADD_TIME": 5,
             }
         if game == "MNPLY":
             settings = {"STATUS": "PUBLIC", "MAX_PLAYERS": 4}
         # TODO: Select Settings
         self.send((game, "CREATE", settings))
 
-    def join_room(self, game, room):
+    def join_room(self, room, game=None):
+        if room in self.rooms:
+            game = "CHESS" if room in self.rooms["CHESS"] else "MNPLY"
+
         if self.lobby_frames[game]:
             self.lobby_frames[game].destroy()
             self.lobby_frames[game] = None
@@ -453,12 +488,12 @@ class Arcade(tk.Toplevel):
             font=("times", 10),
             highlightthickness=0,
             border=0,
-            command=lambda: self.leave_room(game, room["id"], delete=hostname == "You"),
+            command=lambda: self.leave_room(room["id"], game, delete=hostname == "You"),
         ).place(relx=0.01, rely=0.01, anchor="nw")
 
         self.bind(
             "<Escape>",
-            lambda a: self.leave_room(game, room["id"], delete=hostname == "You"),
+            lambda a: self.leave_room(room["id"], game, delete=hostname == "You"),
         )
 
         tk.Label(
@@ -509,9 +544,11 @@ class Arcade(tk.Toplevel):
                 font=("times", 13),
             ).place(relx=0.5, rely=0.9, anchor="center")
 
-        self.update_room(game, room)
+        self.update_room(room, game)
 
-    def update_room(self, game, room):
+    def update_room(self, room, game=None):
+        if room["id"] in self.rooms:
+            game = "CHESS" if room["id"] in self.rooms["CHESS"] else "MNPLY"
         for child in self.room_members[game].winfo_children():
             child.destroy()
         tk.Label(
@@ -540,11 +577,20 @@ class Arcade(tk.Toplevel):
             ).place(relx=0.5, rely=(k / 10), anchor="center")
             k += 1
 
-    def leave_room(self, game, room, delete=False):
+    def leave_room(self, room, game=None, delete=False, confirm=True):
+        if room in self.rooms:
+            game = "CHESS" if room in self.rooms["CHESS"] else "MNPLY"
+        if confirm:
+            if not self.show_message(
+                "Leaving room!",
+                f"Do you want to leave the room? {'The Room will be deleted if you leave'if delete else ''}",
+                "yesno",
+            ):
+                return
         self.current_room = None
         self.room_frames[game].destroy()
         self.room_frames[game] = None
-        self.send((room, "LEAVE"))
+        self.send((room, "LEAVE", "Quit"))
         if not delete:
             self.join_lobby(game)
 

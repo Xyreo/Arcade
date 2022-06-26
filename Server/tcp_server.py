@@ -106,7 +106,7 @@ class Room(Channels):
         self.broadcast(("PLAYER", "ADD", player.details()), self.uuid)
         player.send_instruction(("ROOM", self.game, self.details()))
 
-    def leave(self, player):
+    def leave(self, player, reason=None):
         if self.status in ["PUBLIC", "PRIVATE"]:
             if player.uuid == self.host.uuid:
                 self.delete()
@@ -114,7 +114,7 @@ class Room(Channels):
                 self.broadcast(("PLAYER", "REMOVE", player.uuid))
 
         elif self.status == "INGAME":
-            self.msg(("MSG", ("LEAVE",)), player.uuid)
+            self.msg(("MSG", ("LEAVE", reason)), player.uuid)
             if len(self.members) == 0:
                 del rooms[self.uuid]
         super().leave(player)
@@ -123,11 +123,11 @@ class Room(Channels):
         p = {}
         for i in self.members:
             if i.uuid == self.host.uuid:
-                p[i.uuid] = {"Name": i.name, "side": self.settings["HOST_SIDE"]}
+                p[i.uuid] = {"NAME": i.name, "SIDE": self.settings["HOST_SIDE"]}
             else:
                 p[i.uuid] = {
-                    "name": i.name,
-                    "side": "BLACK"
+                    "NAME": i.name,
+                    "SIDE": "BLACK"
                     if self.settings["HOST_SIDE"] == "WHITE"
                     else "WHITE",
                 }
@@ -138,7 +138,7 @@ class Room(Channels):
                     self.uuid,
                     "ROOM",
                     "START",
-                    {"me": i.uuid, "players": p, "time": self.settings["TIME"]},
+                    {"ME": i.uuid, "PLAYERS": p, "TIME": self.settings["TIME"]},
                 )
             )
 
@@ -289,7 +289,7 @@ class Client(threading.Thread):
         if action == "START":
             rooms[room].start(self)
         elif action == "LEAVE":
-            rooms[room].leave(self)
+            rooms[room].leave(self, msg[1])
         elif action == "SETTINGS":
             rooms[room].change_settings(msg[1])
         elif action == "MSG":
@@ -315,7 +315,7 @@ class Client(threading.Thread):
             if i in lobbies:
                 lobbies[i].leave(self)
             elif i in rooms:
-                rooms[i].leave(self)
+                rooms[i].leave(self, "CONN_ERR")
         self.channels = []
         if self.uuid in players:
             del players[self.uuid]
