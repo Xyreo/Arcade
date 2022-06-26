@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import random
 import threading
 import time
 import tkinter as tk
@@ -451,7 +452,7 @@ class Arcade(tk.Toplevel):
                 "STATUS": "PUBLIC",
                 "MAX_PLAYERS": 2,
                 "TIME": 10,
-                "HOST_SIDE": "BLACK",
+                "HOST_SIDE": random.choice(("BLACK", "WHITE")),
                 "ADD_TIME": 5,
             }
         if game == "MNPLY":

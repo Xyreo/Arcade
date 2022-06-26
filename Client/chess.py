@@ -1323,13 +1323,13 @@ if __name__ == "__main__":
     hobj.login("test", "test")
     chess = Chess(
         {
-            "me": "123456",
-            "players": {
-                "123456": {"name": "gay", "side": "BLACK"},
-                "456789": {"name": "straight", "side": "WHITE"},
+            "ME": "456789",
+            "PLAYERS": {
+                "123456": {"NAME": "gay", "SIDE": "BLACK"},
+                "456789": {"NAME": "straight", "SIDE": "WHITE"},
             },
-            "time": 10,  # minutes
-            "add_time": 5,  # seconds
+            "TIME": 10,  # minutes
+            "ADD_TIME": 5,  # seconds
         },
         print,
         hobj,

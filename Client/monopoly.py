@@ -3060,6 +3060,10 @@ class Monopoly(tk.Toplevel):
                 self.update_game("Offeror has left")
             del self.collective["TRADE"]
 
+        if self.isInDebt:
+            payer, amt, receiver = self.debt_details
+            self.player_details[receiver]["Money"] += amt
+
     def player_leave(self, player_id, debtee=None, quitting=False):
         name = self.player_details[player_id]["Name"]
         if self.turn == player_id:
