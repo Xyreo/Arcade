@@ -121,6 +121,10 @@ class Arcade(tk.Toplevel):
         )
         self.main_notebook.place(relx=0, rely=0, anchor="nw")
 
+        button_style = ttk.Style()
+        button_style.configure("20.TButton", font=("times", 20))
+        button_style.configure("15.TButton", font=("times", 15))
+
         # Chess stuff
         self.chess_frame = tk.Frame(self.main_notebook, background="white")
         self.chess_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
@@ -133,13 +137,10 @@ class Arcade(tk.Toplevel):
         self.main_notebook.add(self.monopoly_frame, text="Monopoly")
         self.join_create("MNPLY")
 
-        button_style = ttk.Style()
-        button_style.configure("my.TButton", font=("times", 20))
-
         self.log_out_button = ttk.Button(
             self,
             text="Log Out",
-            style="my.TButton",
+            style="20.TButton",
             command=self.log_out,
         )
         self.log_out_button.place(relx=0.99, rely=0.01, anchor="ne")
@@ -299,14 +300,12 @@ class Arcade(tk.Toplevel):
         self.login.place(relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n")
 
     def join_create(self, game):
-        button_style = ttk.Style()
-        button_style.configure("my.TButton", font=("times", 20))
         parent = self.chess_frame if game == "CHESS" else self.monopoly_frame
 
         join_button = ttk.Button(
             parent,
             text="Join A Room",
-            style="my.TButton",
+            style="20.TButton",
             command=lambda: self.join_lobby(game),
         )
         join_button.place(relx=0.5, rely=0.4, anchor="center")
@@ -314,7 +313,7 @@ class Arcade(tk.Toplevel):
         create_button = ttk.Button(
             parent,
             text="Create A Room",
-            style="my.TButton",
+            style="20.TButton",
             command=lambda: self.create_room(game),
         )
         create_button.place(relx=0.5, rely=0.6, anchor="center")
@@ -664,13 +663,10 @@ class Login(tk.Frame):
         self.pwdentry.place(relx=0.45, rely=0.4, relwidth=0.2, anchor="w")
         self.uentry.bind("<Return>", lambda a: self.pwdentry.focus_set())
 
-        button_style = ttk.Style()
-        button_style.configure("small.TButton", font=("times", 15))
-
         self.login_button = ttk.Button(
             self,
             text="LOGIN",
-            style="small.TButton",
+            style="15.TButton",
             command=self.login,
         )
         self.login_button.place(relx=0.5, rely=0.8, anchor="center")
@@ -836,13 +832,10 @@ class Register(tk.Frame):
         self.uentry.bind("<Return>", lambda a: self.pwdentry.focus_set())
         self.pwdentry.bind("<Return>", lambda a: self.confpwdentry.focus_set())
 
-        button_style = ttk.Style()
-        button_style.configure("my.TButton", font=("times", 15))
-
         self.reg_button = ttk.Button(
             self,
             text="REGISTER",
-            style="my.TButton",
+            style="15.TButton",
             command=self.reg_user,
         )
         self.reg_button.place(relx=0.5, rely=0.8, anchor="center")
@@ -949,7 +942,15 @@ class Register(tk.Frame):
         missing = self.check_pass(pwd)
 
         msg = ""
-        if uname and not pwd:
+        if len(uname) > 32:
+            self.uentry.delete(0, tk.END)
+            msg = "Username is too long!\nMaximum 32 characters!"
+            self.prompt(msg)
+        elif uname in ["none", "test"]:
+            self.uentry.delete(0, tk.END)
+            msg = "Illegal Username!"
+            self.prompt(msg)
+        elif uname and not pwd:
             self.pwdentry.delete(0, tk.END)
             msg = "Enter Password"
             self.prompt(msg)
@@ -975,7 +976,7 @@ class Register(tk.Frame):
             if self.http.register(
                 uname.strip(),
                 pwd.strip(),
-                "C:/Users/Chaitanya Keyal/OneDrive/Programming/Gr12-CompProject/Client/Assets/Home_Assets/default.png",
+                "C:/Users/Chaitanya Keyal/OneDrive/Programming/Gr12-CompProject/Client/Assets/Home_Assets/default.png",  # TODO PFP
             ):
                 msg = "Registering..."
                 self.prompt(msg)
