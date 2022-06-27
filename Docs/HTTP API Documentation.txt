@@ -33,8 +33,11 @@ Methods:
 8. obj.mply_details(optional: int:position):
     Returns the values requested if valid position, else returns -1.
 
-9. obj.stats(str:game, int:user_id):
-    Returns the list of games played by user user_id.
+9. obj.stats(str:game, str:name):
+    Returns the list of games played by user user_id. Format of each game - (<Game ID>,<Result>,<Winner>)
 
-10. obj.addgame(str:game, int:winner_uuid, dict:results, list[int]:player_uuids):
+10. obj.addgame(str:game, str:winner_uuid, dict:results, list[int]:player_names):
     Adds game to the database.
+
+11. obj.leaderboard(str:game, str:name):
+    Returns dictionary with the game specific leaderboard information
