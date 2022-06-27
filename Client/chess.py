@@ -763,19 +763,19 @@ class Chess(tk.Toplevel):
             font=20,
         ).place(relx=0.5, rely=0.4, anchor="center")
 
-        self.http.addgame(
-            "CHESS",
-            self.players[winner]["NAME"] if winner else "none",
-            {self.board.fen.value},
-            [self.me, self.opponent],
-        )  # ? Add PGN
-
         ttk.Button(
             self.end_game_frame,
             text="EXIT GAME",
             style="20.TButton",
             command=self.quit_game,
         ).place(relx=0.5, rely=0.8, anchor="center")
+
+        self.http.addgame(
+            "CHESS",
+            self.players[winner]["NAME"] if winner else "none",
+            {"board": self.board.fen.value},
+            [self.me, self.opponent],
+        )  # ? Add PGN
 
     def draw_ack(self, ack):
         self.draw_frame.destroy()

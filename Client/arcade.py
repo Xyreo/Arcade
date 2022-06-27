@@ -666,7 +666,7 @@ class Login(tk.Frame):
         self.login_button = ttk.Button(
             self,
             text="LOGIN",
-            style="15.TButton",
+            style="20.TButton",
             command=self.login,
         )
         self.login_button.place(relx=0.5, rely=0.8, anchor="center")
@@ -835,7 +835,7 @@ class Register(tk.Frame):
         self.reg_button = ttk.Button(
             self,
             text="REGISTER",
-            style="15.TButton",
+            style="20.TButton",
             command=self.reg_user,
         )
         self.reg_button.place(relx=0.5, rely=0.8, anchor="center")
