@@ -242,18 +242,18 @@ def details(pos):
 def monopoly_game_add():
     try:
         data = json.loads(request.data)
-        winner = int(data["winner"])
+        winner = data["winner"]
         result = data["result"]
 
         players = data["players"]
         result = str(result).replace("'", '"')
         s = "insert into game_user(user,game) values "
         for i in players:
-            s += f"({i},@v1),"
+            s += f"('{i}',@v1),"
         s = s[:-1] + ";"
 
-        q = f"""SET @v1 := (SELECT uuid FROM game ORDER BY uuid DESC LIMIT 1)+1;
-        insert into game(type,result,winner,uuid) values ('MPY','{result}',{winner},@v1);
+        q = f"""SET @v1 := (SELECT IFNULL(srno,0) FROM game ORDER BY srno DESC LIMIT 1)+1;
+        insert into game(srno,type,result,winner) values (@v1,'MNPLY','{result}','{winner}');
         {s}"""
         db.data_change(q, multi=True)
         return jsonify("Success"), 200
@@ -262,19 +262,25 @@ def monopoly_game_add():
         return jsonify("Bad Request"), 400
 
 
-@monopoly.route("/stats/<int:uuid>")
-def monopoly_stats(uuid):
-    q = f'select user.uuid,user.name,game.uuid,game.result,game.winner from user inner join game_user  on game_user.user=user.uuid inner join game on  game_user.game = game.uuid where user.uuid={uuid} and game.type="MPY";'
+@monopoly.route("/stats/<string:name>")
+def monopoly_stats(name):
+    q = f'select user.srno,user.name,game.srno,game.result,game.winner from user inner join game_user on game_user.user=user.name inner join game on game_user.game = game.srno where user.name="{name}" and game.type="MNPLY";'
     details = db.execute(q)
-    if len(details):
-        return jsonify(details), 200
-    return jsonify("Bad Request"), 400
+    try:
+        if not (details or len(details)):
+            return jsonify("Bad Request"), 400
+        res = []
+        for i in details:
+            res.append((i[2], eval(i[3]), i[4]))
+        return jsonify(res), 200
+    except Exception as e:
+        return jsonify(e), 400
 
 
 @monopoly.route("/leaderboard")
 def monopoly_leaderboard():
     det = db.execute(
-        "select user.uuid, user.name, game.uuid, game.result, game.winner from user inner join game_user  on game_user.user=user.uuid inner join game on game_user.game = game.uuid where game.type='MPY';"
+        "select user.srno, user.name, game.srno, game.result, game.winner from user inner join game_user on game_user.user=user.name inner join game on game_user.game = game.srno where game.type='MNPLY';"
     )
     # cursor.execute('drop table monopoly_board_values')
     try:
@@ -302,18 +308,18 @@ def monopoly_leaderboard():
 def chess_game_add():
     try:
         data = json.loads(request.data)
-        winner = int(data["winner"])
+        winner = data["winner"]
         result = data["result"]
 
         players = data["players"]
         result = str(result).replace("'", '"')
         s = "insert into game_user(user,game) values "
         for i in players:
-            s += f"({i},@v1),"
+            s += f"('{i}',@v1),"
         s = s[:-1] + ";"
 
-        q = f"""SET @v1 := (SELECT uuid FROM game ORDER BY uuid DESC LIMIT 1)+1;
-        insert into game(type,result,winner,uuid) values ('CHS','{result}',{winner},@v1);
+        q = f"""SET @v1 := (SELECT IFNULL(srno,0) FROM game ORDER BY srno DESC LIMIT 1)+1;
+        insert into game(srno,type,result,winner) values (@v1,'CHESS','{result}','{winner}');
         {s}"""
         db.data_change(q, multi=True)
         return jsonify("Succes"), 200
@@ -322,19 +328,25 @@ def chess_game_add():
         return jsonify("Bad Req"), 400
 
 
-@chess.route("/stats/<int:uuid>")
-def chess_stats(uuid):
-    q = f'select user.uuid,user.name,game.uuid,game.result,game.winner from user inner join game_user  on game_user.user=user.uuid inner join game on game_user.game = game.uuid where user.uuid={uuid} and game.type="CHS";'
+@chess.route("/stats/<string:name>")
+def chess_stats(name):
+    q = f'select user.srno,user.name,game.srno,game.result,game.winner from user inner join game_user on game_user.user=user.name inner join game on game_user.game = game.srno where user.name="{name}" and game.type="CHESS";'
     details = db.execute(q)
-    if len(details):
-        return jsonify(details), 200
-    return jsonify("Bad Request"), 400
+    try:
+        if not (details or len(details)):
+            return jsonify("Bad Request"), 400
+        res = []
+        for i in details:
+            res.append((i[2], eval(i[3]), i[4]))
+        return jsonify(res), 200
+    except Exception as e:
+        return jsonify(e), 400
 
 
 @chess.route("/leaderboard")
 def chess_leaderboard():
     det = db.execute(
-        "select user.uuid, user.name, game.uuid, game.result, game.winner from user inner join game_user  on game_user.user=user.uuid inner join game on game_user.game = game.uuid where game.type='CHS';"
+        "select user.srno, user.name, game.srno, game.result, game.winner from user inner join game_user on game_user.user=user.name inner join game on game_user.game = game.srno where game.type='CHESS';"
     )
     # cursor.execute('drop table monopoly_board_values')
     try:
@@ -344,12 +356,15 @@ def chess_leaderboard():
                 res[i[0]]["games"].append((i[2], eval(i[3]), i[4]))
             else:
                 res[i[0]] = {"name": i[1], "games": [(i[2], eval(i[3]), i[4])]}
-        # print(tab.tabulate(cursor))
-        # print(res)
         send = {}
         for i, j in res.items():
-            g = [1 for nw in j["games"] if int(nw[2]) == i]
-            send[j["name"]] = len(g)
+            pt = 0
+            for game in j["games"]:
+                if j["name"] == game[2]:
+                    pt += 1
+                elif game[2] == "none":
+                    pt += 0.5
+            send[j["name"]] = pt
         return jsonify(send), 200
 
     except Exception as e:

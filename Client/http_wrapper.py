@@ -93,8 +93,8 @@ class Http:
         )
         return r.json()
 
-    def stats(self, game, uuid):
-        r = self.game_send("get", game, f"stats/{uuid}")
+    def stats(self, game, name):
+        r = self.game_send("get", game, f"stats/{name}")
         return r.json()
 
     def leaderboard(self, game):
@@ -160,9 +160,11 @@ def pfp_make(img):
 
 
 if __name__ == "__main__":
-    app = Http("http://167.71.231.52:5000")
-    print(app.register("test1", "test1", pfp_send(ASSET + "/default_pfp.png")))
+    app = Http("http://localhost:5000")
+    # print(app.register("test1", "test1", pfp_send(ASSET + "/default_pfp.png")))
     print(app.login("test1", "test1"))
+    print(app.addgame("monopoly", "user1", {"1": "2"}, ["root", "user2", "user1"]))
+    print(app.leaderboard("monopoly"))
     # print(app.del_user())
     print(app.logout())
     # print(app.login("test", "test1"))
