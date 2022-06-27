@@ -770,12 +770,13 @@ class Chess(tk.Toplevel):
             command=self.quit_game,
         ).place(relx=0.5, rely=0.8, anchor="center")
 
-        self.http.addgame(
-            "CHESS",
-            self.players[winner]["NAME"] if winner else "none",
-            {"board": self.board.fen.value},
-            [self.me, self.opponent],
-        )  # ? Add PGN
+        if self.me == winner or (winner == None and self.side == "WHITE"):
+            self.http.addgame(
+                "CHESS",
+                self.players[winner]["NAME"] if winner else "none",
+                {"board": self.board.fen.value},
+                [self.me, self.opponent],
+            )  # ? Add PGN
 
     def draw_ack(self, ack):
         self.draw_frame.destroy()

@@ -102,7 +102,7 @@ class Http:
         return r.json()
 
     def game_send(self, method, game, path, data=None):
-        path = f"{game}/{path}"
+        path = f"{game.lower()}/{path}"
         r = self.auth_send(method, path, data)
         return r
 
