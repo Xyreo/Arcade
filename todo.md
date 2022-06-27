@@ -1,7 +1,6 @@
 (A) Stats Add Game @arcade @ProAltro
 (A) Leaderboard, Stats GUI @arcade
 (A) Timer @chess @Chaitanya-Keyal
-(A) Winner Frame, CheckMate GUI @chess @Chaitanya-Keyal
 (B) Icons +Arcade
 (B) Window Titles +Arcade
 (B) Resize Windows +Arcade
@@ -22,6 +21,7 @@
 (D) All Rules and Texts @monopoly
 (E) GUI Relative Placing and Sizing @monopoly
 (E) Add Hilarious Trade Meme @monopoly
+(Z) Monopoly Stats (Fav Place, Fav Property) @monopoly #Extra 
 (Y) Music, Sounds +Arcade #Extra
 (Z) TakeBack @chess #Extra
 (Z) Voice Chat @arcade #Extra

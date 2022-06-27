@@ -34,6 +34,7 @@ class Chess(tk.Toplevel):
         super().__init__()
         self.me = initialize["ME"]
         self.players = initialize["PLAYERS"]
+        self.opponent = [i for i in self.players if i != self.me][0]
         self.side = self.players[self.me]["SIDE"]
         self.time = initialize["TIME"]  # TODO Timer
         self.add_time = initialize["ADD_TIME"]
@@ -82,15 +83,34 @@ class Chess(tk.Toplevel):
             self, height=Chess.size, width=Chess.size // 2, bg="grey"
         )
         self.main_frame.place(relx=0.9, rely=0.5, anchor="e")
-        tk.Button(
+        self.quit_button = tk.Button(
             self,
             text="← QUIT",
             font=("times", (Chess.size - 2) // 60),
             highlightthickness=0,
             border=0,
             command=self.resign,
-        ).place(relx=0.01, rely=0.0125, anchor="nw")
+        )
+        self.quit_button.place(relx=0.01, rely=0.0125, anchor="nw")
 
+        self.disimg = ImageTk.PhotoImage(
+            Image.new(
+                "RGBA",
+                (Chess.size, Chess.size),
+                self.winfo_rgb("black") + (int(0.5 * 255),),
+            )
+        )
+
+        self.disabled_image = self.canvas.create_image(
+            Chess.size // 2,
+            Chess.size // 2,
+            image=self.disimg,
+            anchor=tk.CENTER,
+        )
+
+        button_style = ttk.Style()
+        button_style.configure("20.TButton", font=("times", 20))
+        button_style.configure("15.TButton", font=("times", 15))
         for i in range(8):
             for j in range(8):
                 s = os.path.join(ASSET_PATH, "Chess_Assets", "circle.png")
@@ -117,9 +137,7 @@ class Chess(tk.Toplevel):
                     ),
                 )
 
-        self.canvas.bind("<Button-1>", self.clicked)
-        self.canvas.bind("<B1-Motion>", self.drag_piece)
-        self.canvas.bind("<ButtonRelease-1>", self.released)
+        self.enable_canvas()
 
     def initialize_board(self):
 
@@ -210,32 +228,13 @@ class Chess(tk.Toplevel):
 
         # endregion
 
-        # region Misc
-        self.disimg = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(
-                    os.path.join(ASSET_PATH, "Chess_Assets", "disable.png")
-                ).resize((Chess.size, Chess.size), Image.Resampling.LANCZOS)
-            ),
-            master=self.canvas,
-        )
-        self.disabled_image = self.canvas.create_image(
-            Chess.size // 2,
-            Chess.size // 2,
-            image=self.disimg,
-            anchor=tk.CENTER,
-            state=tk.HIDDEN,
-        )
-        # endregion
-
     def timer_buttons(self):
-        button_style = ttk.Style()
-        button_style.configure("my.TButton", font=("times", 20))
+        # TIMERS
 
         resign = ttk.Button(
             self.main_frame,
             text="Resign",
-            style="my.TButton",
+            style="20.TButton",
             command=self.resign,
         )
         resign.place(relx=0.5, rely=0.4, anchor="center")
@@ -243,7 +242,7 @@ class Chess(tk.Toplevel):
         draw = ttk.Button(
             self.main_frame,
             text="Offer Draw",
-            style="my.TButton",
+            style="20.TButton",
             command=self.draw_req,
         )
         draw.place(relx=0.5, rely=0.6, anchor="center")
@@ -571,10 +570,10 @@ class Chess(tk.Toplevel):
             self.COLOREDSQUARES["check"] = i
 
         if self.check_for_mate(Chess.swap[color]):
-            if check:
-                self.show_checkmate(True)
-            else:
-                self.show_checkmate(False)
+            self.final_frame(
+                "CHECKMATE" if check else "STALEMATE",
+                self.me if self.side == color else self.opponent,
+            )
 
     def enable_canvas(self):
         self.canvas.bind("<Button-1>", self.clicked)
@@ -582,15 +581,16 @@ class Chess(tk.Toplevel):
         self.canvas.bind("<ButtonRelease-1>", self.released)
         self.canvas.itemconfig(self.disabled_image, state=tk.HIDDEN)
 
-    def disable_canvas(self):
+    def disable_canvas(self, greyed=False):
         self.canvas.unbind("<Button-1>")
         self.canvas.unbind("<B1-Motion>")
         self.canvas.unbind("<ButtonRelease-1>")
-        self.canvas.itemconfig(self.disabled_image, state=tk.NORMAL)
-        self.canvas.tag_raise(self.disabled_image)
+        if greyed:
+            self.canvas.itemconfig(self.disabled_image, state=tk.NORMAL)
+            self.canvas.tag_raise(self.disabled_image)
 
     def promotion(self, end):
-        # self.disable_canvas()
+        self.disable_canvas(True)
         self.canvas.bind("<Button-1>", self.promotion_click)
         sign = 1 if end % 10 == 0 else -1
         self.pawn_options = {
@@ -628,9 +628,9 @@ class Chess(tk.Toplevel):
     def event_handler(self, msg):
         if msg[0] == "LEAVE":
             if msg[1] == "CONN_ERR":
-                pass  # TODO Left due to connection problems
+                self.final_frame("CONN", winner=self.me)
             else:
-                print("You win")  # TODO Left due to resignation
+                self.final_frame("RESIGN", winner=self.me)
 
         elif msg[0] == "MOVE":
             self.opp_move(msg[1])
@@ -674,7 +674,6 @@ class Chess(tk.Toplevel):
             message = f"{opponent} played {piece.title()} to {dest.upper()}"
             if captured:
                 message += f", capturing your {captured.piece.title()}"
-            print(self.get_active_window())
             if self.get_active_window() != "Chess":
                 noti.notify(
                     title="Your Turn has started",
@@ -698,20 +697,6 @@ class Chess(tk.Toplevel):
         j = ord(s[0]) - ord("a")
         return j * 10 + i
 
-    # TODO Draw Game GUI
-
-    def show_checkmate(self, check):
-        if check:
-            txt = "Checkmate"
-        else:
-            txt = "Stalemate"
-
-        tk.Label(self, text=txt, font=40).place(
-            relx=0.5, rely=0.5, anchor=tk.CENTER, relheight=1, relwidth=1
-        )
-        sleep(2)  # Winner Frame
-        self.quit_game()
-
     def show_message(self, title, message, type="info", timeout=0):
         self.mbwin = tk.Toplevel(self)
         self.mbwin.withdraw()
@@ -731,7 +716,7 @@ class Chess(tk.Toplevel):
                 yesno = msgb.askyesno(title, message, master=self.mbwin)
                 return yesno
         except:
-            print("Error")
+            print("Messagebox Error")
 
     def draw_req(self):
         self.poll["DRAW"] = "REQ"
@@ -748,12 +733,61 @@ class Chess(tk.Toplevel):
             font=20,
         ).place(relx=0.5, rely=0.5, anchor="center")
 
+    def final_frame(self, type, winner=None):
+        self.disable_canvas(greyed=True)
+        self.protocol("WM_DELETE_WINDOW", self.quit_game)
+        self.quit_button.configure(command=self.quit_game)
+        txt = ""
+        if type == "DRAW":
+            txt = f"The Game is Tied!\n\nPoints:\n\n{self.players[self.me]['NAME']}: ½\n\n{self.players[self.opponent]['NAME']}: ½"
+        elif type == "CHECKMATE":
+            txt = f"Checkmate!\n\nPoints:\n\n{self.players[self.me]['NAME']}: {1 if self.me==winner else 0}\n\n{self.players[self.opponent]['NAME']}: {1 if self.opponent==winner else 0}"
+        elif type == "STALEMATE":
+            winner = None
+            txt = f"Stalemate!\n\nPoints:\n\n{self.players[self.me]['NAME']}: ½\n\n{self.players[self.opponent]['NAME']}: ½"
+        elif type == "CONN":
+            txt = f"Opponent disconnected!\n\nPoints:\n\n{self.players[self.me]['NAME']}: {1 if self.me==winner else 0}\n\n{self.players[self.opponent]['NAME']}: {1 if self.opponent==winner else 0}"
+        elif type == "RESIGN":
+            txt = f"Opponent resigned!\n\nPoints:\n\n{self.players[self.me]['NAME']}: {1 if self.me==winner else 0}\n\n{self.players[self.opponent]['NAME']}: {1 if self.opponent==winner else 0}"
+        else:
+            print(f"ERROR: {type} is invalid!")
+        self.end_game_frame = tk.Frame(
+            self,
+            height=Chess.size,
+            width=Chess.size // 2,
+        )
+        self.end_game_frame.place(relx=0.9, rely=0.5, anchor="e")
+        tk.Label(
+            self.end_game_frame,
+            text=txt,
+            font=20,
+        ).place(relx=0.5, rely=0.4, anchor="center")
+
+        self.http.addgame(
+            "CHESS",
+            self.players[winner]["NAME"] if winner else "none",
+            {self.board.fen.value},
+            [self.me, self.opponent],
+        )  # ? Add PGN
+
+        ttk.Button(
+            self.end_game_frame,
+            text="EXIT GAME",
+            style="20.TButton",
+            command=self.quit_game,
+        ).place(relx=0.5, rely=0.8, anchor="center")
+
     def draw_ack(self, ack):
         self.draw_frame.destroy()
         if ack:
-            print("Game Draw")  # Frame
+            self.final_frame("DRAW")
         else:
-            print("Draw offer Declined")
+            noti.notify(
+                title="Declined!",
+                app_name="Chess",
+                message=f"{self.players[self.opponent]['NAME']} has declined your draw offer!",
+                timeout=5,
+            )
         del self.poll["DRAW"]
 
     def draw_reply(self):
@@ -770,14 +804,11 @@ class Chess(tk.Toplevel):
             font=20,
         ).place(relx=0.5, rely=0.25, anchor="center")
 
-        button_style = ttk.Style()
-        button_style.configure("my.TButton", font=("times", 15))
-
         def rep(accept):
             self.draw_frame.destroy()
             if accept:
                 self.send(("DRAW", "ACK", True))
-                print("Game Draw")
+                self.final_frame("DRAW")
             else:
                 self.send(("DRAW", "ACK", False))
             del self.poll["DRAW"]
@@ -785,14 +816,14 @@ class Chess(tk.Toplevel):
         ttk.Button(
             self.draw_frame,
             text="Accept",
-            style="my.TButton",
+            style="15.TButton",
             command=lambda: rep(True),
         ).place(relx=0.25, rely=0.75, anchor="center")
 
         ttk.Button(
             self.draw_frame,
             text="Decline",
-            style="my.TButton",
+            style="15.TButton",
             command=lambda: rep(False),
         ).place(relx=0.75, rely=0.75, anchor="center")
 
@@ -802,7 +833,7 @@ class Chess(tk.Toplevel):
             "Are you sure you wish to resign? This will cause your opponent to win by default",
             type="okcancel",
         ):
-            self.quit_game("Resign")  # Winner Frame
+            self.quit_game("RESIGN")
         else:
             return
 
@@ -811,7 +842,8 @@ class Chess(tk.Toplevel):
             self.http.logout()
             app.quit()
         else:
-            self.send(("LEAVE", reason))
+            if reason:
+                self.send(("LEAVE", reason))
             self.destroy()
             try:
                 self.back_to_arcade()

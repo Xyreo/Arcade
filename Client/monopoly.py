@@ -74,9 +74,7 @@ class Property:
 
 
 class Monopoly(tk.Toplevel):
-    def __init__(
-        self, playerdetails, me, send, hobj: Http, order=None, back=None
-    ):
+    def __init__(self, playerdetails, me, send, hobj: Http, order=None, back=None):
         super().__init__()
         self.back_to_arcade = back
         self.player_details = dict(
@@ -101,6 +99,11 @@ class Monopoly(tk.Toplevel):
 
     def initialise(self):
         self.init_objects()
+        button_style = ttk.Style()
+        button_style.configure(
+            "20.TButton", font=("times", int(self.property_width / 3))
+        )
+        button_style.configure("10.TButton", font=("times", 10))
         self.board_canvas.bind("<Button-1>", self.click_to_position)
 
         self.properties = {}
@@ -408,15 +411,10 @@ class Monopoly(tk.Toplevel):
             )
         )
 
-        button_style = ttk.Style()
-        button_style.configure(
-            "my.TButton", font=("times", int(self.property_width / 3))
-        )
-
         self.roll_button = ttk.Button(
             self.board_canvas,
             text="Roll Dice",
-            style="my.TButton",
+            style="20.TButton",
             command=self.roll_dice,
         )
         self.roll_button.place(relx=0.5, rely=0.5, anchor="center")
@@ -1820,7 +1818,7 @@ class Monopoly(tk.Toplevel):
                 self.buy_button = ttk.Button(
                     self.action_frame,
                     text="BUY",
-                    style="my.TButton",
+                    style="20.TButton",
                     command=lambda: self.buy_property(
                         self.player_details[self.turn]["Position"] % 40, self.turn
                     ),
@@ -1830,7 +1828,7 @@ class Monopoly(tk.Toplevel):
                 self.build_button = ttk.Button(
                     self.action_frame,
                     text="BUILD",
-                    style="my.TButton",
+                    style="20.TButton",
                     command=self.build_sell_action_frame,
                 )
                 self.build_button.place(relx=0.2, rely=0.3, anchor="center")
@@ -1838,7 +1836,7 @@ class Monopoly(tk.Toplevel):
                 self.trade_button = ttk.Button(
                     self.action_frame,
                     text="TRADE",
-                    style="my.TButton",
+                    style="20.TButton",
                     command=self.trade,
                 )
                 self.trade_button.place(relx=0.2, rely=0.5, anchor="center")
@@ -1846,7 +1844,7 @@ class Monopoly(tk.Toplevel):
                 self.mortgage_button = ttk.Button(
                     self.action_frame,
                     text="MORTGAGE",
-                    style="my.TButton",
+                    style="20.TButton",
                     command=lambda: self.mortgage_unmortgage(True),
                 )
                 self.mortgage_button.place(relx=0.8, rely=0.1, anchor="center")
@@ -1854,7 +1852,7 @@ class Monopoly(tk.Toplevel):
                 self.unmortgage_button = ttk.Button(
                     self.action_frame,
                     text="UNMORTGAGE",
-                    style="my.TButton",
+                    style="20.TButton",
                     command=lambda: self.mortgage_unmortgage(False),
                 )
                 self.unmortgage_button.place(relx=0.8, rely=0.3, anchor="center")
@@ -1862,7 +1860,7 @@ class Monopoly(tk.Toplevel):
                 self.sell_button = ttk.Button(
                     self.action_frame,
                     text="SELL HOUSES",
-                    style="my.TButton",
+                    style="20.TButton",
                     command=lambda: self.build_sell_action_frame(sell=True),
                 )
                 self.sell_button.place(relx=0.8, rely=0.5, anchor="center")
@@ -1870,7 +1868,7 @@ class Monopoly(tk.Toplevel):
                 self.end_button = ttk.Button(
                     self.action_frame,
                     text="END TURN",
-                    style="my.TButton",
+                    style="20.TButton",
                     command=lambda: self.end_turn(),
                 )
                 self.end_button.place(relx=0.5, rely=0.3, anchor="center")
@@ -2637,13 +2635,10 @@ class Monopoly(tk.Toplevel):
             justify="left",
         ).place(relx=0.5, rely=0.5, anchor="center")
 
-        button_style = ttk.Style()
-        button_style.configure("my2.TButton", font=("times", 10))
-
         ttk.Button(
             self.recv_trade_frame,
             text="YES",
-            style="my2.TButton",
+            style="10.TButton",
             command=lambda: reply(
                 ("TRADE", "ANSWER", True, offeror, propertyrecv, propertygive, cash)
             ),
@@ -2652,7 +2647,7 @@ class Monopoly(tk.Toplevel):
         ttk.Button(
             self.recv_trade_frame,
             text="NO",
-            style="my2.TButton",
+            style="10.TButton",
             command=lambda: reply(
                 ("TRADE", "ANSWER", False, offeror, propertyrecv, propertygive, cash)
             ),
@@ -3199,20 +3194,17 @@ class Monopoly(tk.Toplevel):
                 bg="white",
             ).place(relx=0.5, rely=0.5, anchor="center")
 
-        button_style = ttk.Style()
-        button_style.configure("my.TButton", font=("times", 20))
-
         ttk.Button(
             self.endgame_frame,
             text="YES",
-            style="my.TButton",
+            style="20.TButton",
             command=lambda: self.poll(self.me, ("UPDATE", "endgame", True)),
         ).place(relx=0.4, rely=0.75, anchor="center")
 
         ttk.Button(
             self.endgame_frame,
             text="NO",
-            style="my.TButton",
+            style="20.TButton",
             command=lambda: self.poll(self.me, ("UPDATE", "endgame", False)),
         ).place(relx=0.6, rely=0.75, anchor="center")
 
