@@ -3136,7 +3136,7 @@ class Monopoly(tk.Toplevel):
 
         self.update_game(playerleft=name)
 
-    def poll(self, user, poll, received=False):  # ? Move To Util region
+    def poll(self, user, poll, received=False):
         if poll[0] == "UPDATE":
             inst, thing, res = poll
             if res == -1:
@@ -3154,13 +3154,13 @@ class Monopoly(tk.Toplevel):
                 else:
                     self.endgame_frame.destroy()
                 del self.collective[thing]
+                self.endgame_frame.destroy()
 
             if not received:
                 self.send_msg(("POLL", ("UPDATE", "endgame", res)))
 
         elif poll[0] == "CREATE":
             inst, thing, bankr, name = poll
-            # (self.me, ("CREATE", "endgame", True, name))
             if bankr:
                 self.collective[thing] = {}
                 if user != self.me:
@@ -3172,8 +3172,6 @@ class Monopoly(tk.Toplevel):
             if not received:
                 self.send_msg(("POLL", ("CREATE", "endgame", bankr, name)))
 
-    # TODO: dont show poll if bankrupt
-    # TODO: remove get_input frame after poll completes
     def get_input(self, bankrupt, ender):
         self.endgame_frame = tk.Frame(self, background="white")
         self.endgame_frame.place(
