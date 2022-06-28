@@ -2,19 +2,19 @@
 (A) Winner Frame, Networth @monopoly @Chaitanya-Keyal
 (A) EndGame Button @monopoly @Chaitanya-Keyal
 (A) Stats Add Game @arcade @ProAltro
-(B) Icons +Arcade
-(B) Window Titles +Arcade
-(B) Resize Windows +Arcade
-(B) Notifier +Arcade
-(B) Timer @chess @Chaitanya-Keyal
+(B) Change Password #Account @arcade
+(B) Change Profile Picture #Account  @arcade
+(B) Timer @chess @ProAltro
 (B) Profile Picture @arcade @Chaitanya-Keyal
 (B) Auto Leave if not alive/ Auto End Turn @monopoly @Chaitanya-Keyal #EndTurn
 (B) End Turn Timer @monopoly @Chaitanya-Keyal #EndTurn
-(C) Info, Rules +Arcade
-(C) Change Password #Account @arcade
-(C) Change Profile Picture #Account  @arcade
-(C) Close Account Frame when clicking anywhere else #Account @arcade @ProAltro
-(D) Logo @arcade
+(B) Close Account Frame when clicking anywhere else #Account @arcade @ProAltro
+(C) Icons +Arcade
+(C) Window Titles +Arcade
+(C) Resize Windows +Arcade
+(C) Notifier +Arcade
+(C) Logo @arcade
+(D) Info, Rules +Arcade
 (D) Custom Notebook @arcade
 (D) Private Room @arcade
 (D) Game Settings @arcade
