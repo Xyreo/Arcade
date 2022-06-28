@@ -1,6 +1,6 @@
 (A) Leaderboard, Stats GUI @arcade
+(A) FIX ENDGAME @monopoly @ProAltro 
 (A) Winner Frame, Networth @monopoly @Chaitanya-Keyal
-(A) EndGame Button @monopoly @Chaitanya-Keyal
 (A) Stats Add Game @arcade @ProAltro
 (B) Change Password #Account @arcade
 (B) Change Profile Picture #Account  @arcade

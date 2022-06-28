@@ -100,9 +100,7 @@ class Monopoly(tk.Toplevel):
     def initialise(self):
         self.init_objects()
         button_style = ttk.Style()
-        button_style.configure(
-            "20.TButton", font=("times", int(self.property_width / 3))
-        )
+        button_style.configure("20.TButton", font=("times", 20))
         button_style.configure("10.TButton", font=("times", 10))
         self.board_canvas.bind("<Button-1>", self.click_to_position)
 
@@ -238,6 +236,14 @@ class Monopoly(tk.Toplevel):
             bg="white",
         )
         self.quit_button.place(relx=0.01, rely=0.0125, anchor="nw")
+
+        self.end_game_button = ttk.Button(
+            self,
+            text="END GAME",
+            style="10.TButton",
+            command=self.end_game_now,
+        )
+        self.end_game_button.place(relx=0.485, rely=0.0075, anchor="ne")
 
     def create_image_obj(self):
         self.board_image = ImageTk.PhotoImage(
@@ -3218,6 +3224,17 @@ class Monopoly(tk.Toplevel):
 
     def end_game(self, winner=None):
         print("Game Ended")
+
+    def end_game_now(self):
+        if self.show_message(
+            "End Game?",
+            "Are you sure you wish to end this game? Game will end only based on other players' opinions!",
+            type="okcancel",
+        ):
+            self.poll(
+                self.me,
+                ("CREATE", "endgame", False, self.player_details[self.me]["Name"]),
+            )
 
     # endregion
 
