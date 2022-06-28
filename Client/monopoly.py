@@ -228,7 +228,7 @@ class Monopoly(tk.Toplevel):
         )
         self.main_frame.place(relx=0.99, rely=0.04, anchor="ne")
 
-        tk.Button(
+        self.quit_button = tk.Button(
             self,
             text="← QUIT",
             font=("times", (self.board_side - 2) // 60),
@@ -236,7 +236,8 @@ class Monopoly(tk.Toplevel):
             border=0,
             command=lambda: self.player_leave(self.me, quitting=True),
             bg="white",
-        ).place(relx=0.01, rely=0.0125, anchor="nw")
+        )
+        self.quit_button.place(relx=0.01, rely=0.0125, anchor="nw")
 
     def create_image_obj(self):
         self.board_image = ImageTk.PhotoImage(
@@ -3040,6 +3041,10 @@ class Monopoly(tk.Toplevel):
             root.quit()
         else:
             self.destroy()
+        try:
+            self.back_to_arcade()
+        except:
+            pass
 
     def post_leave(self, usr):
         if "endgame" in self.collective:
@@ -3127,12 +3132,17 @@ class Monopoly(tk.Toplevel):
         del self.player_details[player_id]
         self.uuids.remove(player_id)
 
-        if self.me == player_id and not watch:
-            self.quit_game()
-            try:
-                self.back_to_arcade()
-            except:
-                pass
+        if self.me == player_id:
+            if watch:
+
+                def exit_spec():
+                    self.leave_room_msg("Spectator")
+                    self.quit_game()
+
+                self.protocol("WM_DELETE_WINDOW", exit_spec)
+                self.quit_button.configure(command=exit_spec)
+            else:
+                self.quit_game()
 
         self.update_game(playerleft=name)
 
