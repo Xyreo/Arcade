@@ -1,11 +1,11 @@
 (A) Leaderboard, Stats GUI @arcade
-(A) FIX ENDGAME @monopoly @ProAltro 
+(A) FIX ENDGAME @monopoly @ProAltro
 (A) Winner Frame, Networth @monopoly @Chaitanya-Keyal
 (A) Stats Add Game @arcade @ProAltro
 (B) Change Password #Account @arcade
 (B) Change Profile Picture #Account  @arcade
 (B) Timer @chess @ProAltro
-(B) Profile Picture @arcade @Chaitanya-Keyal
+(B) Display Profile Picture @arcade @Chaitanya-Keyal
 (B) Auto Leave if not alive/ Auto End Turn @monopoly @Chaitanya-Keyal #EndTurn
 (B) End Turn Timer @monopoly @Chaitanya-Keyal #EndTurn
 (B) Close Account Frame when clicking anywhere else #Account @arcade @ProAltro
@@ -22,9 +22,10 @@
 (E) GUI Relative Placing and Sizing @monopoly
 (E) Add Hilarious Trade Meme @monopoly
 (Y) Music, Sounds +Arcade #Extra
+(Z) Dark Mode +Arcade #Extra
 (Z) TakeBack @chess #Extra
 (Z) Voice Chat @arcade #Extra
-(Z) Monopoly Stats (Fav Place, Fav Property) @monopoly #Extra 
+(Z) Monopoly Stats (Fav Place, Fav Property) @monopoly #Extra
 (Z) Choose Color when joining Room @monopoly #Extra
 (Z) Auction @monopoly #Extra
 (Z) Speed Game @monopoly #Extra

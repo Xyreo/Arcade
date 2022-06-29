@@ -7,6 +7,7 @@ import time
 import tkinter as tk
 import tkinter.ttk as ttk
 from io import BytesIO
+from tkinter import filedialog as fd
 from tkinter import messagebox as msgb
 
 from plyer import notification as noti
@@ -25,7 +26,7 @@ tk.Label(loading, text="Checking and Installing Required Modules...").pack()
 loading.after(100, load)
 loading.mainloop()
 
-from PIL import Image, ImageOps, ImageTk
+from PIL import Image, ImageChops, ImageDraw, ImageTk
 
 from chess import Chess
 from client_framework import Client
@@ -120,10 +121,6 @@ class Arcade(tk.Toplevel):
             self, height=self.screen_height, width=self.screen_width
         )
         self.main_notebook.place(relx=0, rely=0, anchor="nw")
-
-        button_style = ttk.Style()
-        button_style.configure("20.TButton", font=("times", 20))
-        button_style.configure("15.TButton", font=("times", 15))
 
         # Chess stuff
         self.chess_frame = tk.Frame(self.main_notebook, background="white")
@@ -291,6 +288,9 @@ class Arcade(tk.Toplevel):
 
     def start_arcade(self):
         root.withdraw()
+        button_style = ttk.Style()
+        button_style.configure("20.TButton", font=("times", 20))
+        button_style.configure("15.TButton", font=("times", 15))
 
         # TODO: Add Logo, Acknowledgement?, date, time, Greeting
         if os.path.exists(ASSET + "/remember_login.txt"):
@@ -605,6 +605,21 @@ class Arcade(tk.Toplevel):
         HTTP.logout()
         root.quit()
 
+    @staticmethod
+    def pfp_send(path):
+        a = Image.open(path).resize((64, 64))
+        a.save(ASSET + "/temp.png")
+        with open(ASSET + "/temp.png", "rb") as f:
+            a = base64.b64encode(f.read()).decode("latin1")
+        os.remove(ASSET + "/temp.png")
+        return a
+
+    @staticmethod
+    def pfp_make(img):
+        b = base64.b64decode(img.encode("latin1"))
+        c = Image.open(BytesIO(b))
+        return c
+
     def CLI(self):
         while True:
             t = tuple(i for i in input().split())
@@ -626,7 +641,7 @@ class Arcade(tk.Toplevel):
 
 
 class Login(tk.Frame):
-    def __init__(self, master, http, complete, remember_login=False):
+    def __init__(self, master, http: Http, complete, remember_login=False):
         super().__init__(master)
         self.notif = None
         self.notifc = 0
@@ -666,7 +681,7 @@ class Login(tk.Frame):
         self.login_button = ttk.Button(
             self,
             text="LOGIN",
-            style="20.TButton",
+            style="15.TButton",
             command=self.login,
         )
         self.login_button.place(relx=0.5, rely=0.8, anchor="center")
@@ -689,18 +704,14 @@ class Login(tk.Frame):
         ).place(relx=0.5, rely=0.6, anchor="center")
 
         self.show_password = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/show_password.png").resize(
-                    (20, 15), Image.Resampling.LANCZOS
-                )
+            Image.open(ASSET + "/show_password.png").resize(
+                (20, 15), Image.Resampling.LANCZOS
             )
         )
 
         self.hide_password = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/hide_password.png").resize(
-                    (20, 15), Image.Resampling.LANCZOS
-                )
+            Image.open(ASSET + "/hide_password.png").resize(
+                (20, 15), Image.Resampling.LANCZOS
             )
         )
 
@@ -798,7 +809,7 @@ class Login(tk.Frame):
 
 
 class Register(tk.Frame):
-    def __init__(self, master, http, complete):
+    def __init__(self, master, http: Http, complete):
         super().__init__(master)
         tk.Label(
             self,
@@ -835,24 +846,20 @@ class Register(tk.Frame):
         self.reg_button = ttk.Button(
             self,
             text="REGISTER",
-            style="20.TButton",
+            style="15.TButton",
             command=self.reg_user,
         )
         self.reg_button.place(relx=0.5, rely=0.8, anchor="center")
 
         self.show_password = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/show_password.png").resize(
-                    (20, 15), Image.Resampling.LANCZOS
-                )
+            Image.open(ASSET + "/show_password.png").resize(
+                (20, 15), Image.Resampling.LANCZOS
             )
         )
 
         self.hide_password = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/hide_password.png").resize(
-                    (20, 15), Image.Resampling.LANCZOS
-                )
+            Image.open(ASSET + "/hide_password.png").resize(
+                (20, 15), Image.Resampling.LANCZOS
             )
         )
 
@@ -900,6 +907,81 @@ class Register(tk.Frame):
         self.notifc = 0
         self.http = http
         self.complete = complete
+        self.pfp_path = ASSET + "/default_pfp.png"
+        self.pfp_select()
+
+    def circle_PIL_Image(self, path, resize=(100, 100)):
+        im = Image.open(path).convert("RGBA")
+        im = im.crop(
+            (
+                (im.size[0] - min(im.size)) // 2,
+                (im.size[1] - min(im.size)) // 2,
+                (im.size[0] + min(im.size)) // 2,
+                (im.size[1] + min(im.size)) // 2,
+            )
+        ).resize(resize, Image.Resampling.LANCZOS)
+        bigsize = (im.size[0] * 10, im.size[1] * 10)
+
+        mask = Image.new("L", bigsize, 0)
+        ImageDraw.Draw(mask).ellipse((0, 0) + bigsize, fill=255)
+        mask = mask.resize(im.size, Image.Resampling.LANCZOS)
+        mask = ImageChops.darker(
+            mask,
+            im.split()[-1],
+        )
+        im.putalpha(mask)
+
+        a = im.resize(bigsize)
+        ImageDraw.Draw(a).ellipse((0, 0) + (bigsize), outline=(0, 0, 0), width=15)
+        a = a.resize(im.size, Image.Resampling.LANCZOS)
+        im.paste(a)
+
+        return im
+
+    def pfp_select(self):
+        self.pfp_image = ImageTk.PhotoImage(self.circle_PIL_Image(self.pfp_path))
+        tk.Label(self, image=self.pfp_image).place(
+            relx=0.75, rely=0.26, anchor="center"
+        )
+        self.remove_image = ImageTk.PhotoImage(
+            Image.open(ASSET + "/remove.png").resize(
+                (32, 32),
+                Image.Resampling.LANCZOS,
+            )
+        )
+
+        def choose():
+            n = fd.askopenfilename(
+                title="Choose a Profile Picture",
+                initialdir=r"%userprofile%",
+                filetypes=(("Image Files", "*.jpg *.png *.webp *.gif *.jpeg"),),
+            )
+            self.pfp_path = n if n else self.pfp_path
+            self.pfp_select()
+
+        def set_default():
+            self.pfp_path = ASSET + "/default_pfp.png"
+            self.pfp_select()
+
+        self.remove_button = tk.Button(
+            self,
+            image=self.remove_image,
+            border=0,
+            highlightthickness=0,
+            command=set_default,
+        )
+        if self.pfp_path == ASSET + "/default_pfp.png":
+            self.remove_button.destroy()
+        else:
+            self.remove_button.place(relx=0.85, rely=0.35, anchor="center")
+
+        self.choose_button = ttk.Button(
+            self,
+            text="Upload Your Picture",
+            style="15.TButton",
+            command=choose,
+        )
+        self.choose_button.place(relx=0.75, rely=0.5, anchor="center")
 
     def check_pass(self, pwd):
         check = {
@@ -976,7 +1058,7 @@ class Register(tk.Frame):
             if self.http.register(
                 uname.strip(),
                 pwd.strip(),
-                "C:/Users/Chaitanya Keyal/OneDrive/Programming/Gr12-CompProject/Client/Assets/Home_Assets/default.png",  # TODO PFP
+                Arcade.pfp_send(self.pfp_path),
             ):
                 msg = "Registering..."
                 self.prompt(msg)
@@ -1007,21 +1089,6 @@ class Register(tk.Frame):
         if self.notif and self.notif[1] == self.notifc:
             self.notif[0].destroy()
             self.notif = None
-
-
-def pfp_send(path):
-    a = Image.open(path).resize((64, 64))
-    a.save(ASSET + "/temp.png")
-    with open(ASSET + "/temp.png", "rb") as f:
-        a = base64.b64encode(f.read()).decode("latin1")
-    os.remove(ASSET + "/temp.png")
-    return a
-
-
-def pfp_make(img):
-    b = base64.b64decode(img.encode("latin1"))
-    c = Image.open(BytesIO(b))
-    return c
 
 
 if __name__ == "__main__":

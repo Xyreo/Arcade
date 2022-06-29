@@ -7,7 +7,7 @@ import tkinter.ttk as ttk
 from time import sleep
 from tkinter import messagebox as msgb
 
-from PIL import Image, ImageOps, ImageTk
+from PIL import Image, ImageTk
 from plyer import notification as noti
 
 from http_wrapper import Http
@@ -100,7 +100,9 @@ class Monopoly(tk.Toplevel):
     def initialise(self):
         self.init_objects()
         button_style = ttk.Style()
-        button_style.configure("20.TButton", font=("times", 20))
+        button_style.configure(
+            "mono.TButton", font=("times", int(self.property_width / 3))
+        )
         button_style.configure("10.TButton", font=("times", 10))
         self.board_canvas.bind("<Button-1>", self.click_to_position)
 
@@ -247,140 +249,108 @@ class Monopoly(tk.Toplevel):
 
     def create_image_obj(self):
         self.board_image = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/BoardIMG.jpg").resize(
-                    (self.board_side, self.board_side), Image.Resampling.LANCZOS
-                )
+            Image.open(ASSET + "/BoardIMG.jpg").resize(
+                (self.board_side, self.board_side), Image.Resampling.LANCZOS
             )
         )
         self.board_canvas.create_image(2, 2, image=self.board_image, anchor="nw")
 
         self.info_tag = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/Info/big_info.png").resize(
-                    (int(self.property_width / 2), int(self.property_width / 2)),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/Info/big_info.png").resize(
+                (int(self.property_width / 2), int(self.property_width / 2)),
+                Image.Resampling.LANCZOS,
             )
         )
 
         self.station_image = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/station.png").resize(
-                    (int(2.5 * self.property_width), int(2.5 * self.property_width)),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/station.png").resize(
+                (int(2.5 * self.property_width), int(2.5 * self.property_width)),
+                Image.Resampling.LANCZOS,
             )
         )
 
         self.water_image = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/water.png").resize(
-                    (int(2.5 * self.property_width), int(2 * self.property_width)),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/water.png").resize(
+                (int(2.5 * self.property_width), int(2 * self.property_width)),
+                Image.Resampling.LANCZOS,
             )
         )
 
         self.electric_image = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/electric.png").resize(
-                    (int(2 * self.property_width), int(2.25 * self.property_width)),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/electric.png").resize(
+                (int(2 * self.property_width), int(2.25 * self.property_width)),
+                Image.Resampling.LANCZOS,
             )
         )
 
         self.dice1 = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/Die/dice1.png").resize(
-                    (int(0.9 * self.property_width), int(0.9 * self.property_width)),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/Die/dice1.png").resize(
+                (int(0.9 * self.property_width), int(0.9 * self.property_width)),
+                Image.Resampling.LANCZOS,
             )
         )
         self.dice2 = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/Die/dice2.png").resize(
-                    (int(0.9 * self.property_width), int(0.9 * self.property_width)),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/Die/dice2.png").resize(
+                (int(0.9 * self.property_width), int(0.9 * self.property_width)),
+                Image.Resampling.LANCZOS,
             )
         )
         self.dice3 = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/Die/dice3.png").resize(
-                    (int(0.9 * self.property_width), int(0.9 * self.property_width)),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/Die/dice3.png").resize(
+                (int(0.9 * self.property_width), int(0.9 * self.property_width)),
+                Image.Resampling.LANCZOS,
             )
         )
         self.dice4 = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/Die/dice4.png").resize(
-                    (int(0.9 * self.property_width), int(0.9 * self.property_width)),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/Die/dice4.png").resize(
+                (int(0.9 * self.property_width), int(0.9 * self.property_width)),
+                Image.Resampling.LANCZOS,
             )
         )
         self.dice5 = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/Die/dice5.png").resize(
-                    (int(0.9 * self.property_width), int(0.9 * self.property_width)),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/Die/dice5.png").resize(
+                (int(0.9 * self.property_width), int(0.9 * self.property_width)),
+                Image.Resampling.LANCZOS,
             )
         )
         self.dice6 = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/Die/dice6.png").resize(
-                    (int(0.9 * self.property_width), int(0.9 * self.property_width)),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/Die/dice6.png").resize(
+                (int(0.9 * self.property_width), int(0.9 * self.property_width)),
+                Image.Resampling.LANCZOS,
             )
         )
 
         self.red_token_image = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/Tokens/red.png").resize(
-                    (self.token_width, self.token_width),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/Tokens/red.png").resize(
+                (self.token_width, self.token_width),
+                Image.Resampling.LANCZOS,
             )
         )
         self.green_token_image = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/Tokens/green.png").resize(
-                    (self.token_width, self.token_width),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/Tokens/green.png").resize(
+                (self.token_width, self.token_width),
+                Image.Resampling.LANCZOS,
             )
         )
         self.blue_token_image = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/Tokens/blue.png").resize(
-                    (self.token_width, self.token_width),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/Tokens/blue.png").resize(
+                (self.token_width, self.token_width),
+                Image.Resampling.LANCZOS,
             )
         )
         self.yellow_token_image = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/Tokens/yellow.png").resize(
-                    (self.token_width, self.token_width),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/Tokens/yellow.png").resize(
+                (self.token_width, self.token_width),
+                Image.Resampling.LANCZOS,
             )
         )
         self.mr_monopoly = ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(ASSET + "/mr_monopoly.png").resize(
-                    (
-                        int((self.board_side - 2) // 2.05),
-                        int((self.board_side - 2) // 1.75),
-                    ),
-                    Image.Resampling.LANCZOS,
-                )
+            Image.open(ASSET + "/mr_monopoly.png").resize(
+                (
+                    int((self.board_side - 2) // 2.05),
+                    int((self.board_side - 2) // 1.75),
+                ),
+                Image.Resampling.LANCZOS,
             )
         )
         self.mr_monopoly_frame = tk.Frame(
@@ -421,7 +391,7 @@ class Monopoly(tk.Toplevel):
         self.roll_button = ttk.Button(
             self.board_canvas,
             text="Roll Dice",
-            style="20.TButton",
+            style="mono.TButton",
             command=self.roll_dice,
         )
         self.roll_button.place(relx=0.5, rely=0.5, anchor="center")
@@ -1825,7 +1795,7 @@ class Monopoly(tk.Toplevel):
                 self.buy_button = ttk.Button(
                     self.action_frame,
                     text="BUY",
-                    style="20.TButton",
+                    style="mono.TButton",
                     command=lambda: self.buy_property(
                         self.player_details[self.turn]["Position"] % 40, self.turn
                     ),
@@ -1835,7 +1805,7 @@ class Monopoly(tk.Toplevel):
                 self.build_button = ttk.Button(
                     self.action_frame,
                     text="BUILD",
-                    style="20.TButton",
+                    style="mono.TButton",
                     command=self.build_sell_action_frame,
                 )
                 self.build_button.place(relx=0.2, rely=0.3, anchor="center")
@@ -1843,7 +1813,7 @@ class Monopoly(tk.Toplevel):
                 self.trade_button = ttk.Button(
                     self.action_frame,
                     text="TRADE",
-                    style="20.TButton",
+                    style="mono.TButton",
                     command=self.trade,
                 )
                 self.trade_button.place(relx=0.2, rely=0.5, anchor="center")
@@ -1851,7 +1821,7 @@ class Monopoly(tk.Toplevel):
                 self.mortgage_button = ttk.Button(
                     self.action_frame,
                     text="MORTGAGE",
-                    style="20.TButton",
+                    style="mono.TButton",
                     command=lambda: self.mortgage_unmortgage(True),
                 )
                 self.mortgage_button.place(relx=0.8, rely=0.1, anchor="center")
@@ -1859,7 +1829,7 @@ class Monopoly(tk.Toplevel):
                 self.unmortgage_button = ttk.Button(
                     self.action_frame,
                     text="UNMORTGAGE",
-                    style="20.TButton",
+                    style="mono.TButton",
                     command=lambda: self.mortgage_unmortgage(False),
                 )
                 self.unmortgage_button.place(relx=0.8, rely=0.3, anchor="center")
@@ -1867,7 +1837,7 @@ class Monopoly(tk.Toplevel):
                 self.sell_button = ttk.Button(
                     self.action_frame,
                     text="SELL HOUSES",
-                    style="20.TButton",
+                    style="mono.TButton",
                     command=lambda: self.build_sell_action_frame(sell=True),
                 )
                 self.sell_button.place(relx=0.8, rely=0.5, anchor="center")
@@ -1875,7 +1845,7 @@ class Monopoly(tk.Toplevel):
                 self.end_button = ttk.Button(
                     self.action_frame,
                     text="END TURN",
-                    style="20.TButton",
+                    style="mono.TButton",
                     command=lambda: self.end_turn(),
                 )
                 self.end_button.place(relx=0.5, rely=0.3, anchor="center")
@@ -2496,15 +2466,13 @@ class Monopoly(tk.Toplevel):
                         rotation = "right"
                         size = size[::-1]
                     house_image = ImageTk.PhotoImage(
-                        ImageOps.expand(
-                            Image.open(HOUSES + f"/{d[j.houses][0]}_{rotation}.png")
-                        ).resize(
-                            (
-                                int((self.property_height) * size[0]),
-                                int((self.property_height) * size[1]),
-                            ),
-                            Image.Resampling.LANCZOS,
-                        )
+                        Image.open(HOUSES + f"/{d[j.houses][0]}_{rotation}.png")
+                    ).resize(
+                        (
+                            int((self.property_height) * size[0]),
+                            int((self.property_height) * size[1]),
+                        ),
+                        Image.Resampling.LANCZOS,
                     )
 
                     self.house_images.append(house_image)
@@ -3211,14 +3179,14 @@ class Monopoly(tk.Toplevel):
         ttk.Button(
             self.endgame_frame,
             text="YES",
-            style="20.TButton",
+            style="mono.TButton",
             command=lambda: self.poll(self.me, ("UPDATE", "endgame", True)),
         ).place(relx=0.4, rely=0.75, anchor="center")
 
         ttk.Button(
             self.endgame_frame,
             text="NO",
-            style="20.TButton",
+            style="mono.TButton",
             command=lambda: self.poll(self.me, ("UPDATE", "endgame", False)),
         ).place(relx=0.6, rely=0.75, anchor="center")
 

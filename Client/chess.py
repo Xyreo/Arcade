@@ -5,7 +5,7 @@ import tkinter.ttk as ttk
 from time import sleep
 from tkinter import messagebox as msgb
 
-from PIL import Image, ImageOps, ImageTk
+from PIL import Image, ImageTk
 from plyer import notification as noti
 
 from http_wrapper import Http
@@ -113,25 +113,22 @@ class Chess(tk.Toplevel):
         button_style.configure("15.TButton", font=("times", 15))
         for i in range(8):
             for j in range(8):
-                s = os.path.join(ASSET_PATH, "Chess_Assets", "circle.png")
                 self.imgs[i * 10 + j] = (
                     ImageTk.PhotoImage(
-                        ImageOps.expand(
-                            Image.open(s).resize(
-                                (Chess.size // (8 * 4), Chess.size // (8 * 4)),
-                                Image.Resampling.LANCZOS,
-                            )
+                        Image.open(
+                            os.path.join(ASSET_PATH, "Chess_Assets", "circle.png")
+                        ).resize(
+                            (Chess.size // (8 * 4), Chess.size // (8 * 4)),
+                            Image.Resampling.LANCZOS,
                         ),
                         master=self.canvas,
                     ),
                     ImageTk.PhotoImage(
-                        ImageOps.expand(
-                            Image.open(
-                                os.path.join(ASSET_PATH, "Chess_Assets", "circle.png")
-                            ).resize(
-                                (Chess.size // (8), Chess.size // (8)),
-                                Image.Resampling.LANCZOS,
-                            )
+                        Image.open(
+                            os.path.join(ASSET_PATH, "Chess_Assets", "circle.png")
+                        ).resize(
+                            (Chess.size // (8), Chess.size // (8)),
+                            Image.Resampling.LANCZOS,
                         ),
                         master=self.canvas,
                     ),
@@ -1109,9 +1106,7 @@ class ChessPiece(Piece):
         p = os.path.join(path, i)
 
         return ImageTk.PhotoImage(
-            ImageOps.expand(
-                Image.open(p).resize((size, size), Image.Resampling.LANCZOS)
-            ),
+            Image.open(p).resize((size, size), Image.Resampling.LANCZOS),
             master=self.game.canvas,
         )
 
