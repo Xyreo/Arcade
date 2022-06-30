@@ -1,27 +1,23 @@
-(A) Leaderboard, Stats GUI @arcade
-(A) Stats Add Game @arcade
 (A) Winner Frame, Networth @monopoly @Chaitanya-Keyal
+(A) Leaderboard, Stats @arcade @ProAltro @Chaitanya-Keyal
 (B) Timer @chess @ProAltro
-(B) Auto Leave if not alive/ Auto End Turn @monopoly @Chaitanya-Keyal #EndTurn
-(B) End Turn Timer @monopoly @Chaitanya-Keyal #EndTurn
+(B) Auto Leave/ Auto End Turn : End Turn Timer @monopoly @Chaitanya-Keyal
 (B) Add PFP to Games @monopoly @chess @Chaitanya-Keyal
-(C) Icons +Arcade
-(C) Window Titles +Arcade
-(C) Resize Windows +Arcade
+(C) Icons, Window Titles +Arcade
 (C) Notifier +Arcade
+(C) Info, Rules +Arcade
 (C) Logo @arcade
-(D) Info, Rules +Arcade
+(D) Resizing Windows +Arcade
 (D) Custom Notebook @arcade
 (D) Private Room @arcade
 (D) Game Settings @arcade
-(D) All Rules and Texts @monopoly
 (E) GUI Relative Placing and Sizing @monopoly
 (E) Add Hilarious Trade Meme @monopoly
-(Y) Music, Sounds +Arcade #Extra
+(X) Music, Sounds +Arcade #Extra
+(Y) TakeBack @chess #Extra
+(Y) Choose Color when joining Room @monopoly #Extra
+(Y) Monopoly Stats (Fav Place, Fav Property) @monopoly #Extra
 (Z) Dark Mode +Arcade #Extra
-(Z) TakeBack @chess #Extra
 (Z) Voice Chat @arcade #Extra
-(Z) Monopoly Stats (Fav Place, Fav Property) @monopoly #Extra
-(Z) Choose Color when joining Room @monopoly #Extra
 (Z) Auction @monopoly #Extra
 (Z) Speed Game @monopoly #Extra
