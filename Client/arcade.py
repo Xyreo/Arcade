@@ -551,12 +551,14 @@ class Arcade(tk.Toplevel):
 
         def confirm_change():
             HTTP.change_pfp(Arcade.pfp_send(self.pfp_path))
-            self.show_message(
-                "Profile Picture Changed!",
-                "Your Profile Picture has been changed successfully! RESTART the app for the changes to reflect!",
-                timeout=5000,
-            )
             self.change_frame.destroy()
+            Arcade.store_pfp(self.name)
+            self.my_pfp = Arcade.get_cached_pfp(self.name)
+            self.acc_button.configure(image=self.my_pfp)
+
+            if self.current_room:
+                self.update_room(self.current_room)
+            # TODO Update Leaderboard/ All Other places pfp is there
 
         self.confirm_button = ttk.Button(
             self.change_frame,
