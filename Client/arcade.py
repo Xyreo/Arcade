@@ -1066,7 +1066,7 @@ class Login(tk.Frame):
             self.reg.destroy()
 
         def register():
-            self.reg = Register(self, HTTP, forget_reg)
+            self.reg = Register(self, forget_reg)
             self.reg.place(relx=0.5, rely=0.5, relheight=1, relwidth=1, anchor="center")
 
         tk.Button(

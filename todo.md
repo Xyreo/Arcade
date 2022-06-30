@@ -7,6 +7,7 @@
 (B) End Turn Timer @monopoly @Chaitanya-Keyal #EndTurn
 (B) Arcade-Server Documentation @arcade @ProAltro
 (B) Close Account Frame when clicking anywhere else #Account @arcade @ProAltro
+(B) Add PFP to Games @monopoly @chess @Chaitanya-Keyal
 (C) Icons +Arcade
 (C) Window Titles +Arcade
 (C) Resize Windows +Arcade

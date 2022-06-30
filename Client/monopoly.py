@@ -153,7 +153,8 @@ class Monopoly(tk.Toplevel):
                 else:
                     if msg[4] == self.me:
                         self.update_game("Your Trade Offer was declined!")
-                del self.collective["TRADE"]
+                if "TRADE" in self.collective:
+                    del self.collective["TRADE"]
             elif msg[2] == "REQUEST":
                 if msg[3] == self.me:
                     self.recv_trade(msg[0], *msg[4:7])
