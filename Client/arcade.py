@@ -557,7 +557,7 @@ class Arcade(tk.Toplevel):
             self.acc_button.configure(image=self.my_pfp)
 
             if self.current_room:
-                self.update_room(self.current_room)
+                self.update_room(self.rooms.get_rooms()[self.current_room])
             # TODO Update Leaderboard/ All Other places pfp is there
 
         self.confirm_button = ttk.Button(

@@ -84,6 +84,10 @@ class Room(Channels):
         self.status = self.settings["STATUS"]
         self.game = game
         super().join(host)
+        for room in rooms:
+            if room.host.name == host.name:
+                room.delete()
+                room.host.close()
         host.send_instruction(("ROOM", self.game, self.details()))
 
     def delete(self):
