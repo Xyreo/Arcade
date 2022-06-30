@@ -84,10 +84,6 @@ class Room(Channels):
         self.status = self.settings["STATUS"]
         self.game = game
         super().join(host)
-        for room in rooms:
-            if room.host.name == host.name:
-                room.delete()
-                room.host.close()
         host.send_instruction(("ROOM", self.game, self.details()))
 
     def delete(self):
@@ -219,6 +215,10 @@ class Client(threading.Thread):
             self.name = pickle.loads(self.conn.recv(1048))[1]
         except:
             self.name = "Unknown"
+
+        for uuid, player in players.items():
+            if player.name == self.name:
+                player.close()
 
         log(f"Connected to {self.addr} as {self.name}")
 
@@ -364,6 +364,7 @@ class Driver:
 
 lobbies: list[Lobby]
 rooms: list[Room]
+players: dict[int, Client]
 
 
 if __name__ == "__main__":
