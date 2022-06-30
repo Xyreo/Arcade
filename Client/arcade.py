@@ -292,6 +292,10 @@ class Arcade(tk.Toplevel):
         if self.acc_frame.winfo_exists():
             self.acc_frame.destroy()
         else:
+            try:
+                self.change_frame.destroy()
+            except:
+                pass
             self.acc_frame = tk.Frame(self)
             self.acc_frame.place(
                 relx=0.99, rely=0.1, relheight=0.12, relwidth=0.087, anchor="ne"
@@ -320,6 +324,7 @@ class Arcade(tk.Toplevel):
             ).grid(row=2, column=0, sticky="nsew")
 
     def change_password(self):
+        self.acc_frame.destroy()
         self.change_frame = tk.Frame(self)
         self.change_frame.place(
             relx=0.99, rely=0.1, relheight=0.3, relwidth=0.25, anchor="ne"
@@ -487,6 +492,7 @@ class Arcade(tk.Toplevel):
         self.notifc = 0
 
     def change_pfp(self):
+        self.acc_frame.destroy()
         self.pfp_path = ASSET + "/cached_pfp/" + self.name + ".png"
         self.change_frame = tk.Frame(self)
         self.change_frame.place(
