@@ -598,7 +598,7 @@ class Arcade(tk.Toplevel):
         self.config(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.exit)
 
-        self.login = Login(self, HTTP, self.initialize)
+        self.login = Login(self, self.initialize)
         self.login.place(relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n")
 
     # endregion
