@@ -290,38 +290,55 @@ class Arcade(tk.Toplevel):
 
     def account_tab(self):
         if self.acc_frame.winfo_exists():
+            self.unbind("<Button-1>")
             self.acc_frame.destroy()
         else:
             try:
                 self.change_frame.destroy()
             except:
                 pass
+
+            def clicked(e):
+                if self.acc_frame.winfo_containing(e.x_root, e.y_root) not in [
+                    self.log_out_button,
+                    self.change_pass_button,
+                    self.change_pfp_button,
+                    self.acc_frame,
+                    self.acc_button,
+                ]:
+                    self.acc_frame.destroy()
+                    self.unbind("<Button-1>")
+
+            self.bind("<Button-1>", lambda e: clicked(e))
             self.acc_frame = tk.Frame(self)
             self.acc_frame.place(
                 relx=0.99, rely=0.1, relheight=0.12, relwidth=0.087, anchor="ne"
             )
 
-            ttk.Button(
+            self.log_out_button = ttk.Button(
                 self.acc_frame, text="Log Out", style="12.TButton", command=self.log_out
-            ).grid(
+            )
+            self.log_out_button.grid(
                 row=0,
                 column=0,
                 sticky="nsew",
             )
 
-            ttk.Button(
+            self.change_pass_button = ttk.Button(
                 self.acc_frame,
                 text="Change Password",
                 style="12.TButton",
                 command=self.change_password,
-            ).grid(row=1, column=0, sticky="nsew")
+            )
+            self.change_pass_button.grid(row=1, column=0, sticky="nsew")
 
-            ttk.Button(
+            self.change_pfp_button = ttk.Button(
                 self.acc_frame,
                 text="Change Picture",
                 style="12.TButton",
                 command=self.change_pfp,
-            ).grid(row=2, column=0, sticky="nsew")
+            )
+            self.change_pfp_button.grid(row=2, column=0, sticky="nsew")
 
     def change_password(self):
         self.acc_frame.destroy()

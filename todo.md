@@ -1,9 +1,7 @@
 (A) Leaderboard, Stats GUI @arcade
-(A) FIX ENDGAME @monopoly @ProAltro
-(A) Stats Add Game @arcade @ProAltro
+(A) Stats Add Game @arcade
 (A) Winner Frame, Networth @monopoly @Chaitanya-Keyal
 (B) Timer @chess @ProAltro
-(B) Close Account Frame when clicking anywhere else @arcade @ProAltro
 (B) Auto Leave if not alive/ Auto End Turn @monopoly @Chaitanya-Keyal #EndTurn
 (B) End Turn Timer @monopoly @Chaitanya-Keyal #EndTurn
 (B) Add PFP to Games @monopoly @chess @Chaitanya-Keyal
