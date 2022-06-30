@@ -58,3 +58,4 @@ venv/
 remember_login.txt
 test.py
 .DS_Store
+cached_pfp/

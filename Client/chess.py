@@ -36,7 +36,7 @@ class Chess(tk.Toplevel):
         self.players = initialize["PLAYERS"]
         self.opponent = [i for i in self.players if i != self.me][0]
         self.side = self.players[self.me]["SIDE"]
-        self.time = initialize["TIME"]  # TODO Timer
+        self.time = initialize["TIME"]
         self.add_time = initialize["ADD_TIME"]
         self.back_to_arcade = back
 
@@ -226,7 +226,7 @@ class Chess(tk.Toplevel):
         # endregion
 
     def timer_buttons(self):
-        # TIMERS
+        # TODO: TIMERS
 
         resign = ttk.Button(
             self.main_frame,

@@ -2,12 +2,10 @@
 (A) FIX ENDGAME @monopoly @ProAltro
 (A) Winner Frame, Networth @monopoly @Chaitanya-Keyal
 (A) Stats Add Game @arcade @ProAltro
-(B) Change Password #Account @arcade
-(B) Change Profile Picture #Account  @arcade
 (B) Timer @chess @ProAltro
-(B) Display Profile Picture @arcade @Chaitanya-Keyal
 (B) Auto Leave if not alive/ Auto End Turn @monopoly @Chaitanya-Keyal #EndTurn
 (B) End Turn Timer @monopoly @Chaitanya-Keyal #EndTurn
+(B) Arcade-Server Documentation @arcade @ProAltro
 (B) Close Account Frame when clicking anywhere else #Account @arcade @ProAltro
 (C) Icons +Arcade
 (C) Window Titles +Arcade

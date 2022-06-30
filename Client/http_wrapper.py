@@ -1,9 +1,6 @@
-import base64
 import os
-from io import BytesIO
 
 import requests
-from PIL import Image
 
 
 class Http:
@@ -143,35 +140,12 @@ class Response:
 ASSET = "Assets/Home_Assets"
 ASSET = ASSET if os.path.exists(ASSET) else "Client/" + ASSET
 
-
-def pfp_send(path):
-    a = Image.open(path).resize((64, 64))
-    a.save(ASSET + "/temp.png")
-    with open(ASSET + "/temp.png", "rb") as f:
-        a = base64.b64encode(f.read()).decode("latin1")
-    os.remove(ASSET + "/temp.png")
-    return a
-
-
-def pfp_make(img):
-    b = base64.b64decode(img.encode("latin1"))
-    c = Image.open(BytesIO(b))
-    return c
-
-
 if __name__ == "__main__":
     app = Http("http://localhost:5000")
-    # print(app.register("test1", "test1", pfp_send(ASSET + "/default_pfp.png")))
-    print(app.login("test1", "test1"))
-    print(app.addgame("monopoly", "user1", {"1": "2"}, ["root", "user2", "user1"]))
-    print(app.leaderboard("monopoly"))
-    # print(app.del_user())
+    print(app.login("test", "test"))
     print(app.logout())
-    # print(app.login("test", "test1"))
-    # print(app.change_password("test"))
-    # print(app.change_pfp(pfp_send(ASSET + "/Spider_Man_Logo.png")))
-    # pfp_make(app.fetch_pfp("user2")).save("die.png")
-    # print(app.logout())
+    # print(app.addgame("monopoly", "user1", {"1": "2"}, ["root", "user2", "user1"]))
+    # print(app.leaderboard("monopoly"))
     # print(app.addgame("chess", 1, {1: 2}, [1, 32]))
     # print(app.stats("monopoly", 1))
     # print(app.del_user())

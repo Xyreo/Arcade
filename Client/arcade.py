@@ -1,5 +1,4 @@
 import base64
-import json
 import os
 import random
 import threading
@@ -104,6 +103,8 @@ class Arcade(tk.Toplevel):
 
         self.current_room = None
 
+    # region # Initialising
+
     def initialize(self, name, token):
         self.geometry(
             f"{self.screen_width}x{self.screen_height}+{self.x_coord}+{self.y_coord}"
@@ -134,42 +135,60 @@ class Arcade(tk.Toplevel):
         self.main_notebook.add(self.monopoly_frame, text="Monopoly")
         self.join_create("MNPLY")
 
-        self.log_out_button = ttk.Button(
+        Arcade.store_pfp(self.name)
+        self.my_pfp = Arcade.get_cached_pfp(self.name)
+
+        self.acc_button = tk.Button(
             self,
-            text="Log Out",
-            style="20.TButton",
-            command=self.log_out,
+            image=self.my_pfp,
+            text=f" {self.name} ▾",
+            bg="white",
+            highlightthickness=0,
+            border=0,
+            font=("times 14 bold"),
+            compound="left",
+            command=self.account_tab,
         )
-        self.log_out_button.place(relx=0.99, rely=0.01, anchor="ne")
+        self.acc_button.place(relx=0.99, rely=0.06, anchor="e")
+        self.acc_frame = tk.Frame()
+        self.acc_frame.destroy()
 
-    def log_out(self):
-        self.send(("GAME", "LEAVE"))
-        HTTP.logout()
-        # TODO: Uncomment this when done with project because testing on same system will keep deleting file
-        # try:
-        #     os.remove(ASSET + "/remember_login.txt")
-        # except FileNotFoundError:
-        #     pass
-        self.main_notebook.destroy()
-        self.log_out_button.destroy()
+    def start_arcade(self):
+        root.withdraw()
+        button_style = ttk.Style()
+        button_style.configure("20.TButton", font=("times", 20))
+        button_style.configure("15.TButton", font=("times", 15))
+        button_style.configure("12.TButton", font=("times", 12))
 
-        self.screen_width = int(0.9 * self.winfo_screenwidth())
-        self.screen_height = int(self.screen_width / 1.9)
-        self.x_coord = self.winfo_screenwidth() // 2 - self.screen_width // 2
-        self.y_coord = (self.winfo_screenheight() - 70) // 2 - self.screen_height // 2
-
-        self.title("Arcade")
-        self.geometry(
-            f"{self.screen_width//2}x{self.screen_height}+{self.x_coord+self.screen_width//4}+{self.y_coord}"
-        )
-        self.config(bg="white")
-        self.protocol("WM_DELETE_WINDOW", self.exit)
-
-        self.login = Login(self, HTTP, self.initialize)
+        # TODO: Add Logo, Acknowledgement?, date, time, Greeting
+        if os.path.exists(ASSET + "/remember_login.txt"):
+            self.login = Login(self, self.initialize, remember_login=True)
+        else:
+            self.login = Login(self, self.initialize)
         self.login.place(relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n")
 
-    def pprint(self, d):
-        print(json.dumps(d, indent=4))
+    def join_create(self, game):
+        parent = self.chess_frame if game == "CHESS" else self.monopoly_frame
+
+        join_button = ttk.Button(
+            parent,
+            text="Join A Room",
+            style="20.TButton",
+            command=lambda: self.join_lobby(game),
+        )
+        join_button.place(relx=0.5, rely=0.4, anchor="center")
+
+        create_button = ttk.Button(
+            parent,
+            text="Create A Room",
+            style="20.TButton",
+            command=lambda: self.create_room(game),
+        )
+        create_button.place(relx=0.5, rely=0.6, anchor="center")
+
+    # endregion
+
+    # region # Event Handling
 
     def event_handler(self, msg):
         dest = msg[0]
@@ -265,8 +284,397 @@ class Arcade(tk.Toplevel):
         print("Sent:", msg)
         self.cobj.send(msg)
 
+    # endregion
+
+    # region # Account Tab
+
+    def account_tab(self):
+        if self.acc_frame.winfo_exists():
+            self.acc_frame.destroy()
+        else:
+            self.acc_frame = tk.Frame(self)
+            self.acc_frame.place(
+                relx=0.99, rely=0.1, relheight=0.12, relwidth=0.087, anchor="ne"
+            )
+
+            ttk.Button(
+                self.acc_frame, text="Log Out", style="12.TButton", command=self.log_out
+            ).grid(
+                row=0,
+                column=0,
+                sticky="nsew",
+            )
+
+            ttk.Button(
+                self.acc_frame,
+                text="Change Password",
+                style="12.TButton",
+                command=self.change_password,
+            ).grid(row=1, column=0, sticky="nsew")
+
+            ttk.Button(
+                self.acc_frame,
+                text="Change Picture",
+                style="12.TButton",
+                command=self.change_pfp,
+            ).grid(row=2, column=0, sticky="nsew")
+
+    def change_password(self):
+        self.change_frame = tk.Frame(self)
+        self.change_frame.place(
+            relx=0.99, rely=0.1, relheight=0.3, relwidth=0.25, anchor="ne"
+        )
+        self.pwd = tk.StringVar()
+        self.confpwd = tk.StringVar()
+        tk.Button(
+            self.change_frame,
+            text="← Cancel",
+            font=("times", 11),
+            highlightthickness=0,
+            border=0,
+            command=self.change_frame.destroy,
+        ).place(relx=0.01, rely=0.01, anchor="nw")
+
+        self.change_frame.bind("<Escape>", lambda a: self.change_frame.destroy())
+        tk.Label(self.change_frame, text="New Password: ").place(
+            relx=0.49, rely=0.25, anchor="e"
+        )
+        self.pwdentry = tk.Entry(self.change_frame, textvariable=self.pwd, show="*")
+        self.pass_hidden = True
+        self.pwdentry.place(relx=0.5, rely=0.25, relwidth=0.275, anchor="w")
+        self.pwdentry.focus_set()
+        tk.Label(self.change_frame, text="Confirm Password: ").place(
+            relx=0.49, rely=0.4, anchor="e"
+        )
+        self.confpwdentry = tk.Entry(
+            self.change_frame, textvariable=self.confpwd, show="*"
+        )
+        self.conf_pass_hidden = True
+        self.confpwdentry.place(relx=0.5, rely=0.4, relwidth=0.275, anchor="w")
+
+        self.pwdentry.bind("<Return>", lambda a: self.confpwdentry.focus_set())
+        self.confpwdentry.bind("<Return>", lambda a: self.confpwdentry.focus_set())
+
+        def chng_pass():
+            pwd = self.pwd.get().strip()
+            confpwd = self.confpwd.get().strip()
+
+            self.confpwdentry.delete(0, tk.END)
+            prompts = {
+                "length": "Atleast 8 Characters in Total",
+                "upper": "1 Upper Case Letter",
+                "lower": "1 Lower Case Letter",
+                "char": "1 Special Character",
+                "digit": "1 Digit",
+                "space": "No Spaces",
+            }
+            missing = Register.check_pass(pwd)
+
+            msg = ""
+            if not pwd:
+                self.pwdentry.delete(0, tk.END)
+                msg = "Enter Password"
+                prompt(msg)
+            elif pwd and not confpwd:
+                msg = "Confirm Password"
+                prompt(msg)
+            elif missing:
+                self.pwdentry.delete(0, tk.END)
+                msg = "Password should have:"
+                for i in missing:
+                    msg += "\n" + prompts[i]
+                prompt(msg)
+            elif confpwd != pwd:
+                msg = "Password does not match"
+                prompt(msg)
+            else:
+                if HTTP.change_password(pwd.strip()):
+                    msg = "Confirming and Logging you out..."
+                    prompt(msg)
+                    self.after(2000, self.log_out())
+                else:
+                    self.pwdentry.delete(0, tk.END)
+                    msg = "ERROR"
+                    prompt(msg)
+
+        def prompt(msg):
+            try:
+                destroyprompt()
+                self.notifc += 1
+                color = "red"
+                if msg == "Confirming...":
+                    color = "green"
+                self.notif = (
+                    tk.Label(
+                        self.change_frame, text=msg, fg=color, font=("calibri", 11)
+                    ),
+                    self.notifc,
+                )
+                self.notif[0].place(
+                    relx=0.5, rely=0.55 if "\n" not in msg else 0.7, anchor="center"
+                )
+                self.after(5000, destroyprompt)
+
+            except:
+                pass
+
+        def destroyprompt():
+            if self.notif and self.notif[1] == self.notifc:
+                self.notif[0].destroy()
+                self.notif = None
+
+        self.change_button = ttk.Button(
+            self.change_frame,
+            text="CHANGE",
+            style="15.TButton",
+            command=chng_pass,
+        )
+        self.change_button.place(relx=0.5, rely=0.7, anchor="center")
+
+        self.show_password = ImageTk.PhotoImage(
+            Image.open(ASSET + "/show_password.png").resize(
+                (20, 15), Image.Resampling.LANCZOS
+            )
+        )
+
+        self.hide_password = ImageTk.PhotoImage(
+            Image.open(ASSET + "/hide_password.png").resize(
+                (20, 15), Image.Resampling.LANCZOS
+            )
+        )
+
+        self.show_hide_pass = tk.Button(
+            self.change_frame,
+            image=self.show_password,
+            highlightthickness=0,
+            border=0,
+            command=lambda: toggle_hide_password(False),
+        )
+        self.show_hide_conf_pass = tk.Button(
+            self.change_frame,
+            image=self.show_password,
+            highlightthickness=0,
+            border=0,
+            command=lambda: toggle_hide_password(True),
+        )
+        self.show_hide_pass.place(relx=0.8, rely=0.25, anchor="w")
+        self.show_hide_conf_pass.place(relx=0.8, rely=0.4, anchor="w")
+
+        for i in self.winfo_children():
+            i.bind("<Escape>", lambda a: self.destroy())
+
+        def toggle_hide_password(conf):
+            if conf:
+                if self.conf_pass_hidden:
+                    self.confpwdentry.config(show="")
+                    self.show_hide_conf_pass.config(image=self.hide_password)
+                else:
+                    self.confpwdentry.config(show="*")
+                    self.show_hide_conf_pass.config(image=self.show_password)
+                self.conf_pass_hidden = not self.conf_pass_hidden
+            else:
+                if self.pass_hidden:
+                    self.pwdentry.config(show="")
+                    self.show_hide_pass.config(image=self.hide_password)
+                else:
+                    self.pwdentry.config(show="*")
+                    self.show_hide_pass.config(image=self.show_password)
+                self.pass_hidden = not self.pass_hidden
+
+        self.confpwdentry.bind("<Return>", lambda a: chng_pass())
+
+        self.notif = None
+        self.notifc = 0
+
+    def change_pfp(self):
+        self.pfp_path = ASSET + "/cached_pfp/" + self.name + ".png"
+        self.change_frame = tk.Frame(self)
+        self.change_frame.place(
+            relx=0.99, rely=0.1, relheight=0.3, relwidth=0.25, anchor="ne"
+        )
+        tk.Button(
+            self.change_frame,
+            text="← Cancel",
+            font=("times", 11),
+            highlightthickness=0,
+            border=0,
+            command=self.change_frame.destroy,
+        ).place(relx=0.01, rely=0.01, anchor="nw")
+        self.select_pfp()
+
+    def select_pfp(self):
+        self.pfp_image = ImageTk.PhotoImage(
+            Arcade.circle_PIL_Image(Image.open(self.pfp_path), (100, 100))
+        )
+        tk.Label(self.change_frame, image=self.pfp_image).place(
+            relx=0.5, rely=0.3, anchor="center"
+        )
+        self.remove_image = ImageTk.PhotoImage(
+            Image.open(ASSET + "/remove.png").resize(
+                (32, 32),
+                Image.Resampling.LANCZOS,
+            )
+        )
+
+        def choose():
+            n = fd.askopenfilename(
+                title="Choose a Profile Picture",
+                initialdir=r"%userprofile%",
+                filetypes=(("Image Files", "*.jpg *.png *.webp *.gif *.jpeg"),),
+            )
+            self.pfp_path = n if n else self.pfp_path
+            self.select_pfp()
+
+        def set_default():
+            self.pfp_path = ASSET + "/default_pfp.png"
+            self.select_pfp()
+
+        self.remove_button = tk.Button(
+            self.change_frame,
+            image=self.remove_image,
+            border=0,
+            highlightthickness=0,
+            command=set_default,
+        )
+        if self.pfp_path == ASSET + "/default_pfp.png":
+            self.remove_button.destroy()
+        else:
+            self.remove_button.place(relx=0.7, rely=0.45, anchor="center")
+
+        self.choose_button = ttk.Button(
+            self.change_frame,
+            text="Upload Picture",
+            style="15.TButton",
+            command=choose,
+        )
+        self.choose_button.place(relx=0.5, rely=0.625, anchor="center")
+
+        def confirm_change():
+            HTTP.change_pfp(Arcade.pfp_send(self.pfp_path))
+            self.show_message(
+                "Profile Picture Changed!",
+                "Your Profile Picture has been changed successfully! RESTART the app for the changes to reflect!",
+                timeout=5000,
+            )
+            self.change_frame.destroy()
+
+        self.confirm_button = ttk.Button(
+            self.change_frame,
+            text="Confirm",
+            style="15.TButton",
+            command=confirm_change,
+        )
+
+        if self.pfp_path == ASSET + "/cached_pfp/" + self.name + ".png":
+            self.confirm_button.destroy()
+        else:
+            self.confirm_button.place(relx=0.5, rely=0.9, anchor="center")
+
+    def log_out(self):
+        self.send(("GAME", "LEAVE"))
+        HTTP.logout()
+        # TODO: Uncomment this when done with project because testing on same system will keep deleting file
+        # try:
+        #     os.remove(ASSET + "/remember_login.txt")
+        # except FileNotFoundError:
+        #     pass
+        self.main_notebook.destroy()
+        self.acc_button.destroy()
+        self.acc_frame.destroy()
+        try:
+            self.change_frame.destroy()
+        except:
+            pass
+
+        self.screen_width = int(0.9 * self.winfo_screenwidth())
+        self.screen_height = int(self.screen_width / 1.9)
+        self.x_coord = self.winfo_screenwidth() // 2 - self.screen_width // 2
+        self.y_coord = (self.winfo_screenheight() - 70) // 2 - self.screen_height // 2
+
+        self.title("Arcade")
+        self.geometry(
+            f"{self.screen_width//2}x{self.screen_height}+{self.x_coord+self.screen_width//4}+{self.y_coord}"
+        )
+        self.config(bg="white")
+        self.protocol("WM_DELETE_WINDOW", self.exit)
+
+        self.login = Login(self, HTTP, self.initialize)
+        self.login.place(relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n")
+
+    # endregion
+
+    # region # Profile Picture
+
+    @staticmethod
+    def pfp_send(path):
+        im = Image.open(path)
+        im = im.crop(
+            (
+                (im.size[0] - min(im.size)) // 2,
+                (im.size[1] - min(im.size)) // 2,
+                (im.size[0] + min(im.size)) // 2,
+                (im.size[1] + min(im.size)) // 2,
+            )
+        ).resize((64, 64), Image.Resampling.LANCZOS)
+        im.save(ASSET + "/temp.png")
+        with open(ASSET + "/temp.png", "rb") as f:
+            a = base64.b64encode(f.read()).decode("latin1")
+        os.remove(ASSET + "/temp.png")
+        return a
+
+    @staticmethod
+    def pfp_make(img):
+        b = base64.b64decode(img.encode("latin1"))
+        c = Image.open(BytesIO(b))
+        return c
+
+    @staticmethod
+    def store_pfp(name):
+        Arcade.circle_PIL_Image(Arcade.pfp_make(HTTP.fetch_pfp(name))).save(
+            ASSET + "/cached_pfp/" + name + ".png"
+        )
+
+    @staticmethod
+    def get_cached_pfp(name, resize=(32, 32)):
+        return ImageTk.PhotoImage(
+            Image.open(ASSET + "/cached_pfp/" + name + ".png").resize(
+                resize, Image.Resampling.LANCZOS
+            )
+        )
+
+    @staticmethod
+    def circle_PIL_Image(pil_img: Image.Image, resize=(64, 64)):
+        im = pil_img.convert("RGBA")
+        im = im.crop(
+            (
+                (im.size[0] - min(im.size)) // 2,
+                (im.size[1] - min(im.size)) // 2,
+                (im.size[0] + min(im.size)) // 2,
+                (im.size[1] + min(im.size)) // 2,
+            )
+        ).resize(resize, Image.Resampling.LANCZOS)
+        bigsize = (im.size[0] * 10, im.size[1] * 10)
+
+        mask = Image.new("L", bigsize, 0)
+        ImageDraw.Draw(mask).ellipse((0, 0) + bigsize, fill=255)
+        mask = mask.resize(im.size, Image.Resampling.LANCZOS)
+        mask = ImageChops.darker(
+            mask,
+            im.split()[-1],
+        )
+        im.putalpha(mask)
+
+        a = im.resize(bigsize)
+        ImageDraw.Draw(a).ellipse((0, 0) + (bigsize), outline=(0, 0, 0), width=15)
+        a = a.resize(im.size, Image.Resampling.LANCZOS)
+        im.paste(a)
+
+        return im
+
+    # endregion
+
     def show_message(self, title, message, type="info", timeout=0):
-        mbwin = tk.Tk()
+        mbwin = tk.Toplevel(self)
         mbwin.withdraw()
         try:
             if timeout:
@@ -286,37 +694,7 @@ class Arcade(tk.Toplevel):
         except:
             print("Error")
 
-    def start_arcade(self):
-        root.withdraw()
-        button_style = ttk.Style()
-        button_style.configure("20.TButton", font=("times", 20))
-        button_style.configure("15.TButton", font=("times", 15))
-
-        # TODO: Add Logo, Acknowledgement?, date, time, Greeting
-        if os.path.exists(ASSET + "/remember_login.txt"):
-            self.login = Login(self, HTTP, self.initialize, remember_login=True)
-        else:
-            self.login = Login(self, HTTP, self.initialize)
-        self.login.place(relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n")
-
-    def join_create(self, game):
-        parent = self.chess_frame if game == "CHESS" else self.monopoly_frame
-
-        join_button = ttk.Button(
-            parent,
-            text="Join A Room",
-            style="20.TButton",
-            command=lambda: self.join_lobby(game),
-        )
-        join_button.place(relx=0.5, rely=0.4, anchor="center")
-
-        create_button = ttk.Button(
-            parent,
-            text="Create A Room",
-            style="20.TButton",
-            command=lambda: self.create_room(game),
-        )
-        create_button.place(relx=0.5, rely=0.6, anchor="center")
+    # region # Lobby
 
     def join_lobby(self, game):
         parent = self.chess_frame if game == "CHESS" else self.monopoly_frame
@@ -416,6 +794,10 @@ class Arcade(tk.Toplevel):
             self.lobby_frames[game] = None
         self.unbind("<Escape>")
         self.send(("0", "LEAVE", game.upper()))
+
+    # endregion
+
+    # region # Room
 
     def join_selected_room(self, room, game=None):
         if room in self.rooms:
@@ -560,6 +942,10 @@ class Arcade(tk.Toplevel):
         ).place(relx=0.5, rely=0.1, anchor="center")
         k = 2
         d = sorted(list(room["members"].values()), key=lambda x: x["name"])
+        for i in d:
+            if not os.path.isfile(ASSET + "/cached_pfp/" + i["name"] + ".png"):
+                Arcade.store_pfp(i["name"])
+            i.update({"pfp": Arcade.get_cached_pfp(i["name"], (20, 20))})
         try:
             if len(d) > 1:
                 self.room_start_button.configure(state="normal")
@@ -570,11 +956,13 @@ class Arcade(tk.Toplevel):
         for i in d:
             tk.Label(
                 self.room_members[game],
-                text=i["name"],
+                image=i["pfp"],
+                text="  " + i["name"],
                 font=("times", 13),
                 highlightthickness=0,
                 border=0,
-            ).place(relx=0.5, rely=(k / 10), anchor="center")
+                compound="left",
+            ).place(relx=0.4, rely=(k / 10), anchor="w")
             k += 1
 
     def leave_room(self, room, game=None, delete=False, confirm=True):
@@ -597,6 +985,8 @@ class Arcade(tk.Toplevel):
     def start_room(self, game, room):
         self.send((room, "START"))
 
+    # endregion
+
     def end_game(self):
         self.deiconify()
         self.current_room = None
@@ -604,21 +994,8 @@ class Arcade(tk.Toplevel):
     def exit(self):
         HTTP.logout()
         root.quit()
-
-    @staticmethod
-    def pfp_send(path):
-        a = Image.open(path).resize((64, 64))
-        a.save(ASSET + "/temp.png")
-        with open(ASSET + "/temp.png", "rb") as f:
-            a = base64.b64encode(f.read()).decode("latin1")
-        os.remove(ASSET + "/temp.png")
-        return a
-
-    @staticmethod
-    def pfp_make(img):
-        b = base64.b64decode(img.encode("latin1"))
-        c = Image.open(BytesIO(b))
-        return c
+        for file in os.scandir(ASSET + "/cached_pfp"):
+            os.remove(file.path)
 
     def CLI(self):
         while True:
@@ -641,21 +1018,20 @@ class Arcade(tk.Toplevel):
 
 
 class Login(tk.Frame):
-    def __init__(self, master, http: Http, complete, remember_login=False):
+    def __init__(self, master, complete, remember_login=False):
         super().__init__(master)
         self.notif = None
         self.notifc = 0
-        self.http = http
         self.complete = complete
 
         if remember_login:
             master.withdraw()
             with open(ASSET + "/remember_login.txt", "r") as f:
                 uname, pwd = eval(f.readlines()[-1])
-                self.check_login = self.http.login(uname, pwd, remember_login=True)
-                if self.check_login != -1:
+                self.check_login = HTTP.login(uname, pwd, remember_login=True)
+                if self.check_login == 1:
                     master.deiconify()
-                    self.complete(uname, self.http.TOKEN)
+                    self.complete(uname, HTTP.TOKEN)
                 elif self.check_login == -1:
                     pass
                 else:
@@ -758,7 +1134,7 @@ class Login(tk.Frame):
             pwd = ""
             self.prompt(msg)
         else:
-            self.check_login = self.http.login(
+            self.check_login = HTTP.login(
                 uname.strip(), pwd.strip(), remember_me=self.remember_me.get()
             )
             if self.check_login:
@@ -769,7 +1145,7 @@ class Login(tk.Frame):
                         self.store_password(uname.strip(), self.check_login)
                     else:
                         self.delete_stored_login()
-                    self.after(1000, lambda: self.complete(uname, self.http.TOKEN))
+                    self.after(1000, lambda: self.complete(uname, HTTP.TOKEN))
                 else:
                     msg = "User logged in on another device!"
                     self.prompt(msg)
@@ -809,7 +1185,7 @@ class Login(tk.Frame):
 
 
 class Register(tk.Frame):
-    def __init__(self, master, http: Http, complete):
+    def __init__(self, master, complete):
         super().__init__(master)
         tk.Label(
             self,
@@ -905,41 +1281,14 @@ class Register(tk.Frame):
 
         self.notif = None
         self.notifc = 0
-        self.http = http
         self.complete = complete
         self.pfp_path = ASSET + "/default_pfp.png"
         self.pfp_select()
 
-    def circle_PIL_Image(self, path, resize=(100, 100)):
-        im = Image.open(path).convert("RGBA")
-        im = im.crop(
-            (
-                (im.size[0] - min(im.size)) // 2,
-                (im.size[1] - min(im.size)) // 2,
-                (im.size[0] + min(im.size)) // 2,
-                (im.size[1] + min(im.size)) // 2,
-            )
-        ).resize(resize, Image.Resampling.LANCZOS)
-        bigsize = (im.size[0] * 10, im.size[1] * 10)
-
-        mask = Image.new("L", bigsize, 0)
-        ImageDraw.Draw(mask).ellipse((0, 0) + bigsize, fill=255)
-        mask = mask.resize(im.size, Image.Resampling.LANCZOS)
-        mask = ImageChops.darker(
-            mask,
-            im.split()[-1],
-        )
-        im.putalpha(mask)
-
-        a = im.resize(bigsize)
-        ImageDraw.Draw(a).ellipse((0, 0) + (bigsize), outline=(0, 0, 0), width=15)
-        a = a.resize(im.size, Image.Resampling.LANCZOS)
-        im.paste(a)
-
-        return im
-
     def pfp_select(self):
-        self.pfp_image = ImageTk.PhotoImage(self.circle_PIL_Image(self.pfp_path))
+        self.pfp_image = ImageTk.PhotoImage(
+            Arcade.circle_PIL_Image(Image.open(self.pfp_path), (100, 100))
+        )
         tk.Label(self, image=self.pfp_image).place(
             relx=0.75, rely=0.26, anchor="center"
         )
@@ -977,13 +1326,14 @@ class Register(tk.Frame):
 
         self.choose_button = ttk.Button(
             self,
-            text="Upload Your Picture",
+            text="Upload Picture",
             style="15.TButton",
             command=choose,
         )
         self.choose_button.place(relx=0.75, rely=0.5, anchor="center")
 
-    def check_pass(self, pwd):
+    @staticmethod
+    def check_pass(pwd):
         check = {
             "length": False,
             "upper": False,
@@ -1021,7 +1371,7 @@ class Register(tk.Frame):
             "digit": "1 Digit",
             "space": "No Spaces",
         }
-        missing = self.check_pass(pwd)
+        missing = Register.check_pass(pwd)
 
         msg = ""
         if len(uname) > 32:
@@ -1055,7 +1405,7 @@ class Register(tk.Frame):
             msg = "Password does not match"
             self.prompt(msg)
         else:
-            if self.http.register(
+            if HTTP.register(
                 uname.strip(),
                 pwd.strip(),
                 Arcade.pfp_send(self.pfp_path),
@@ -1093,6 +1443,10 @@ class Register(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
+    try:
+        os.mkdir(ASSET + "/cached_pfp")
+    except:
+        pass
     arc = Arcade()
     arc.start_arcade()
     root.mainloop()
