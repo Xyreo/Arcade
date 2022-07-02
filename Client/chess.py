@@ -1,17 +1,20 @@
+import base64
 import os
 import threading
 import tkinter as tk
 import tkinter.ttk as ttk
+from io import BytesIO
 from time import sleep
 from tkinter import messagebox as msgb
 
-from PIL import Image, ImageTk
+from PIL import Image, ImageChops, ImageDraw, ImageTk
 from plyer import notification as noti
 
 from http_wrapper import Http
 
 ASSET_PATH = "Assets"
 ASSET_PATH = ASSET_PATH if os.path.exists(ASSET_PATH) else "Client/" + ASSET_PATH
+HOME_ASSETS = ASSET_PATH + "/Home_Assets"
 
 
 class Chess(tk.Toplevel):
@@ -39,6 +42,19 @@ class Chess(tk.Toplevel):
         self.time = initialize["TIME"]
         self.add_time = initialize["ADD_TIME"]
         self.back_to_arcade = back
+        Chess.http = http
+
+        for i in self.players:
+            if not os.path.isfile(
+                HOME_ASSETS + "/cached_pfp/" + self.players[i]["NAME"] + ".png"
+            ):
+                Chess.store_pfp(self.players[i]["NAME"])
+
+            self.players[i].update(
+                {
+                    "PFP": Chess.get_cached_pfp(self.players[i]["NAME"], (24, 24)),
+                }
+            )
 
         self.board: dict[int, Piece] = Board()
         self.board_ids: dict = {}
@@ -59,8 +75,6 @@ class Chess(tk.Toplevel):
         self.turn = "WHITE"
         self.debug = debug
         self.poll = {}
-        self.http = http
-
         self.lock = threading.Lock()
         self.lock.acquire(blocking=False)
 
@@ -83,15 +97,6 @@ class Chess(tk.Toplevel):
             self, height=Chess.size, width=Chess.size // 2, bg="grey"
         )
         self.main_frame.place(relx=0.9, rely=0.5, anchor="e")
-        self.quit_button = tk.Button(
-            self,
-            text="← QUIT",
-            font=("times", (Chess.size - 2) // 60),
-            highlightthickness=0,
-            border=0,
-            command=self.resign,
-        )
-        self.quit_button.place(relx=0.01, rely=0.0125, anchor="nw")
 
         self.disimg = ImageTk.PhotoImage(
             Image.new(
@@ -135,6 +140,104 @@ class Chess(tk.Toplevel):
                 )
 
         self.enable_canvas()
+
+        self.acc_button = tk.Button(
+            self,
+            image=self.players[self.me]["PFP"],
+            text=f" {self.players[self.me]['NAME']} ▾",
+            highlightthickness=0,
+            border=0,
+            font=("times 14 bold"),
+            compound="left",
+            command=self.account_tab,
+        )
+        self.acc_button.place(relx=0.01, rely=0.0185, anchor="w")
+        self.acc_frame = tk.Frame()
+        self.acc_frame.destroy()
+
+    # region # Profile Picture
+
+    @staticmethod
+    def pfp_make(img):
+        b = base64.b64decode(img.encode("latin1"))
+        c = Image.open(BytesIO(b))
+        return c
+
+    @staticmethod
+    def store_pfp(name):
+        Chess.circle_PIL_Image(Chess.pfp_make(Chess.http.fetch_pfp(name))).save(
+            HOME_ASSETS + "/cached_pfp/" + name + ".png"
+        )
+
+    @staticmethod
+    def get_cached_pfp(name, resize=(32, 32)):
+        return ImageTk.PhotoImage(
+            Image.open(HOME_ASSETS + "/cached_pfp/" + name + ".png").resize(
+                resize, Image.Resampling.LANCZOS
+            )
+        )
+
+    @staticmethod
+    def circle_PIL_Image(pil_img: Image.Image, resize=(64, 64)):
+        im = pil_img.convert("RGBA")
+        im = im.crop(
+            (
+                (im.size[0] - min(im.size)) // 2,
+                (im.size[1] - min(im.size)) // 2,
+                (im.size[0] + min(im.size)) // 2,
+                (im.size[1] + min(im.size)) // 2,
+            )
+        ).resize(resize, Image.Resampling.LANCZOS)
+        bigsize = (im.size[0] * 10, im.size[1] * 10)
+
+        mask = Image.new("L", bigsize, 0)
+        ImageDraw.Draw(mask).ellipse((0, 0) + bigsize, fill=255)
+        mask = mask.resize(im.size, Image.Resampling.LANCZOS)
+        mask = ImageChops.darker(
+            mask,
+            im.split()[-1],
+        )
+        im.putalpha(mask)
+
+        a = im.resize(bigsize)
+        ImageDraw.Draw(a).ellipse((0, 0) + (bigsize), outline=(0, 0, 0), width=15)
+        a = a.resize(im.size, Image.Resampling.LANCZOS)
+        im.paste(a)
+
+        return im
+
+    # endregion
+
+    def account_tab(self):
+        if self.acc_frame.winfo_exists():
+            self.unbind("<Button-1>")
+            self.acc_frame.destroy()
+        else:
+
+            def clicked(e):
+                if self.acc_frame.winfo_containing(e.x_root, e.y_root) not in [
+                    self.quit_button,
+                    self.acc_frame,
+                    self.acc_button,
+                ]:
+                    self.acc_frame.destroy()
+                    self.unbind("<Button-1>")
+
+            self.bind("<Button-1>", lambda e: clicked(e))
+            self.acc_frame = tk.Frame(self, bg="white")
+            self.acc_frame.place(relx=0.01, rely=0.04, anchor="nw")
+
+            self.quit_button = ttk.Button(
+                self.acc_frame,
+                text="QUIT",
+                style="12.TButton",
+                command=self.resign,
+            )
+            self.quit_button.grid(
+                row=0,
+                column=0,
+                sticky="nsew",
+            )
 
     def initialize_board(self):
 
@@ -226,7 +329,7 @@ class Chess(tk.Toplevel):
         # endregion
 
     def timer_buttons(self):
-        # TODO: TIMERS
+        # TODO: TIMERS + username, pfp
 
         resign = ttk.Button(
             self.main_frame,
@@ -695,7 +798,7 @@ class Chess(tk.Toplevel):
         return j * 10 + i
 
     def show_message(self, title, message, type="info", timeout=0):
-        self.mbwin = tk.Toplevel(self)
+        self.mbwin = tk.Tk()
         self.mbwin.withdraw()
         try:
             if timeout:
@@ -718,9 +821,7 @@ class Chess(tk.Toplevel):
     def draw_req(self):
         self.poll["DRAW"] = "REQ"
         self.send(("DRAW", "REQ"))
-        self.draw_frame = tk.Frame(
-            self.main_frame, height=Chess.size, width=Chess.size // 2
-        )
+        self.draw_frame = tk.Frame(self.main_frame)
         self.draw_frame.place(
             relx=0.5, rely=0.5, anchor="center", relwidth=1, relheight=0.3
         )
@@ -768,7 +869,7 @@ class Chess(tk.Toplevel):
         ).place(relx=0.5, rely=0.8, anchor="center")
 
         if self.me == winner or (winner == None and self.side == "WHITE"):
-            self.http.addgame(
+            Chess.http.addgame(
                 "CHESS",
                 self.players[winner]["NAME"] if winner else "none",
                 {"board": self.board.fen.value},
@@ -790,9 +891,7 @@ class Chess(tk.Toplevel):
 
     def draw_reply(self):
         self.poll["DRAW"] = "ACK"
-        self.draw_frame = tk.Frame(
-            self.main_frame, height=Chess.size, width=Chess.size // 2
-        )
+        self.draw_frame = tk.Frame(self.main_frame)
         self.draw_frame.place(
             relx=0.5, rely=0.5, anchor="center", relwidth=1, relheight=0.3
         )
@@ -837,7 +936,7 @@ class Chess(tk.Toplevel):
 
     def quit_game(self, reason=None):
         if __name__ == "__main__":
-            self.http.logout()
+            Chess.http.logout()
             app.quit()
         else:
             if reason:
@@ -1408,8 +1507,8 @@ if __name__ == "__main__":
         {
             "ME": "456789",
             "PLAYERS": {
-                "123456": {"NAME": "gay", "SIDE": "BLACK"},
-                "456789": {"NAME": "straight", "SIDE": "WHITE"},
+                "123456": {"NAME": "test", "SIDE": "BLACK"},
+                "456789": {"NAME": "test", "SIDE": "WHITE"},
             },
             "TIME": 10,  # minutes
             "ADD_TIME": 5,  # seconds

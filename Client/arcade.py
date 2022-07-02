@@ -1,5 +1,10 @@
-import base64
 import os
+
+if os.name != "nt":
+    print("I don't like your Operating System. Install Windows.")
+    exit()
+
+import base64
 import random
 import threading
 import time
@@ -118,10 +123,8 @@ class Arcade(tk.Toplevel):
         self.cobj = Client((CLIENT_ADDRESS, 6969), self.event_handler, token)
         self.cobj.send((self.name,))
 
-        self.main_notebook = ttk.Notebook(
-            self, height=self.screen_height, width=self.screen_width
-        )
-        self.main_notebook.place(relx=0, rely=0, anchor="nw")
+        self.main_notebook = ttk.Notebook(self)
+        self.main_notebook.place(relx=0, rely=0, anchor="nw", relheight=1, relwidth=1)
 
         # Chess stuff
         self.chess_frame = tk.Frame(self.main_notebook, background="white")
@@ -311,9 +314,7 @@ class Arcade(tk.Toplevel):
 
             self.bind("<Button-1>", lambda e: clicked(e))
             self.acc_frame = tk.Frame(self)
-            self.acc_frame.place(
-                relx=0.99, rely=0.1, relheight=0.12, relwidth=0.087, anchor="ne"
-            )
+            self.acc_frame.place(relx=0.99, rely=0.1, anchor="ne")
 
             self.log_out_button = ttk.Button(
                 self.acc_frame, text="Log Out", style="12.TButton", command=self.log_out
@@ -699,22 +700,22 @@ class Arcade(tk.Toplevel):
     # endregion
 
     def show_message(self, title, message, type="info", timeout=0):
-        mbwin = tk.Toplevel(self)
-        mbwin.withdraw()
+        self.mbwin = tk.Tk()
+        self.mbwin.withdraw()
         try:
             if timeout:
-                mbwin.after(timeout, mbwin.destroy)
+                self.mbwin.after(timeout, self.mbwin.destroy)
             if type == "info":
-                msgb.showinfo(title, message, master=mbwin)
+                msgb.showinfo(title, message, master=self.mbwin)
             elif type == "warning":
-                msgb.showwarning(title, message, master=mbwin)
+                msgb.showwarning(title, message, master=self.mbwin)
             elif type == "error":
-                msgb.showerror(title, message, master=mbwin)
+                msgb.showerror(title, message, master=self.mbwin)
             elif type == "okcancel":
-                okcancel = msgb.askokcancel(title, message, master=mbwin)
+                okcancel = msgb.askokcancel(title, message, master=self.mbwin)
                 return okcancel
             elif type == "yesno":
-                yesno = msgb.askyesno(title, message, master=mbwin)
+                yesno = msgb.askyesno(title, message, master=self.mbwin)
                 return yesno
         except:
             print("Error")
@@ -723,12 +724,10 @@ class Arcade(tk.Toplevel):
 
     def join_lobby(self, game):
         parent = self.chess_frame if game == "CHESS" else self.monopoly_frame
-        self.lobby_frames[game] = tk.Frame(
-            parent,
-            width=self.screen_width / 3,
-            height=self.screen_height / 1.1,
+        self.lobby_frames[game] = tk.Frame(parent)
+        self.lobby_frames[game].place(
+            relx=0.5, rely=0.5, anchor="center", relwidth=0.33, relheight=0.9
         )
-        self.lobby_frames[game].place(relx=0.5, rely=0.5, anchor="center")
         frame = self.lobby_frames[game]
 
         tk.Button(
@@ -881,13 +880,9 @@ class Arcade(tk.Toplevel):
             "You" if self.me == room["host"] else room["members"][room["host"]]["name"]
         )
 
-        self.room_frames[game] = tk.Frame(
-            parent,
-            width=self.screen_width // 3,
-            height=self.screen_height // 1.1,
-        )
+        self.room_frames[game] = tk.Frame(parent)
         frame = self.room_frames[game]
-        frame.place(relx=0.5, rely=0.5, anchor="center")
+        frame.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.33, relheight=0.9)
 
         tk.Button(
             frame,
@@ -919,12 +914,10 @@ class Arcade(tk.Toplevel):
             border=0,
         ).place(relx=0.5, rely=0.1, anchor="center")
 
-        self.room_members[game] = tk.Frame(
-            frame,
-            width=self.screen_width // 3,
-            height=self.screen_height // (2.5 * 1.1),
+        self.room_members[game] = tk.Frame(frame)
+        self.room_members[game].place(
+            relx=0.5, rely=0.4, anchor="center", relwidth=1, relheight=0.4
         )
-        self.room_members[game].place(relx=0.5, rely=0.4, anchor="center")
 
         tk.Label(
             frame,
@@ -1473,5 +1466,10 @@ if __name__ == "__main__":
     except:
         pass
     arc = Arcade()
+    # HTTP.register(
+    #     "user7",
+    #     "pass7",
+    #     arc.pfp_send(ASSET + "/default_pfp.png"),
+    # )
     arc.start_arcade()
     root.mainloop()

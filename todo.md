@@ -2,7 +2,6 @@
 (A) Leaderboard, Stats @arcade @ProAltro @Chaitanya-Keyal
 (B) Timer @chess @ProAltro
 (B) Auto Leave/ Auto End Turn : End Turn Timer @monopoly @Chaitanya-Keyal
-(B) Add PFP to Games @monopoly @chess @Chaitanya-Keyal
 (C) Icons, Window Titles +Arcade
 (C) Notifier +Arcade
 (C) Info, Rules +Arcade
@@ -11,7 +10,7 @@
 (D) Custom Notebook @arcade
 (D) Private Room @arcade
 (D) Game Settings @arcade
-(E) GUI Relative Placing and Sizing @monopoly
+(E) Images Resizer +Arcade
 (E) Add Hilarious Trade Meme @monopoly
 (X) Music, Sounds +Arcade #Extra
 (Y) TakeBack @chess #Extra

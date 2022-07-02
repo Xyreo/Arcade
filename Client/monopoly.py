@@ -1,13 +1,15 @@
+import base64
 import copy
 import os
 import random
 import threading
 import tkinter as tk
 import tkinter.ttk as ttk
+from io import BytesIO
 from time import sleep
 from tkinter import messagebox as msgb
 
-from PIL import Image, ImageTk
+from PIL import Image, ImageChops, ImageDraw, ImageTk
 from plyer import notification as noti
 
 from http_wrapper import Http
@@ -17,8 +19,9 @@ try:
 except:
     print("No Output Devices Found")
 
-ASSET = "./Assets/Mnply_Assets"
-ASSET = ASSET if os.path.exists(ASSET) else "Client/" + ASSET
+ASSET = "./Assets" if os.path.exists("./Assets") else "Client/Assets"
+MONOPOLY_ASSETS = ASSET + "/Mnply_Assets"
+HOME_ASSETS = ASSET + "/Home_Assets"
 
 
 class Property:
@@ -88,8 +91,8 @@ class Monopoly(tk.Toplevel):
         self.send_msg = lambda msg: send(("MSG", msg))
         self.leave_room_msg = lambda reason: send(("LEAVE", reason))
         self.create_window()
-        self.create_gui_divisions()
         self.initialise()
+        self.create_gui_divisions()
         self.create_image_obj()
         self.dice_tokens()
         self.action_frame_popup("Default")
@@ -104,7 +107,7 @@ class Monopoly(tk.Toplevel):
             "mono.TButton", font=("times", int(self.property_width / 3))
         )
         button_style.configure("10.TButton", font=("times", 10))
-        self.board_canvas.bind("<Button-1>", self.click_to_position)
+        button_style.configure("12.TButton", font=("times", 12))
 
         self.properties = {}
         details = self.http.mply_details()
@@ -113,6 +116,11 @@ class Monopoly(tk.Toplevel):
         Property.game = self
 
         for i in self.player_details:
+            if not os.path.isfile(
+                HOME_ASSETS + "/cached_pfp/" + self.player_details[i]["Name"] + ".png"
+            ):
+                Monopoly.store_pfp(self.player_details[i]["Name"])
+
             self.player_details[i].update(
                 {
                     "Money": 1500,
@@ -120,12 +128,14 @@ class Monopoly(tk.Toplevel):
                     "Position": 0,
                     "Properties": [],
                     "GOJF": 0,
+                    "PFP": Monopoly.get_cached_pfp(
+                        self.player_details[i]["Name"], (24, 24)
+                    ),
                 }
             )  # Properties will store obj from properties dict
 
-        if os.name == "nt":
-            self.cli_thread = threading.Thread(target=self.CLI, daemon=True)
-            self.cli_thread.start()
+        self.cli_thread = threading.Thread(target=self.CLI, daemon=True)
+        self.cli_thread.start()
 
     def event_handler(self, msg):
         if msg[1] == "ROLL":
@@ -158,6 +168,59 @@ class Monopoly(tk.Toplevel):
             elif msg[2] == "REQUEST":
                 if msg[3] == self.me:
                     self.recv_trade(msg[0], *msg[4:7])
+
+    # region # Profile Picture
+
+    @staticmethod
+    def pfp_make(img):
+        b = base64.b64decode(img.encode("latin1"))
+        c = Image.open(BytesIO(b))
+        return c
+
+    @staticmethod
+    def store_pfp(name):
+        Monopoly.circle_PIL_Image(
+            Monopoly.pfp_make(Monopoly.http.fetch_pfp(name))
+        ).save(HOME_ASSETS + "/cached_pfp/" + name + ".png")
+
+    @staticmethod
+    def get_cached_pfp(name, resize=(32, 32)):
+        return ImageTk.PhotoImage(
+            Image.open(HOME_ASSETS + "/cached_pfp/" + name + ".png").resize(
+                resize, Image.Resampling.LANCZOS
+            )
+        )
+
+    @staticmethod
+    def circle_PIL_Image(pil_img: Image.Image, resize=(64, 64)):
+        im = pil_img.convert("RGBA")
+        im = im.crop(
+            (
+                (im.size[0] - min(im.size)) // 2,
+                (im.size[1] - min(im.size)) // 2,
+                (im.size[0] + min(im.size)) // 2,
+                (im.size[1] + min(im.size)) // 2,
+            )
+        ).resize(resize, Image.Resampling.LANCZOS)
+        bigsize = (im.size[0] * 10, im.size[1] * 10)
+
+        mask = Image.new("L", bigsize, 0)
+        ImageDraw.Draw(mask).ellipse((0, 0) + bigsize, fill=255)
+        mask = mask.resize(im.size, Image.Resampling.LANCZOS)
+        mask = ImageChops.darker(
+            mask,
+            im.split()[-1],
+        )
+        im.putalpha(mask)
+
+        a = im.resize(bigsize)
+        ImageDraw.Draw(a).ellipse((0, 0) + (bigsize), outline=(0, 0, 0), width=15)
+        a = a.resize(im.size, Image.Resampling.LANCZOS)
+        im.paste(a)
+
+        return im
+
+    # endregion
 
     # region # Create
 
@@ -195,6 +258,7 @@ class Monopoly(tk.Toplevel):
 
         self.isInDebt = False
         self.debt_details = []
+        self.n = 0
 
     def create_window(self):
         screen_width = int(0.9 * self.winfo_screenwidth())
@@ -214,139 +278,151 @@ class Monopoly(tk.Toplevel):
         self.protocol(
             "WM_DELETE_WINDOW", lambda: self.player_leave(self.me, quitting=True)
         )
+        self.bind("<Configure>", lambda e: self.win_resized(e))
+
+    def win_resized(self, e):
+        if e.widget == self:
+            t = threading.Thread(target=self.resizer, args=((self.n + 1),))
+            t.start()
+            self.n += 1
+
+    def resizer(self, n):
+        sleep(0.1)
+        if n == self.n:
+            if self.property_frame.winfo_exists():
+                self.property_frame.destroy()
+                self.property_frame_popup(self.property_pos_displayed)
+            self.n = 0
 
     def create_gui_divisions(self):
         self.board_canvas = tk.Canvas(
             self, width=self.board_side, height=self.board_side
         )
         self.board_canvas.place(relx=0.01, rely=0.04, anchor="nw")
+        self.board_canvas.bind("<Button-1>", self.click_to_position)
 
         self.main_frame = tk.Frame(
             self,
-            width=self.board_side - 2,
-            height=self.board_side - 2,
             background="white",
         )
-        self.main_frame.place(relx=0.99, rely=0.04, anchor="ne")
+        self.main_frame.place(
+            relx=0.99, rely=0.04, relwidth=0.475, relheight=0.9, anchor="ne"
+        )
 
-        self.quit_button = tk.Button(
+        self.acc_button = tk.Button(
             self,
-            text="← QUIT",
-            font=("times", (self.board_side - 2) // 60),
+            image=self.player_details[self.me]["PFP"],
+            text=f" {self.player_details[self.me]['Name']} ▾",
+            bg="white",
             highlightthickness=0,
             border=0,
-            command=lambda: self.player_leave(self.me, quitting=True),
-            bg="white",
+            font=("times 14 bold"),
+            compound="left",
+            command=self.account_tab,
         )
-        self.quit_button.place(relx=0.01, rely=0.0125, anchor="nw")
-
-        self.end_game_button = ttk.Button(
-            self,
-            text="END GAME",
-            style="10.TButton",
-            command=self.end_game_now,
-        )
-        self.end_game_button.place(relx=0.485, rely=0.0075, anchor="ne")
+        self.acc_button.place(relx=0.01, rely=0.0185, anchor="w")
+        self.acc_frame = tk.Frame()
+        self.acc_frame.destroy()
 
     def create_image_obj(self):
         self.board_image = ImageTk.PhotoImage(
-            Image.open(ASSET + "/BoardIMG.jpg").resize(
+            Image.open(MONOPOLY_ASSETS + "/BoardIMG.jpg").resize(
                 (self.board_side, self.board_side), Image.Resampling.LANCZOS
             )
         )
         self.board_canvas.create_image(2, 2, image=self.board_image, anchor="nw")
 
         self.info_tag = ImageTk.PhotoImage(
-            Image.open(ASSET + "/Info/big_info.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/Info/big_info.png").resize(
                 (int(self.property_width / 2), int(self.property_width / 2)),
                 Image.Resampling.LANCZOS,
             )
         )
 
         self.station_image = ImageTk.PhotoImage(
-            Image.open(ASSET + "/station.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/station.png").resize(
                 (int(2.5 * self.property_width), int(2.5 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
 
         self.water_image = ImageTk.PhotoImage(
-            Image.open(ASSET + "/water.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/water.png").resize(
                 (int(2.5 * self.property_width), int(2 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
 
         self.electric_image = ImageTk.PhotoImage(
-            Image.open(ASSET + "/electric.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/electric.png").resize(
                 (int(2 * self.property_width), int(2.25 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
 
         self.dice1 = ImageTk.PhotoImage(
-            Image.open(ASSET + "/Die/dice1.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/Die/dice1.png").resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice2 = ImageTk.PhotoImage(
-            Image.open(ASSET + "/Die/dice2.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/Die/dice2.png").resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice3 = ImageTk.PhotoImage(
-            Image.open(ASSET + "/Die/dice3.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/Die/dice3.png").resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice4 = ImageTk.PhotoImage(
-            Image.open(ASSET + "/Die/dice4.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/Die/dice4.png").resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice5 = ImageTk.PhotoImage(
-            Image.open(ASSET + "/Die/dice5.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/Die/dice5.png").resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice6 = ImageTk.PhotoImage(
-            Image.open(ASSET + "/Die/dice6.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/Die/dice6.png").resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
 
         self.red_token_image = ImageTk.PhotoImage(
-            Image.open(ASSET + "/Tokens/red.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/Tokens/red.png").resize(
                 (self.token_width, self.token_width),
                 Image.Resampling.LANCZOS,
             )
         )
         self.green_token_image = ImageTk.PhotoImage(
-            Image.open(ASSET + "/Tokens/green.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/Tokens/green.png").resize(
                 (self.token_width, self.token_width),
                 Image.Resampling.LANCZOS,
             )
         )
         self.blue_token_image = ImageTk.PhotoImage(
-            Image.open(ASSET + "/Tokens/blue.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/Tokens/blue.png").resize(
                 (self.token_width, self.token_width),
                 Image.Resampling.LANCZOS,
             )
         )
         self.yellow_token_image = ImageTk.PhotoImage(
-            Image.open(ASSET + "/Tokens/yellow.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/Tokens/yellow.png").resize(
                 (self.token_width, self.token_width),
                 Image.Resampling.LANCZOS,
             )
         )
         self.mr_monopoly = ImageTk.PhotoImage(
-            Image.open(ASSET + "/mr_monopoly.png").resize(
+            Image.open(MONOPOLY_ASSETS + "/mr_monopoly.png").resize(
                 (
                     int((self.board_side - 2) // 2.05),
                     int((self.board_side - 2) // 1.75),
@@ -356,14 +432,14 @@ class Monopoly(tk.Toplevel):
         )
         self.mr_monopoly_frame = tk.Frame(
             self.main_frame,
-            width=(self.board_side - 2) // 2.05,
-            height=(self.board_side - 2) // 1.75,
             bg="#F9FBFF",
             highlightthickness=0,
             highlightbackground="#F9FBFF",
         )
 
-        self.mr_monopoly_frame.place(relx=1, rely=1, anchor="se")
+        self.mr_monopoly_frame.place(
+            relx=1, rely=1, relheight=0.575, relwidth=0.475, anchor="se"
+        )
         tk.Label(
             self.mr_monopoly_frame,
             image=self.mr_monopoly,
@@ -442,12 +518,68 @@ class Monopoly(tk.Toplevel):
             command=lambda: self.open_children("gold"),
         )
 
+    def account_tab(self):
+        if self.acc_frame.winfo_exists():
+            self.unbind("<Button-1>")
+            self.acc_frame.destroy()
+        else:
+
+            def clicked(e):
+                if self.acc_frame.winfo_containing(e.x_root, e.y_root) not in [
+                    self.quit_button,
+                    self.end_game_button,
+                    self.acc_frame,
+                    self.acc_button,
+                ]:
+                    self.acc_frame.destroy()
+                    self.unbind("<Button-1>")
+
+            self.bind("<Button-1>", lambda e: clicked(e))
+            self.acc_frame = tk.Frame(self, bg="white")
+            self.acc_frame.place(relx=0.01, rely=0.04, anchor="nw")
+
+            def end_game_now():
+                if self.show_message(
+                    "End Game?",
+                    "Are you sure you wish to end this game? Game will end only based on other players' opinions!",
+                    type="okcancel",
+                ):
+                    self.poll(
+                        self.me,
+                        (
+                            "CREATE",
+                            "endgame",
+                            False,
+                            self.player_details[self.me]["Name"],
+                        ),
+                    )
+
+            self.quit_button = ttk.Button(
+                self.acc_frame,
+                text="Forfeit",
+                style="12.TButton",
+                command=lambda: self.player_leave(self.me, quitting=True),
+            )
+            self.quit_button.grid(
+                row=0,
+                column=0,
+                sticky="nsew",
+            )
+
+            self.end_game_button = ttk.Button(
+                self.acc_frame,
+                text="End Game",
+                style="12.TButton",
+                command=end_game_now,
+            )
+            self.end_game_button.grid(row=1, column=0, sticky="nsew")
+
     # endregion
 
     # region # Util
 
     def show_message(self, title, message, type="info", timeout=0):
-        self.mbwin = tk.Toplevel(self)
+        self.mbwin = tk.Tk()
         self.mbwin.withdraw()
         try:
             if timeout:
@@ -648,7 +780,7 @@ class Monopoly(tk.Toplevel):
 
     def roll_dice(self, roll=None, received=False, cli=False):
         try:
-            music(ASSET + "/Die/diceroll.mp3")
+            music(MONOPOLY_ASSETS + "/Die/diceroll.mp3")
         except:
             pass
         dice_roll = roll if received else (random.randint(1, 6), random.randint(1, 6))
@@ -979,11 +1111,9 @@ class Monopoly(tk.Toplevel):
         canvas = tk.Canvas(
             self.property_frame,
             highlightthickness=0,
-            width=(self.board_side - 2) // 2.25,
-            height=(self.board_side - 2) // 3.2,
             bg="#F9FBFF",
         )
-        canvas.place(relx=0.5, rely=0.7, anchor="center")
+        canvas.place(relx=0.5, rely=0.7, relheight=0.55, relwidth=0.9, anchor="center")
         canvas.update()
         y_coord = canvas.winfo_height() / 12
 
@@ -1145,11 +1275,9 @@ class Monopoly(tk.Toplevel):
         canvas = tk.Canvas(
             self.property_frame,
             highlightthickness=0,
-            width=(self.board_side - 2) // 2.25,
-            height=(self.board_side - 2) // 3.2,
             bg="#F9FBFF",
         )
-        canvas.place(relx=0.5, rely=0.7, anchor="center")
+        canvas.place(relx=0.5, rely=0.7, relheight=0.55, relwidth=0.9, anchor="center")
         canvas.update()
         y_coord = canvas.winfo_height() / 14
 
@@ -1303,13 +1431,13 @@ class Monopoly(tk.Toplevel):
     def colour_property_frame(self, position):
         title_frame = tk.Frame(
             self.property_frame,
-            width=(self.board_side - 2) // 2.25,
-            height=(self.board_side - 2) // 10,
             bg=self.properties[position].hex,
             highlightthickness=2,
             highlightbackground="black",
         )
-        title_frame.place(relx=0.5, rely=0.125, anchor="center")
+        title_frame.place(
+            relx=0.5, rely=0.125, relwidth=0.9, relheight=0.2, anchor="center"
+        )
 
         tk.Label(
             title_frame,
@@ -1339,11 +1467,10 @@ class Monopoly(tk.Toplevel):
         canvas = tk.Canvas(
             self.property_frame,
             highlightthickness=0,
-            width=(self.board_side - 2) // 2.25,
-            height=(self.board_side - 2) // 2.3,
             bg="#F9FBFF",
         )
-        canvas.place(relx=0.5, rely=0.6, anchor="center")
+        canvas.place(relx=0.5, rely=0.6, relheight=0.7, relwidth=0.9, anchor="center")
+
         canvas.update()
         y_coord = canvas.winfo_height() / 23
 
@@ -1602,14 +1729,14 @@ class Monopoly(tk.Toplevel):
         self.property_pos_displayed = position
         self.property_frame = tk.Frame(
             self.main_frame,
-            width=(self.board_side - 2) // 2.05,
-            height=(self.board_side - 2) // 1.75,
             bg="#F9FBFF",
             highlightthickness=2,
             highlightbackground="black",
         )
 
-        self.property_frame.place(relx=1, rely=1, anchor="se")
+        self.property_frame.place(
+            relx=1, rely=1, relheight=0.575, relwidth=0.475, anchor="se"
+        )
 
         if position in [5, 15, 25, 35]:
             self.station_property_frame(position)
@@ -1640,13 +1767,11 @@ class Monopoly(tk.Toplevel):
     # region # Player Frame
 
     def player_frame_popup(self, list_of_open=[]):
-        self.player_frame = tk.Frame(
-            self.main_frame,
-            width=(self.board_side - 2) // 2.05,
-            height=(self.board_side - 2) // 1.75,
-        )
+        self.player_frame = tk.Frame(self.main_frame)
 
-        self.player_frame.place(relx=0, rely=1, anchor="sw")
+        self.player_frame.place(
+            relx=0, rely=0.999, relheight=0.575, relwidth=0.5, anchor="sw"
+        )
 
         scroll = ttk.Scrollbar(self.player_frame, orient="vertical")
         scroll.place(relx=1, rely=0, relwidth=0.06, anchor="ne", relheight=1)
@@ -1678,26 +1803,15 @@ class Monopoly(tk.Toplevel):
         self.player_tree.heading("Value", text="Cash → Value", anchor="center")
 
         for i, j in self.player_details.items():
-            if i == self.me:
-                self.player_tree.insert(
-                    parent="",
-                    index="end",
-                    iid=i,
-                    text="",
-                    values=(j["Name"], j["Money"]),
-                    tags=j["Colour"],
-                )
-                self.player_tree.tag_configure(j["Colour"], background=j["Colour"])
-            else:
-                self.player_tree.insert(
-                    parent="",
-                    index="end",
-                    iid=i,
-                    text="",
-                    values=(j["Name"], j["Money"]),
-                    tags=j["Colour"],
-                )
-                self.player_tree.tag_configure(j["Colour"], foreground=j["Colour"])
+            self.player_tree.insert(
+                parent="",
+                index="end",
+                iid=i,
+                text="",
+                values=(j["Name"], j["Money"]),
+                tags=j["Colour"],
+            )
+            self.player_tree.tag_configure(j["Colour"], foreground=j["Colour"])
 
             if i in list_of_open:
                 self.player_tree.item(i, open=True)
@@ -1768,10 +1882,8 @@ class Monopoly(tk.Toplevel):
     def action_frame_popup(self, txt):
         self.action_frame = tk.Frame(
             self.main_frame,
-            width=(self.board_side - 2) // 1,
-            height=(self.board_side - 2) // 2.45,
         )
-        self.action_frame.place(relx=0, rely=0, anchor="nw")
+        self.action_frame.place(relx=0, rely=0, relwidth=1, relheight=0.4, anchor="nw")
 
         if self.me not in self.uuids:
             self.roll_button.configure(state="disabled")
@@ -2044,12 +2156,8 @@ class Monopoly(tk.Toplevel):
         return my_sets
 
     def build_sell_action_frame(self, sell=False):
-        self.build_frame = tk.Frame(
-            self.action_frame,
-            width=(self.board_side - 2) // 1,
-            height=(self.board_side - 2) // 2.45,
-        )
-        self.build_frame.place(relx=0, rely=0, anchor="nw")
+        self.build_frame = tk.Frame(self.action_frame)
+        self.build_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
 
         tk.Button(
             self.build_frame,
@@ -2435,7 +2543,7 @@ class Monopoly(tk.Toplevel):
             self.pay(payer, amt, receiver)
 
     def place_houses(self):
-        HOUSES = ASSET + "/Houses"
+        HOUSES = MONOPOLY_ASSETS + "/Houses"
         d = {
             1: ["house_1", 0.2],
             2: ["house_2", 0.36],
@@ -2572,12 +2680,10 @@ class Monopoly(tk.Toplevel):
 
     def recv_trade(self, offeror, propertyrecv, propertygive, cash):
         self.collective["TRADE"] = ("RECV", offeror)
-        self.recv_trade_frame = tk.Frame(
-            self.action_frame,
-            width=(self.board_side - 2) // 1,
-            height=(self.board_side - 2) // 2.45,
+        self.recv_trade_frame = tk.Frame(self.action_frame)
+        self.recv_trade_frame.place(
+            relx=0, rely=0, relwidth=1, relheight=1, anchor="nw"
         )
-        self.recv_trade_frame.place(relx=0, rely=0, anchor="nw")
 
         tk.Label(
             self.recv_trade_frame,
@@ -2641,12 +2747,8 @@ class Monopoly(tk.Toplevel):
             self.update_game()
 
     def trade(self):
-        self.trade_frame = tk.Frame(
-            self.action_frame,
-            width=(self.board_side - 2) // 1,
-            height=(self.board_side - 2) // 2.45,
-        )
-        self.trade_frame.place(relx=0, rely=0, anchor="nw")
+        self.trade_frame = tk.Frame(self.action_frame)
+        self.trade_frame.place(relx=0, rely=0, relwidth=1, relheight=1, anchor="nw")
 
         tk.Button(
             self.trade_frame,
@@ -2862,12 +2964,8 @@ class Monopoly(tk.Toplevel):
                     self.toggle_action_buttons(True)
                     return
 
-                waiting = tk.Frame(
-                    self.trade_frame,
-                    width=(self.board_side - 2) // 1,
-                    height=(self.board_side - 2) // 2.45,
-                )
-                waiting.place(relx=0, rely=0, anchor="nw")
+                waiting = tk.Frame(self.trade_frame)
+                waiting.place(relx=0, rely=0, relwidth=1, relheight=1, anchor="nw")
 
                 tk.Label(
                     waiting,
@@ -3013,6 +3111,8 @@ class Monopoly(tk.Toplevel):
     def quit_game(self):
         if __name__ == "__main__":
             self.http.logout()
+            for file in os.scandir(HOME_ASSETS + "/cached_pfp"):
+                os.remove(file.path)
             root.quit()
         else:
             self.destroy()
@@ -3193,17 +3293,6 @@ class Monopoly(tk.Toplevel):
 
     def end_game(self, winner=None):
         print("Game Ended")
-
-    def end_game_now(self):
-        if self.show_message(
-            "End Game?",
-            "Are you sure you wish to end this game? Game will end only based on other players' opinions!",
-            type="okcancel",
-        ):
-            self.poll(
-                self.me,
-                ("CREATE", "endgame", False, self.player_details[self.me]["Name"]),
-            )
 
     # endregion
 
@@ -3458,12 +3547,18 @@ class Community:
 if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()
+    try:
+        os.mkdir(HOME_ASSETS + "/cached_pfp")
+    except:
+        pass
     hobj = Http("http://167.71.231.52:5000")
-    hobj.login("test", "test")
+    uname = "user"
+    pwd = "pass"
+    hobj.login(uname, pwd)
     mono = Monopoly(
         {
             "QWERTY": {
-                "Name": "test",
+                "Name": uname,
                 "Colour": "red",
             }
         },
