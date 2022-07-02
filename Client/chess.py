@@ -1204,7 +1204,7 @@ class ChessPiece(Piece):
         self.game.canvas.tag_raise(self.img_id)
 
     def img(self, color: str, piece: str):
-        path = os.path.join(ASSET_PATH, "Chess_Assets", "Pieces")
+        path = os.path.join(ASSET_PATH, "Chess_Assets", "Pieces2")
         size = int((Chess.size / 8) * 0.75)
         i = (color[0] + "_" + piece + ".png").lower()
         p = os.path.join(path, i)
