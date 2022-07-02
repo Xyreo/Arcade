@@ -605,7 +605,7 @@ class Chess(tk.Toplevel):
 
             elif self.poll["DRAW"] == "REQ":
                 self.send(("DRAW", "DENY"))
-                self.draw_ack(False)
+                self.draw_ack(False,True)
 
         self.last_move = [start, end]
         self.board[start].moved(end)
@@ -880,12 +880,13 @@ class Chess(tk.Toplevel):
                 [self.me, self.opponent],
             )  # ? Add PGN
 
-    def draw_ack(self, ack):
+    def draw_ack(self, ack,cancel=False):
         self.draw_frame.destroy()
         if ack:
             self.final_frame("DRAW")
         else:
-            noti.notify(
+            if not cancel:
+                noti.notify(
                 title="Declined!",
                 app_name="Chess",
                 message=f"{self.players[self.opponent]['NAME']} has declined your draw offer!",
