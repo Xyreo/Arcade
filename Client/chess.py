@@ -75,6 +75,7 @@ class Chess(tk.Toplevel):
         self.turn = "WHITE"
         self.debug = debug
         self.poll = {}
+        self.isEnded = False
         self.lock = threading.Lock()
         self.lock.acquire(blocking=False)
 
@@ -233,6 +234,8 @@ class Chess(tk.Toplevel):
                 style="12.TButton",
                 command=self.resign,
             )
+            if self.isEnded:
+                self.quit_button.configure(command=self.quit_game)
             self.quit_button.grid(
                 row=0,
                 column=0,
@@ -832,9 +835,9 @@ class Chess(tk.Toplevel):
         ).place(relx=0.5, rely=0.5, anchor="center")
 
     def final_frame(self, type, winner=None):
+        self.isEnded = True
         self.disable_canvas(greyed=True)
         self.protocol("WM_DELETE_WINDOW", self.quit_game)
-        self.quit_button.configure(command=self.quit_game)
         txt = ""
         if type == "DRAW":
             txt = f"The Game is Tied!\n\nPoints:\n\n{self.players[self.me]['NAME']}: ½\n\n{self.players[self.opponent]['NAME']}: ½"
