@@ -6,7 +6,6 @@
 (C) Notifier +Arcade
 (C) Info, Rules +Arcade
 (C) Logo @arcade
-(D) Resizing Windows +Arcade
 (D) Custom Notebook @arcade
 (D) Private Room @arcade
 (D) Game Settings @arcade
