@@ -86,6 +86,7 @@ class Chess(tk.Toplevel):
         x_coord = self.winfo_screenwidth() // 2 - screen_width // 2
         y_coord = (self.winfo_screenheight() - 70) // 2 - screen_height // 2
         self.geometry(f"{screen_width}x{screen_height}+{x_coord}+{y_coord}")
+        self.minsize(int(Chess.size * 1.6), Chess.size)
         self.protocol("WM_DELETE_WINDOW", self.resign)
         self.title("Chess")
         self.canvas = tk.Canvas(
