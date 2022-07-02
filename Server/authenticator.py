@@ -11,14 +11,14 @@ class Auth:
         self.r = redis.Redis(host="localhost", port=6379, db=1)
 
     def add(self, name):
-        if self.r.exists(name):
+        if self.r.exists(name.lower()):
             return False
 
         session_id = secrets.token_hex(16)
         while self.r.exists(session_id):
             session_id = secrets.token_hex(16)
         self.r.setex(session_id, timedelta(minutes=time), value=name)
-        self.r.setex(name, timedelta(minutes=time), value=session_id)
+        self.r.setex(name.lower(), timedelta(minutes=time), value=session_id)
         return session_id
 
     def end_session(self, session_id):

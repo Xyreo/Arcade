@@ -141,11 +141,10 @@ ASSET = "Assets/Home_Assets"
 ASSET = ASSET if os.path.exists(ASSET) else "Client/" + ASSET
 
 if __name__ == "__main__":
-    app = Http("http://localhost:5000")
+    app = Http("http://167.71.231.52:5000")
     print(app.login("test", "test"))
+    print(app.leaderboard("chess"))
+    # print(app.addgame("chess", "none", {1: 2}, ["user1", "user2"]))
     print(app.logout())
-    # print(app.addgame("monopoly", "user1", {"1": "2"}, ["root", "user2", "user1"]))
-    # print(app.leaderboard("monopoly"))
-    # print(app.addgame("chess", 1, {1: 2}, [1, 32]))
     # print(app.stats("monopoly", 1))
     # print(app.del_user())

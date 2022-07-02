@@ -216,8 +216,9 @@ class Client(threading.Thread):
         except:
             self.name = "Unknown"
 
-        for uuid, player in players.items():
-            if player.name == self.name:
+        p = list(players.values())
+        for player in p:
+            if player.name.lower() == self.name.lower():
                 player.close()
 
         log(f"Connected to {self.addr} as {self.name}")
