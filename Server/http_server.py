@@ -1,3 +1,4 @@
+import base64
 import datetime
 import json
 import os
@@ -12,10 +13,10 @@ from flask import Blueprint, Flask, jsonify, request
 
 from authenticator import Auth
 
-
 app = Flask(__name__)
 load_dotenv(find_dotenv())
 password = os.getenv("password")
+PFP_PATH = "pfp"
 
 
 class Database:
@@ -112,8 +113,9 @@ def register():
     password = str(password)[2:-1]
     doj = str(date.today())
     db.data_change(
-        f'INSERT INTO user(name,doj,password,pfp) VALUES("{username}","{doj}","{password}","{img}")'
+        f'INSERT INTO user(name,doj,password) VALUES("{username}","{doj}","{password}")'
     )
+    save_img(img, username)
 
     return jsonify("Success"), 200
 
@@ -204,10 +206,10 @@ def change_password():
 
 @req_authorisation.route("/fetch_pfp/<string:name>")
 def fetch_pfp(name):
-    pfp = db.execute(f"SELECT pfp FROM user WHERE name='{name}'")
-    if len(pfp) != 1:
+    pfp = load_img(name)
+    if not pfp:
         return jsonify("User Not Found"), 404
-    return jsonify({"image": pfp[0]}), 200
+    return jsonify({"image": pfp}), 200
 
 
 @req_authorisation.route("/change_pfp", methods=["POST"])
@@ -215,7 +217,7 @@ def change_pfp():
     data = json.loads(request.data)
     username = auth.get_user(request.headers.get("Authorization").split()[1])
     img = data["image"]
-    db.data_change(f"UPDATE user SET pfp='{img}' WHERE name='{username}'")
+    save_img(img, username)
     return jsonify("Success"), 200
 
 
@@ -369,6 +371,32 @@ def chess_leaderboard():
 
     except Exception as e:
         return jsonify(e), 404
+
+
+def save_img(img, user):
+    try:
+        with open(os.path.join(PFP_PATH, f"{user}_pfp.png"), "wb") as f:
+            f.write(base64.b64decode(img.encode("latin1")))
+    except Exception as e:
+        print("Error while saving image-", e)
+
+
+def load_img(user):
+    if os.path.isfile(os.path.join(PFP_PATH, f"{user}_pfp.png")):
+        try:
+            with open(os.path.join(PFP_PATH, f"{user}_pfp.png"), "rb") as f:
+                return base64.b64encode(f.read()).decode("latin1")
+        except Exception as e:
+            print("Error while loading image-", e)
+    else:
+        try:
+            with open(os.path.join(PFP_PATH, f"default_pfp.png"), "rb") as f:
+                with open(os.path.join(PFP_PATH, f"{user}_pfp.png"), "wb") as f2:
+                    f2.write(f.read())
+                f.seek(0)
+                return base64.b64encode(f.read()).decode("latin1")
+        except Exception as e:
+            print("Error while loading image-", e)
 
 
 # endregion

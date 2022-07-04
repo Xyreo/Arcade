@@ -76,7 +76,7 @@ class Http:
     def fetch_pfp(self, name):
         r = self.auth_send("get", f"fetch_pfp/{name}")
         if r.status_code == 200:
-            return r.json()["image"][0]
+            return r.json()["image"]
         elif r.status_code == 404:
             return False
 
@@ -142,8 +142,9 @@ ASSET = ASSET if os.path.exists(ASSET) else "Client/" + ASSET
 
 if __name__ == "__main__":
     app = Http("http://167.71.231.52:5000")
-    print(app.login("test", "test"))
-    print(app.leaderboard("chess"))
+    print(app.register(""))
+    # print(app.login("test", "test"))
+    # print(app.leaderboard("chess"))
     # print(app.addgame("chess", "none", {1: 2}, ["user1", "user2"]))
     print(app.logout())
     # print(app.stats("monopoly", 1))
