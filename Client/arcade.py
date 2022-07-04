@@ -2,6 +2,7 @@ import os
 
 if os.name != "nt":
     print("I don't like your Operating System. Install Windows.")
+    # exit()
 
 import base64
 import random
