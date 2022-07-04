@@ -3552,8 +3552,8 @@ if __name__ == "__main__":
     except:
         pass
     hobj = Http("http://167.71.231.52:5000")
-    uname = "user"
-    pwd = "pass"
+    uname = "user1"
+    pwd = "pass1"
     hobj.login(uname, pwd)
     mono = Monopoly(
         {

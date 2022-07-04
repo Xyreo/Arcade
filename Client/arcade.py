@@ -218,7 +218,7 @@ class Arcade(tk.Toplevel):
                     self.rooms.remove_player(msg[4], msg[3])
             elif msg[1] == "SETTINGS":
                 self.rooms.change_settings(msg[3], msg[2])
-            self.update_lobby(dest)  # TODO gui for this
+            self.update_lobby(dest)  # TODO Settings GUI in Lobby
 
         elif dest == "ROOM":
             self.rooms.add_room(msg[1], msg[2])
@@ -235,7 +235,7 @@ class Arcade(tk.Toplevel):
 
             elif msg[1] == "SETTINGS":
                 self.rooms.change_settings(dest, msg[2])
-                self.update_room(self.rooms[game][dest])  # TODO gui for this
+                self.update_room(self.rooms[game][dest])  # TODO Settings GUI in Room
 
             elif msg[1] == "ROOM":
                 self.room_frames[game].destroy()
@@ -582,7 +582,7 @@ class Arcade(tk.Toplevel):
 
             if self.current_room:
                 self.update_room(self.rooms.get_rooms()[self.current_room])
-            # TODO Update Leaderboard/ All Other places pfp is there
+            # TODO Update Leaderboard/ All the other places pfp is seen
 
         self.confirm_button = ttk.Button(
             self.change_frame,
@@ -861,8 +861,10 @@ class Arcade(tk.Toplevel):
                 "ADD_TIME": 5,
             }
         if game == "MNPLY":
-            settings = {"STATUS": "PUBLIC", "MAX_PLAYERS": 4}
-        # TODO: Select Settings
+            settings = {
+                "STATUS": "PUBLIC",
+                "MAX_PLAYERS": 4,
+            }  # ? Colour, Speed Game, Auctions
         self.send((game, "CREATE", settings))
 
     def join_room(self, room, game=None):
@@ -927,7 +929,7 @@ class Arcade(tk.Toplevel):
             border=0,
         ).place(relx=0.5, rely=0.5, anchor="center")
 
-        # TODO: Show settings here
+        # TODO: Show/Select Settings
         if hostname == "You":
             self.room_start_button = tk.Button(
                 frame,
@@ -1422,7 +1424,9 @@ class Register(tk.Frame):
         missing = Register.check_pass(pwd)
 
         msg = ""
-        if uname in ["none", "test"]:
+        if uname in [
+            "none",
+        ]:
             self.uentry.delete(0, tk.END)
             msg = "Illegal Username!"
             self.prompt(msg)
@@ -1492,10 +1496,5 @@ if __name__ == "__main__":
     except:
         pass
     arc = Arcade()
-    # HTTP.register(
-    #     "user7",
-    #     "pass7",
-    #     arc.pfp_send(ASSET + "/default_pfp.png"),
-    # )
     arc.start_arcade()
     root.mainloop()
