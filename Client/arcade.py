@@ -641,8 +641,8 @@ class Arcade(tk.Toplevel):
                 (im.size[0] + min(im.size)) // 2,
                 (im.size[1] + min(im.size)) // 2,
             )
-        ).resize((64, 64), Image.Resampling.LANCZOS)
-        im.save(ASSET + "/temp.png")
+        ).resize((256, 256), Image.Resampling.LANCZOS)
+        im.save(ASSET + "/temp.png", optimize=True)
         with open(ASSET + "/temp.png", "rb") as f:
             a = base64.b64encode(f.read()).decode("latin1")
         os.remove(ASSET + "/temp.png")
@@ -669,7 +669,7 @@ class Arcade(tk.Toplevel):
         )
 
     @staticmethod
-    def circle_PIL_Image(pil_img: Image.Image, resize=(64, 64)):
+    def circle_PIL_Image(pil_img: Image.Image, resize=(256, 256)):
         im = pil_img.convert("RGBA")
         im = im.crop(
             (
@@ -1063,11 +1063,26 @@ class Login(tk.Frame):
         self.pwd = tk.StringVar()
 
         tk.Label(self, text="Username: ").place(relx=0.44, rely=0.3, anchor="e")
-        self.uentry = tk.Entry(self, textvariable=self.uname)
+
+        def no_special(e):
+            if not any(i in ["'", '"', ";", " "] for i in e) and len(e) <= 32:
+                return True
+            else:
+                return False
+
+        self.uentry = ttk.Entry(
+            self,
+            textvariable=self.uname,
+            validate="key",
+            validatecommand=(
+                self.register(lambda e: no_special(e)),
+                "%P",
+            ),
+        )
         self.uentry.place(relx=0.45, rely=0.3, relwidth=0.2, anchor="w")
         self.uentry.focus_set()
         tk.Label(self, text="Password: ").place(relx=0.44, rely=0.4, anchor="e")
-        self.pwdentry = tk.Entry(self, textvariable=self.pwd, show="*")
+        self.pwdentry = ttk.Entry(self, textvariable=self.pwd, show="*")
         self.pass_hidden = True
         self.pwdentry.place(relx=0.45, rely=0.4, relwidth=0.2, anchor="w")
         self.uentry.bind("<Return>", lambda a: self.pwdentry.focus_set())
@@ -1222,15 +1237,30 @@ class Register(tk.Frame):
         ).place(relx=0.01, rely=0.01, anchor="nw")
         self.bind("<Escape>", lambda a: self.destroy())
         tk.Label(self, text="Create Username: ").place(relx=0.24, rely=0.3, anchor="e")
-        self.uentry = tk.Entry(self, textvariable=self.uname)
+
+        def no_special(e):
+            if not any(i in ["'", '"', ";", " "] for i in e) and len(e) <= 32:
+                return True
+            else:
+                return False
+
+        self.uentry = ttk.Entry(
+            self,
+            textvariable=self.uname,
+            validate="key",
+            validatecommand=(
+                self.register(lambda e: no_special(e)),
+                "%P",
+            ),
+        )
         self.uentry.place(relx=0.25, rely=0.3, relwidth=0.2, anchor="w")
         self.uentry.focus_set()
         tk.Label(self, text="Create Password: ").place(relx=0.24, rely=0.4, anchor="e")
-        self.pwdentry = tk.Entry(self, textvariable=self.pwd, show="*")
+        self.pwdentry = ttk.Entry(self, textvariable=self.pwd, show="*")
         self.pass_hidden = True
         self.pwdentry.place(relx=0.25, rely=0.4, relwidth=0.2, anchor="w")
         tk.Label(self, text="Confirm Password: ").place(relx=0.24, rely=0.5, anchor="e")
-        self.confpwdentry = tk.Entry(self, textvariable=self.confpwd, show="*")
+        self.confpwdentry = ttk.Entry(self, textvariable=self.confpwd, show="*")
         self.conf_pass_hidden = True
         self.confpwdentry.place(relx=0.25, rely=0.5, relwidth=0.2, anchor="w")
 
@@ -1392,11 +1422,7 @@ class Register(tk.Frame):
         missing = Register.check_pass(pwd)
 
         msg = ""
-        if len(uname) > 32:
-            self.uentry.delete(0, tk.END)
-            msg = "Username is too long!\nMaximum 32 characters!"
-            self.prompt(msg)
-        elif uname in ["none", "test"]:
+        if uname in ["none", "test"]:
             self.uentry.delete(0, tk.END)
             msg = "Illegal Username!"
             self.prompt(msg)

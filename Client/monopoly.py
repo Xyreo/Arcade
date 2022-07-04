@@ -192,7 +192,7 @@ class Monopoly(tk.Toplevel):
         )
 
     @staticmethod
-    def circle_PIL_Image(pil_img: Image.Image, resize=(64, 64)):
+    def circle_PIL_Image(pil_img: Image.Image, resize=(256, 256)):
         im = pil_img.convert("RGBA")
         im = im.crop(
             (

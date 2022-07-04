@@ -180,7 +180,7 @@ class Chess(tk.Toplevel):
         )
 
     @staticmethod
-    def circle_PIL_Image(pil_img: Image.Image, resize=(64, 64)):
+    def circle_PIL_Image(pil_img: Image.Image, resize=(256, 256)):
         im = pil_img.convert("RGBA")
         im = im.crop(
             (
@@ -605,7 +605,7 @@ class Chess(tk.Toplevel):
 
             elif self.poll["DRAW"] == "REQ":
                 self.send(("DRAW", "DENY"))
-                self.draw_ack(False,True)
+                self.draw_ack(False, True)
 
         self.last_move = [start, end]
         self.board[start].moved(end)
@@ -880,18 +880,18 @@ class Chess(tk.Toplevel):
                 [self.me, self.opponent],
             )  # ? Add PGN
 
-    def draw_ack(self, ack,cancel=False):
+    def draw_ack(self, ack, cancel=False):
         self.draw_frame.destroy()
         if ack:
             self.final_frame("DRAW")
         else:
             if not cancel:
                 noti.notify(
-                title="Declined!",
-                app_name="Chess",
-                message=f"{self.players[self.opponent]['NAME']} has declined your draw offer!",
-                timeout=5,
-            )
+                    title="Declined!",
+                    app_name="Chess",
+                    message=f"{self.players[self.opponent]['NAME']} has declined your draw offer!",
+                    timeout=5,
+                )
         del self.poll["DRAW"]
 
     def draw_reply(self):
@@ -1204,7 +1204,7 @@ class ChessPiece(Piece):
         self.game.canvas.tag_raise(self.img_id)
 
     def img(self, color: str, piece: str):
-        path = os.path.join(ASSET_PATH, "Chess_Assets", "Pieces2")
+        path = os.path.join(ASSET_PATH, "Chess_Assets", "Pieces")
         size = int((Chess.size / 8) * 0.75)
         i = (color[0] + "_" + piece + ".png").lower()
         p = os.path.join(path, i)
@@ -1506,6 +1506,10 @@ class Board:
 if __name__ == "__main__":
     app = tk.Tk()
     app.withdraw()
+    try:
+        os.mkdir(HOME_ASSETS + "/cached_pfp")
+    except:
+        pass
     hobj = Http("http://167.71.231.52:5000")
     hobj.login("test", "test")
     chess = Chess(
