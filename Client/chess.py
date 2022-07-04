@@ -1511,13 +1511,13 @@ if __name__ == "__main__":
     except:
         pass
     hobj = Http("http://167.71.231.52:5000")
-    hobj.login("test", "test")
+    hobj.login("user1", "pass1")
     chess = Chess(
         {
             "ME": "456789",
             "PLAYERS": {
-                "123456": {"NAME": "test", "SIDE": "BLACK"},
-                "456789": {"NAME": "test", "SIDE": "WHITE"},
+                "123456": {"NAME": "user1", "SIDE": "BLACK"},
+                "456789": {"NAME": "user1", "SIDE": "WHITE"},
             },
             "TIME": 10,  # minutes
             "ADD_TIME": 5,  # seconds
