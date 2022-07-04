@@ -877,7 +877,7 @@ class Chess(tk.Toplevel):
                 "CHESS",
                 self.players[winner]["NAME"] if winner else "none",
                 {"board": self.board.fen.value},
-                [self.me, self.opponent],
+                [self.players[self.me]["NAME"], self.players[self.opponent]["NAME"]],
             )  # ? Add PGN
 
     def draw_ack(self, ack, cancel=False):
