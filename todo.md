@@ -5,7 +5,8 @@
 (C) Icons, Window Titles +Arcade
 (C) Notifier +Arcade
 (C) Info, Rules +Arcade
-(C) PFP throws error when logging in without remember me @ProAltro
+(C) PFP throws error on initial login @ProAltro
+(C) Change Remember login file location @Chaitanya-Keyal
 (D) Custom Notebook @arcade
 (D) Private Room @arcade
 (D) Game Settings @arcade
