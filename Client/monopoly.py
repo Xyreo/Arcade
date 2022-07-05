@@ -2,6 +2,7 @@ import base64
 import copy
 import os
 import random
+import sys
 import threading
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -19,9 +20,23 @@ try:
 except:
     print("No Output Devices Found")
 
-ASSET = "./Assets" if os.path.exists("./Assets") else "Client/Assets"
-MONOPOLY_ASSETS = ASSET + "/Mnply_Assets"
-HOME_ASSETS = ASSET + "/Home_Assets"
+ASSET = "Assets"
+ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)
+HOME_ASSETS = os.path.join(ASSET, "Home_Assets")
+MONOPOLY_ASSETS = os.path.join(ASSET, "Mnply_Assets")
+
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
+ASSET = resource_path(ASSET)
+HOME_ASSETS = resource_path(HOME_ASSETS)
+MONOPOLY_ASSETS = resource_path(MONOPOLY_ASSETS)
 
 
 class Property:
@@ -117,7 +132,9 @@ class Monopoly(tk.Toplevel):
 
         for i in self.player_details:
             if not os.path.isfile(
-                HOME_ASSETS + "/cached_pfp/" + self.player_details[i]["Name"] + ".png"
+                os.path.join(
+                    HOME_ASSETS, "cached_pfp", self.player_details[i]["Name"] + ".png"
+                )
             ):
                 Monopoly.store_pfp(self.player_details[i]["Name"])
 
@@ -129,7 +146,7 @@ class Monopoly(tk.Toplevel):
                     "Properties": [],
                     "GOJF": 0,
                     "PFP": Monopoly.get_cached_pfp(
-                        self.player_details[i]["Name"], (24, 24)
+                        self.player_details[i]["Name"], (32, 32)
                     ),
                 }
             )  # Properties will store obj from properties dict
@@ -181,12 +198,12 @@ class Monopoly(tk.Toplevel):
     def store_pfp(name):
         Monopoly.circle_PIL_Image(
             Monopoly.pfp_make(Monopoly.http.fetch_pfp(name))
-        ).save(HOME_ASSETS + "/cached_pfp/" + name + ".png")
+        ).save(os.path.join(HOME_ASSETS, "cached_pfp", name + ".png"))
 
     @staticmethod
     def get_cached_pfp(name, resize=(32, 32)):
         return ImageTk.PhotoImage(
-            Image.open(HOME_ASSETS + "/cached_pfp/" + name + ".png").resize(
+            Image.open(os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")).resize(
                 resize, Image.Resampling.LANCZOS
             )
         )
@@ -320,109 +337,109 @@ class Monopoly(tk.Toplevel):
             compound="left",
             command=self.account_tab,
         )
-        self.acc_button.place(relx=0.01, rely=0.0185, anchor="w")
+        self.acc_button.place(relx=0.01, rely=0.019, anchor="w")
         self.acc_frame = tk.Frame()
         self.acc_frame.destroy()
 
     def create_image_obj(self):
         self.board_image = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/BoardIMG.jpg").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "BoardIMG.jpg")).resize(
                 (self.board_side, self.board_side), Image.Resampling.LANCZOS
             )
         )
         self.board_canvas.create_image(2, 2, image=self.board_image, anchor="nw")
 
         self.info_tag = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/Info/big_info.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "Info", "big_info.png")).resize(
                 (int(self.property_width / 2), int(self.property_width / 2)),
                 Image.Resampling.LANCZOS,
             )
         )
 
         self.station_image = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/station.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "station.png")).resize(
                 (int(2.5 * self.property_width), int(2.5 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
 
         self.water_image = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/water.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "water.png")).resize(
                 (int(2.5 * self.property_width), int(2 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
 
         self.electric_image = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/electric.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "electric.png")).resize(
                 (int(2 * self.property_width), int(2.25 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
 
         self.dice1 = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/Die/dice1.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "Die", "dice1.png")).resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice2 = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/Die/dice2.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "Die", "dice2.png")).resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice3 = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/Die/dice3.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "Die", "dice3.png")).resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice4 = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/Die/dice4.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "Die", "dice4.png")).resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice5 = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/Die/dice5.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "Die", "dice5.png")).resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice6 = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/Die/dice6.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "Die", "dice6.png")).resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
 
         self.red_token_image = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/Tokens/red.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "Tokens", "red.png")).resize(
                 (self.token_width, self.token_width),
                 Image.Resampling.LANCZOS,
             )
         )
         self.green_token_image = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/Tokens/green.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "Tokens", "green.png")).resize(
                 (self.token_width, self.token_width),
                 Image.Resampling.LANCZOS,
             )
         )
         self.blue_token_image = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/Tokens/blue.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "Tokens", "blue.png")).resize(
                 (self.token_width, self.token_width),
                 Image.Resampling.LANCZOS,
             )
         )
         self.yellow_token_image = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/Tokens/yellow.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "Tokens", "yellow.png")).resize(
                 (self.token_width, self.token_width),
                 Image.Resampling.LANCZOS,
             )
         )
         self.mr_monopoly = ImageTk.PhotoImage(
-            Image.open(MONOPOLY_ASSETS + "/mr_monopoly.png").resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "mr_monopoly.png")).resize(
                 (
                     int((self.board_side - 2) // 2.05),
                     int((self.board_side - 2) // 1.75),
@@ -780,7 +797,7 @@ class Monopoly(tk.Toplevel):
 
     def roll_dice(self, roll=None, received=False, cli=False):
         try:
-            music(MONOPOLY_ASSETS + "/Die/diceroll.mp3")
+            music(os.path.join(MONOPOLY_ASSETS, "Die", "diceroll.mp3"))
         except:
             pass
         dice_roll = roll if received else (random.randint(1, 6), random.randint(1, 6))
@@ -2543,7 +2560,7 @@ class Monopoly(tk.Toplevel):
             self.pay(payer, amt, receiver)
 
     def place_houses(self):
-        HOUSES = MONOPOLY_ASSETS + "/Houses"
+        HOUSES = os.path.join(MONOPOLY_ASSETS, "Houses")
         d = {
             1: ["house_1", 0.2],
             2: ["house_2", 0.36],
@@ -2575,7 +2592,9 @@ class Monopoly(tk.Toplevel):
                         rotation = "right"
                         size = size[::-1]
                     house_image = ImageTk.PhotoImage(
-                        Image.open(HOUSES + f"/{d[j.houses][0]}_{rotation}.png")
+                        Image.open(
+                            os.path.join(HOUSES, f"{d[j.houses][0]}_{rotation}.png")
+                        )
                     ).resize(
                         (
                             int((self.property_height) * size[0]),
@@ -3111,7 +3130,7 @@ class Monopoly(tk.Toplevel):
     def quit_game(self):
         if __name__ == "__main__":
             self.http.logout()
-            for file in os.scandir(HOME_ASSETS + "/cached_pfp"):
+            for file in os.scandir(os.path.join(HOME_ASSETS, "cached_pfp")):
                 os.remove(file.path)
             root.quit()
         else:
@@ -3548,7 +3567,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()
     try:
-        os.mkdir(HOME_ASSETS + "/cached_pfp")
+        os.mkdir(os.path.join(HOME_ASSETS, "cached_pfp"))
     except:
         pass
     hobj = Http("http://167.71.231.52:5000")

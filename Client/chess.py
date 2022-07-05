@@ -1,5 +1,6 @@
 import base64
 import os
+import sys
 import threading
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -13,8 +14,22 @@ from plyer import notification as noti
 from http_wrapper import Http
 
 ASSET_PATH = "Assets"
-ASSET_PATH = ASSET_PATH if os.path.exists(ASSET_PATH) else "Client/" + ASSET_PATH
-HOME_ASSETS = ASSET_PATH + "/Home_Assets"
+ASSET_PATH = (
+    ASSET_PATH if os.path.exists(ASSET_PATH) else os.path.join("Client", ASSET_PATH)
+)
+HOME_ASSETS = os.path.join(ASSET_PATH, "Home_Assets")
+
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
+ASSET_PATH = resource_path(ASSET_PATH)
+HOME_ASSETS = resource_path(HOME_ASSETS)
 
 
 class Chess(tk.Toplevel):
@@ -46,13 +61,15 @@ class Chess(tk.Toplevel):
 
         for i in self.players:
             if not os.path.isfile(
-                HOME_ASSETS + "/cached_pfp/" + self.players[i]["NAME"] + ".png"
+                os.path.join(
+                    HOME_ASSETS, "cached_pfp", self.players[i]["NAME"] + ".png"
+                )
             ):
                 Chess.store_pfp(self.players[i]["NAME"])
 
             self.players[i].update(
                 {
-                    "PFP": Chess.get_cached_pfp(self.players[i]["NAME"], (24, 24)),
+                    "PFP": Chess.get_cached_pfp(self.players[i]["NAME"], (32, 32)),
                 }
             )
 
@@ -153,7 +170,7 @@ class Chess(tk.Toplevel):
             compound="left",
             command=self.account_tab,
         )
-        self.acc_button.place(relx=0.01, rely=0.0185, anchor="w")
+        self.acc_button.place(relx=0.01, rely=0.025, anchor="w")
         self.acc_frame = tk.Frame()
         self.acc_frame.destroy()
 
@@ -168,13 +185,13 @@ class Chess(tk.Toplevel):
     @staticmethod
     def store_pfp(name):
         Chess.circle_PIL_Image(Chess.pfp_make(Chess.http.fetch_pfp(name))).save(
-            HOME_ASSETS + "/cached_pfp/" + name + ".png"
+            os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")
         )
 
     @staticmethod
     def get_cached_pfp(name, resize=(32, 32)):
         return ImageTk.PhotoImage(
-            Image.open(HOME_ASSETS + "/cached_pfp/" + name + ".png").resize(
+            Image.open(os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")).resize(
                 resize, Image.Resampling.LANCZOS
             )
         )
@@ -732,9 +749,11 @@ class Chess(tk.Toplevel):
     def event_handler(self, msg):
         if msg[0] == "LEAVE":
             if msg[1] == "CONN_ERR":
-                self.final_frame("CONN", winner=self.me)
+                if not self.isEnded:
+                    self.final_frame("CONN", winner=self.me)
             else:
-                self.final_frame("RESIGN", winner=self.me)
+                if not self.isEnded:
+                    self.final_frame("RESIGN", winner=self.me)
 
         elif msg[0] == "MOVE":
             self.opp_move(msg[1])
@@ -1507,7 +1526,7 @@ if __name__ == "__main__":
     app = tk.Tk()
     app.withdraw()
     try:
-        os.mkdir(HOME_ASSETS + "/cached_pfp")
+        os.mkdir(os.path.join(HOME_ASSETS, "cached_pfp"))
     except:
         pass
     hobj = Http("http://167.71.231.52:5000")
