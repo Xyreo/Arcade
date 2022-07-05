@@ -2,6 +2,6 @@
 
 Monopoly, Chess <& Scrabble>
 
-Run Client/arcade.py to play.
+Run arcade.exe to play.
 
 @Xyreo has not worked on this.

@@ -5,6 +5,9 @@
 (C) Icons, Window Titles +Arcade
 (C) Notifier +Arcade
 (C) Info, Rules +Arcade
+(C) Assets on Server @ProAltro
+(C) PFP throws some error when logging in for the first time @Chaitanya-Keyal
+(C) Actually Standalone exe @Chaitanya-Keyal
 (C) Logo @arcade
 (D) Custom Notebook @arcade
 (D) Private Room @arcade
