@@ -1,10 +1,5 @@
-import os
-
-if os.name != "nt":
-    print("I don't like your Operating System. Install Windows.")
-    # exit()
-
 import base64
+import os
 import random
 import sys
 import threading
@@ -15,7 +10,13 @@ from io import BytesIO
 from tkinter import filedialog as fd
 from tkinter import messagebox as msgb
 
+from PIL import Image, ImageChops, ImageDraw, ImageTk
 from plyer import notification as noti
+
+from chess import Chess
+from client_framework import Client
+from http_wrapper import Http
+from monopoly import Monopoly
 
 ASSET = os.path.join("Assets", "Home_Assets")
 ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)
@@ -30,14 +31,6 @@ def resource_path(relative_path):
 
 
 ASSET = resource_path(ASSET)
-
-from PIL import Image, ImageChops, ImageDraw, ImageTk
-
-from chess import Chess
-from client_framework import Client
-from http_wrapper import Http
-from monopoly import Monopoly
-
 HTTP = Http("http://167.71.231.52:5000")
 CLIENT_ADDRESS = "167.71.231.52"
 isWin = os.name == "nt"
@@ -57,6 +50,9 @@ REMEMBER_ME_FILE = (
         "remember_login.txt",
     )
 )
+
+if not isWin:
+    print("I don't like your Operating System. Install Windows.")
 
 
 class Rooms(dict):
