@@ -40,6 +40,13 @@ from monopoly import Monopoly
 
 HTTP = Http("http://167.71.231.52:5000")
 CLIENT_ADDRESS = "167.71.231.52"
+REMEMBER_ME_FILE = os.path.join(
+    os.environ["USERPROFILE"],
+    "AppData",
+    "Local",
+    "Arcade",
+    "remember_login.txt",
+)
 
 
 class Rooms(dict):
@@ -165,7 +172,7 @@ class Arcade(tk.Toplevel):
         button_style.configure("15.TButton", font=("times", 15))
         button_style.configure("12.TButton", font=("times", 12))
 
-        if os.path.exists(os.path.join(ASSET, "remember_login.txt")):
+        if os.path.exists(REMEMBER_ME_FILE):
             self.login = Login(self, self.initialize, remember_login=True)
         else:
             self.logo = ImageTk.PhotoImage(
@@ -611,11 +618,10 @@ class Arcade(tk.Toplevel):
     def log_out(self):
         self.send(("GAME", "LEAVE"))
         HTTP.logout()
-        # TODO: Uncomment this when done with project because testing on same system will keep deleting file
-        # try:
-        #     os.remove(os.path.join(ASSET,"remember_login.txt"))
-        # except FileNotFoundError:
-        #     pass
+        try:
+            os.remove(REMEMBER_ME_FILE)
+        except FileNotFoundError:
+            pass
         self.main_notebook.destroy()
         self.acc_button.destroy()
         self.acc_frame.destroy()
@@ -636,6 +642,17 @@ class Arcade(tk.Toplevel):
         self.config(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.exit)
 
+        self.logo = ImageTk.PhotoImage(
+            Image.open(os.path.join(ASSET, "Logo.png")).resize(
+                (self.screen_width // 4, self.screen_width // 4),
+                Image.Resampling.LANCZOS,
+            )
+        )
+        a = tk.Frame(self)
+        a.place(relx=0.5, rely=0.3, anchor="center", relheight=0.6, relwidth=1)
+        tk.Label(a, image=self.logo).place(
+            relx=0.5, rely=0.5, anchor="center", relheight=1
+        )
         self.login = Login(self, self.initialize)
         self.login.place(relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n")
 
@@ -1069,7 +1086,10 @@ class Login(tk.Frame):
 
         if remember_login:
             master.withdraw()
-            with open(os.path.join(ASSET, "remember_login.txt"), "r") as f:
+            with open(
+                REMEMBER_ME_FILE,
+                "r",
+            ) as f:
                 uname, pwd = eval(f.readlines()[-1])
                 self.check_login = HTTP.login(uname, pwd, remember_login=True)
                 if self.check_login == 1:
@@ -1215,7 +1235,10 @@ class Login(tk.Frame):
         pass
 
     def store_password(self, uname, pwd):
-        with open(os.path.join(ASSET, "remember_login.txt"), "w") as f:
+        with open(
+            REMEMBER_ME_FILE,
+            "w",
+        ) as f:
             f.write(
                 f"WARNING!\nDo NOT Alter, Rename or Delete the contents of this file!\nThis File is required to remember Your Login Details\n\n{(uname,pwd)}"
             )
@@ -1516,6 +1539,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     try:
         os.mkdir(os.path.join(ASSET, "cached_pfp"))
+        os.mkdir(os.path.join(os.environ["USERPROFILE"], "AppData", "Local", "Arcade"))
     except:
         pass
     arc = Arcade()

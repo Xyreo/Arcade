@@ -253,7 +253,7 @@ class Chess(tk.Toplevel):
                 command=self.resign,
             )
             if self.isEnded:
-                self.quit_button.configure(command=self.quit_game)
+                self.quit_button.configure(command=lambda: self.quit_game("ENDED"))
             self.quit_button.grid(
                 row=0,
                 column=0,
@@ -857,7 +857,7 @@ class Chess(tk.Toplevel):
     def final_frame(self, type, winner=None):
         self.isEnded = True
         self.disable_canvas(greyed=True)
-        self.protocol("WM_DELETE_WINDOW", self.quit_game)
+        self.protocol("WM_DELETE_WINDOW", lambda: self.quit_game("ENDED"))
         txt = ""
         if type == "DRAW":
             txt = f"The Game is Tied!\n\nPoints:\n\n{self.players[self.me]['NAME']}: ½\n\n{self.players[self.opponent]['NAME']}: ½"
@@ -888,7 +888,7 @@ class Chess(tk.Toplevel):
             self.end_game_frame,
             text="EXIT GAME",
             style="20.TButton",
-            command=self.quit_game,
+            command=lambda: self.quit_game("ENDED"),
         ).place(relx=0.5, rely=0.8, anchor="center")
 
         if self.me == winner or (winner == None and self.side == "WHITE"):
@@ -958,13 +958,12 @@ class Chess(tk.Toplevel):
         else:
             return
 
-    def quit_game(self, reason=None):
+    def quit_game(self, reason="None"):
         if __name__ == "__main__":
             Chess.http.logout()
             app.quit()
         else:
-            if reason:
-                self.send(("LEAVE", reason))
+            self.send(("LEAVE", reason))
             self.destroy()
             try:
                 self.back_to_arcade()

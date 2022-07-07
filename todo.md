@@ -1,3 +1,7 @@
+(A) Don't allow extra player in room @ProAltro
+(A) Check player rooms in server @ProAltro
+(A) Close on session expire @ProAltro
+(A) Check change password error @ProAltro
 (A) Winner Frame, Networth @monopoly @Chaitanya-Keyal
 (A) Leaderboard, Stats @arcade @ProAltro @Chaitanya-Keyal
 (B) Timer @chess @ProAltro
@@ -5,8 +9,7 @@
 (C) Icons, Window Titles +Arcade
 (C) Notifier +Arcade
 (C) Info, Rules +Arcade
-(C) PFP throws error on initial login @ProAltro
-(C) Change Remember login file location @Chaitanya-Keyal
+(C) Account tab doesn't display sometimes @ProAltro
 (D) Custom Notebook @arcade
 (D) Private Room @arcade
 (D) Game Settings @arcade
