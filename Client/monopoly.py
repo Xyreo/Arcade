@@ -151,8 +151,9 @@ class Monopoly(tk.Toplevel):
                 }
             )  # Properties will store obj from properties dict
 
-        self.cli_thread = threading.Thread(target=self.CLI, daemon=True)
-        self.cli_thread.start()
+        if os.name == "nt":
+            self.cli_thread = threading.Thread(target=self.CLI, daemon=True)
+            self.cli_thread.start()
 
     def event_handler(self, msg):
         if msg[1] == "ROLL":

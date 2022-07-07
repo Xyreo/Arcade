@@ -40,12 +40,22 @@ from monopoly import Monopoly
 
 HTTP = Http("http://167.71.231.52:5000")
 CLIENT_ADDRESS = "167.71.231.52"
-REMEMBER_ME_FILE = os.path.join(
-    os.environ["USERPROFILE"],
-    "AppData",
-    "Local",
-    "Arcade",
-    "remember_login.txt",
+isWin = os.name == "nt"
+REMEMBER_ME_FILE = (
+    os.path.join(
+        os.environ["USERPROFILE"],
+        "AppData",
+        "Local",
+        "Arcade",
+        "remember_login.txt",
+    )
+    if isWin
+    else os.path.join(
+        os.environ["$USER"],
+        "Applications",
+        "Arcade",
+        "remember_login.txt",
+    )
 )
 
 
@@ -112,8 +122,9 @@ class Arcade(tk.Toplevel):
         self.config(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.exit)
         self.iconbitmap(os.path.join(ASSET, "icon.ico"))
-        self.thr = threading.Thread(target=self.CLI, daemon=True)
-        self.thr.start()
+        if isWin:
+            self.thr = threading.Thread(target=self.CLI, daemon=True)
+            self.thr.start()
 
         self.current_room = None
 
@@ -956,7 +967,7 @@ class Arcade(tk.Toplevel):
             font=("times 13 underline"),
             highlightthickness=0,
             border=0,
-        ).place(relx=0.5, rely=0.5, anchor="center")
+        ).place(relx=0.5, rely=0.6, anchor="center")
 
         # TODO: Show/Select Settings
         if hostname == "You":
@@ -1539,7 +1550,20 @@ if __name__ == "__main__":
     root = tk.Tk()
     try:
         os.mkdir(os.path.join(ASSET, "cached_pfp"))
-        os.mkdir(os.path.join(os.environ["USERPROFILE"], "AppData", "Local", "Arcade"))
+        os.mkdir(
+            os.path.join(
+                os.environ["USERPROFILE"],
+                "AppData",
+                "Local",
+                "Arcade",
+            )
+            if os.name == "nt"
+            else os.path.join(
+                os.environ["$USER"],
+                "Applications",
+                "Arcade",
+            )
+        )
     except:
         pass
     arc = Arcade()
