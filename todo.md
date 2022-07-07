@@ -1,7 +1,4 @@
-(A) Don't allow extra player in room @ProAltro
-(A) Check player rooms in server @ProAltro
 (A) Close on session expire @ProAltro
-(A) Check change password error @ProAltro
 (A) Winner Frame, Networth @monopoly @Chaitanya-Keyal
 (A) Leaderboard, Stats @arcade @ProAltro @Chaitanya-Keyal
 (B) Timer @chess @ProAltro

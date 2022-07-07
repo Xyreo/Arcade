@@ -38,6 +38,8 @@ from client_framework import Client
 from http_wrapper import Http
 from monopoly import Monopoly
 
+"""HTTP = Http("http://localhost:5000")
+CLIENT_ADDRESS = "localhost"""
 HTTP = Http("http://167.71.231.52:5000")
 CLIENT_ADDRESS = "167.71.231.52"
 isWin = os.name == "nt"
@@ -251,8 +253,11 @@ class Arcade(tk.Toplevel):
             self.update_lobby(dest)  # TODO Settings GUI in Lobby
 
         elif dest == "ROOM":
-            self.rooms.add_room(msg[1], msg[2])
-            self.join_room(msg[2]["id"], msg[1])
+            if msg[1] == "ADD":
+                self.rooms.add_room(msg[2], msg[3])
+                self.join_room(msg[3]["id"], msg[2])
+            elif msg[1] == "REJECT":
+                self.join_lobby(msg[2])  # TODO GUI
 
         elif dest == self.current_room:
             game = "CHESS" if dest in self.rooms["CHESS"] else "MNPLY"
@@ -628,7 +633,6 @@ class Arcade(tk.Toplevel):
 
     def log_out(self):
         self.send(("GAME", "LEAVE"))
-        HTTP.logout()
         try:
             os.remove(REMEMBER_ME_FILE)
         except FileNotFoundError:

@@ -88,6 +88,10 @@ class Room(Channels):
 
     def delete(self):
         self.broadcast(("ROOM", "REMOVE"))
+        for i in self.members:
+            if self.uuid in i.channels:
+                i.channels.remove(self.uuid)
+
         lobbies[self.game].rooms.remove(self)
         del rooms[self.uuid]
 
@@ -102,9 +106,12 @@ class Room(Channels):
         lobbies[self.game].broadcast_to_members(("ROOM", "REMOVE", self.uuid))
 
     def join(self, player):
+        if len(self.members) >= self.settings["MAX_PLAYERS"]:
+            player.send_instruction(("ROOM", "REJECT", self.game))
+            return
         super().join(player)
         self.broadcast(("PLAYER", "ADD", player.details()), self.uuid)
-        player.send_instruction(("ROOM", self.game, self.details()))
+        player.send_instruction(("ROOM", "ADD", self.game, self.details()))
 
     def leave(self, player, reason=None):
         if self.status in ["PUBLIC", "PRIVATE"]:
@@ -250,6 +257,8 @@ class Client(threading.Thread):
         except (EOFError, ConnectionResetError):
             self.close()
             return
+        except OSError:
+            return
         except Exception as e:
             log(f"Load Error: {type(e)} : {e} ")
 
@@ -259,6 +268,7 @@ class Client(threading.Thread):
                 self.instruction_handler(message[1:])
             else:
                 self.send_instruction(("GAME", "SESSION_EXP"))
+                self.close()
         else:
             self.instruction_handler(message)
 
