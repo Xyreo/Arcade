@@ -51,7 +51,7 @@ REMEMBER_ME_FILE = (
     )
     if isWin
     else os.path.join(
-        os.environ["$USER"],
+        os.environ["HOME"],
         "Applications",
         "Arcade",
         "remember_login.txt",
@@ -1559,7 +1559,7 @@ if __name__ == "__main__":
             )
             if os.name == "nt"
             else os.path.join(
-                os.environ["$USER"],
+                os.environ["HOME"],
                 "Applications",
                 "Arcade",
             )
