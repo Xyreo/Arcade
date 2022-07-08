@@ -227,7 +227,10 @@ class Arcade(tk.Toplevel):
             self.me = msg[1]
         elif dest == "GAME":
             if msg[1] == "SESSION_EXP":
-                pass  # TODO session expired stuff
+                self.show_message(
+                    "Session Expired",
+                    "You have been inactive for too long! Please Restart the App to Continue!",
+                )  # ? Relogin or Restart
         elif dest in ["CHESS", "MNPLY"]:
             if msg[1] == "INIT":
                 self.rooms.initialize(dest, msg[2])
@@ -251,7 +254,12 @@ class Arcade(tk.Toplevel):
                 self.rooms.add_room(msg[2], msg[3])
                 self.join_room(msg[3]["id"], msg[2])
             elif msg[1] == "REJECT":
-                self.join_lobby(msg[2])  # TODO GUI
+                self.join_lobby(msg[2])
+                self.show_message(
+                    "Room Full",
+                    "The Room you tried to Join is full and can't accept any more players!",
+                    timeout=4000,
+                )
 
         elif dest == self.current_room:
             game = "CHESS" if dest in self.rooms["CHESS"] else "MNPLY"
