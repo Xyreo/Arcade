@@ -126,9 +126,13 @@ class Monopoly(tk.Toplevel):
         button_style.configure("12.TButton", font=("times", 12))
 
         self.properties = {}
-        details = self.http.mply_details()
-        for i in range(40):
-            self.properties[i] = Property(details[i])
+        try:
+            details = self.http.mply_details()
+            for i in range(40):
+                self.properties[i] = Property(details[i])
+        except:
+            print("Couldn't Access Property Details! Invalid Session.")
+            exit()
         Property.game = self
 
         for i in self.player_details:
@@ -146,7 +150,7 @@ class Monopoly(tk.Toplevel):
                     "Position": 0,
                     "Properties": [],
                     "GOJF": 0,
-                    "PLACES": [],
+                    "PLACES": {},
                     "PFP": Monopoly.get_cached_pfp(
                         self.player_details[i]["Name"], (32, 32)
                     ),

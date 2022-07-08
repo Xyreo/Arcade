@@ -84,7 +84,7 @@ class Room(Channels):
         self.status = self.settings["STATUS"]
         self.game = game
         super().join(host)
-        host.send_instruction(("ROOM", self.game, self.details()))
+        host.send_instruction(("ROOM", "ADD", self.game, self.details()))
 
     def delete(self):
         self.broadcast(("ROOM", "REMOVE"))
