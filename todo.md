@@ -1,19 +1,18 @@
-(A) Beta Tests
-(A) Leaderboard, Stats @arcade @ProAltro @Chaitanya-Keyal
-(B) Timer @chess @ProAltro
-(B) Auto Leave/ Auto End Turn : End Turn Timer @monopoly @Chaitanya-Keyal
+(A) Leaderboard, Stats +Arcade @ProAltro @Chaitanya-Keyal
+(A) Timer @chess @ProAltro
+(A) Auto Leave/ Auto End Turn : End Turn Timer @monopoly @Chaitanya-Keyal
 (B) Trace Server Line by Line @ProAltro
+(B) Session Expiry just after Login @ProAltro
 (C) Icons, Window Titles +Arcade
 (C) Notifier +Arcade
 (C) Info, Rules +Arcade
-(C) Account tab doesn't display sometimes @ProAltro
-(D) Custom Notebook @arcade
-(D) Private Room @arcade
-(D) Game Settings @arcade
+(D) Custom Notebook +Arcade
+(D) Private Room +Arcade
+(D) Game Settings +Arcade
 (E) Images Resizer +Arcade
 (E) Add Hilarious Trade Meme @monopoly
 (X) Music, Sounds +Arcade #Extra
-(X) Add Default Tab Setting in Account @arcade
+(X) Add Default Game Setting in Account Tab +Arcade
 (Y) TakeBack @chess #Extra
 (Y) Choose Color when joining Room @monopoly #Extra
 (Z) Dark Mode +Arcade #Extra
