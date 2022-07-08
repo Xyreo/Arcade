@@ -413,11 +413,7 @@ class Arcade(tk.Toplevel):
 
             self.confpwdentry.delete(0, tk.END)
             prompts = {
-                "length": "Atleast 8 Characters in Total",
-                "upper": "1 Upper Case Letter",
-                "lower": "1 Lower Case Letter",
-                "char": "1 Special Character",
-                "digit": "1 Digit",
+                "length": "Atleast 4 Characters in Total",
                 "space": "No Spaces",
             }
             missing = Register.check_pass(pwd)
@@ -1441,22 +1437,10 @@ class Register(tk.Frame):
     def check_pass(pwd):
         check = {
             "length": False,
-            "upper": False,
-            "lower": False,
-            "char": False,
-            "digit": False,
             "space": True,
         }
-        if len(pwd) >= 8:
+        if len(pwd) >= 4:
             check["length"] = True
-        if any(i.isupper() for i in pwd):
-            check["upper"] = True
-        if any(i.islower() for i in pwd):
-            check["lower"] = True
-        if any(i.isdigit() for i in pwd):
-            check["digit"] = True
-        if any(not i.isalnum() for i in pwd):
-            check["char"] = True
         if any(i.isspace() for i in pwd):
             check["space"] = False
 
@@ -1469,11 +1453,7 @@ class Register(tk.Frame):
 
         self.confpwdentry.delete(0, tk.END)
         prompts = {
-            "length": "Atleast 8 Characters in Total",
-            "upper": "1 Upper Case Letter",
-            "lower": "1 Lower Case Letter",
-            "char": "1 Special Character",
-            "digit": "1 Digit",
+            "length": "Atleast 4 Characters",
             "space": "No Spaces",
         }
         missing = Register.check_pass(pwd)
@@ -1548,6 +1528,9 @@ if __name__ == "__main__":
     root = tk.Tk()
     try:
         os.mkdir(os.path.join(ASSET, "cached_pfp"))
+    except:
+        pass
+    try:
         os.mkdir(
             os.path.join(
                 os.environ["USERPROFILE"],

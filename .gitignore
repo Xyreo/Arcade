@@ -57,5 +57,6 @@ venv/
 .env
 remember_login.txt
 test.py
+try.ipynb
 .DS_Store
 cached_pfp/

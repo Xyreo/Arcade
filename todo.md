@@ -1,5 +1,6 @@
 (A) Winner Frame, Networth @monopoly @Chaitanya-Keyal
 (A) Leaderboard, Stats @arcade @ProAltro @Chaitanya-Keyal
+(A) Test Monopoly Ending @Chaitanya-Keyal
 (B) Timer @chess @ProAltro
 (B) Auto Leave/ Auto End Turn : End Turn Timer @monopoly @Chaitanya-Keyal
 (B) Trace Server Line by Line @ProAltro
@@ -15,7 +16,6 @@
 (X) Music, Sounds +Arcade #Extra
 (Y) TakeBack @chess #Extra
 (Y) Choose Color when joining Room @monopoly #Extra
-(Y) Monopoly Stats (Fav Place, Fav Property) @monopoly #Extra
 (Z) Dark Mode +Arcade #Extra
 (Z) Voice Chat @arcade #Extra
 (Z) Auction @monopoly #Extra
