@@ -103,6 +103,7 @@ class Monopoly(tk.Toplevel):
         self.community = Community(self, order[1])
         Monopoly.http = hobj
         print(self.player_details[self.me])
+        self.n = 0
         self.send_msg = lambda msg: send(("MSG", msg))
         self.send_leave = lambda reason: send(("LEAVE", reason))
         self.create_window()
@@ -278,6 +279,8 @@ class Monopoly(tk.Toplevel):
         self.mortgage_frame.destroy()
         self.build_frame = tk.Frame()
         self.build_frame.destroy()
+        self.end_game_button = ttk.Button()
+        self.end_game_button.destroy()
 
         self.property_pos_displayed = None
         self.current_txt = "Default"
@@ -289,7 +292,8 @@ class Monopoly(tk.Toplevel):
 
         self.isInDebt = False
         self.debt_details = []
-        self.n = 0
+        self.isEnding = False
+        self.isEnded = False
 
     def create_window(self):
         screen_width = int(0.9 * self.winfo_screenwidth())
@@ -353,7 +357,6 @@ class Monopoly(tk.Toplevel):
         )
         self.acc_button.place(relx=0.01, rely=0.019, anchor="w")
         self.acc_frame = tk.Frame()
-        self.acc_frame.destroy()
 
     def create_image_obj(self):
         self.board_image = ImageTk.PhotoImage(
@@ -550,9 +553,9 @@ class Monopoly(tk.Toplevel):
         )
 
     def account_tab(self):
-        if self.acc_frame.winfo_exists():
+        if self.acc_frame.winfo_ismapped():
             self.unbind("<Button-1>")
-            self.acc_frame.destroy()
+            self.acc_frame.place_forget()
         else:
 
             def clicked(e):
@@ -562,7 +565,7 @@ class Monopoly(tk.Toplevel):
                     self.acc_frame,
                     self.acc_button,
                 ]:
-                    self.acc_frame.destroy()
+                    self.acc_frame.place_forget()
                     self.unbind("<Button-1>")
 
             self.bind("<Button-1>", lambda e: clicked(e))
@@ -584,12 +587,20 @@ class Monopoly(tk.Toplevel):
                             self.player_details[self.me]["Name"],
                         ),
                     )
+                self.acc_frame.place_forget()
+                self.unbind("<Button-1>")
+
+            def q():
+                self.send_leave("ENDED")
+                self.quit_game()
 
             self.quit_button = ttk.Button(
                 self.acc_frame,
-                text="Forfeit",
+                text="Forfeit" if not self.isEnded else "QUIT",
                 style="12.TButton",
-                command=lambda: self.player_leave(self.me, quitting=True),
+                command=(lambda: self.player_leave(self.me, quitting=True))
+                if not self.isEnded
+                else q,
             )
             self.quit_button.grid(
                 row=0,
@@ -597,13 +608,14 @@ class Monopoly(tk.Toplevel):
                 sticky="nsew",
             )
 
-            self.end_game_button = ttk.Button(
-                self.acc_frame,
-                text="End Game",
-                style="12.TButton",
-                command=end_game_now,
-            )
-            self.end_game_button.grid(row=1, column=0, sticky="nsew")
+            if not (self.isEnding or self.isEnded):
+                self.end_game_button = ttk.Button(
+                    self.acc_frame,
+                    text="End Game",
+                    style="12.TButton",
+                    command=end_game_now,
+                )
+                self.end_game_button.grid(row=1, column=0, sticky="nsew")
 
     # endregion
 
@@ -684,6 +696,12 @@ class Monopoly(tk.Toplevel):
                 self.action_frame_popup(self.current_txt)
         if self.turn != self.me:
             self.roll_button.configure(state="disabled")
+
+        try:
+            self.acc_frame.place_forget()
+            self.unbind("<Button-1>")
+        except:
+            pass
 
     def toggle_action_buttons(self, enable=False):
         if enable:
@@ -3279,13 +3297,15 @@ class Monopoly(tk.Toplevel):
                         c += 1
                 if c > len(self.player_details) // 2:
                     if self.turn == self.me:
-                        self.send_msg("GAME_ENDED")
+                        self.send_msg(("GAME_ENDED",))
                         self.end_game()
                 else:
                     self.update_game(
                         "The Majority of players wish to continue the game!"
                     )
-                    self.toggle_buttons_end_game("normal", False)
+                    if self.turn == self.me:
+                        self.roll_button.configure(state="normal")
+                    self.isEnding = False
                 del self.collective[thing]
 
             if not received:
@@ -3295,37 +3315,21 @@ class Monopoly(tk.Toplevel):
             inst, thing, bankr, name = poll
             if bankr:
                 self.collective[thing] = {}
-                if user != self.me:
-                    self.get_input(bankr, name)
+                self.get_input(bankr, name)
             else:
                 self.collective[thing] = {user: True}
-                if user != self.me:
-                    self.get_input(bankr, name)
+                self.get_input(bankr, name)
             if not received:
                 self.send_msg(("POLL", ("CREATE", "endgame", bankr, name)))
 
     def get_input(self, bankrupt, ender):
-        self.toggle_buttons_end_game("disabled")
+        self.isEnding = True
+        self.roll_button.configure(state="disabled")
         self.endgame_frame = tk.Frame(self.action_frame, background="white")
         self.endgame_frame.place(
             relx=0.5, rely=0.5, relwidth=1, relheight=1, anchor="center"
         )
-        if bankrupt:
-            tk.Label(
-                self.endgame_frame,
-                text=f"{ender} is Bankrupt! Do you want to end the game now?",
-                font=20,
-                bg="white",
-            ).place(relx=0.5, rely=0.5, anchor="center")
-        else:
-            tk.Label(
-                self.endgame_frame,
-                text=f"{ender} wants to end the game! Do you want to end the game too?",
-                font=20,
-                bg="white",
-            ).place(relx=0.5, rely=0.5, anchor="center")
-
-        def ans(bool):
+        if ender == self.player_details[self.me]["Name"]:
             self.waiting_frame = tk.Frame(self.endgame_frame, background="white")
             self.waiting_frame.place(
                 relx=0.5, rely=0.5, relwidth=1, relheight=1, anchor="center"
@@ -3336,45 +3340,52 @@ class Monopoly(tk.Toplevel):
                 font=20,
                 bg="white",
             ).place(relx=0.5, rely=0.5, anchor="center")
+        else:
+            if bankrupt:
+                tk.Label(
+                    self.endgame_frame,
+                    text=f"{ender} is Bankrupt! Do you want to end the game now?",
+                    font=20,
+                    bg="white",
+                ).place(relx=0.5, rely=0.5, anchor="center")
+            else:
+                tk.Label(
+                    self.endgame_frame,
+                    text=f"{ender} wants to end the game! Do you want to end the game too?",
+                    font=20,
+                    bg="white",
+                ).place(relx=0.5, rely=0.5, anchor="center")
 
-            self.poll(self.me, ("UPDATE", "endgame", bool))
+            def ans(bool):
+                self.waiting_frame = tk.Frame(self.endgame_frame, background="white")
+                self.waiting_frame.place(
+                    relx=0.5, rely=0.5, relwidth=1, relheight=1, anchor="center"
+                )
+                tk.Label(
+                    self.waiting_frame,
+                    text="Waiting for others to vote!",
+                    font=20,
+                    bg="white",
+                ).place(relx=0.5, rely=0.5, anchor="center")
 
-        ttk.Button(
-            self.endgame_frame,
-            text="YES",
-            style="mono.TButton",
-            command=lambda: ans(True),
-        ).place(relx=0.4, rely=0.75, anchor="center")
+                self.poll(self.me, ("UPDATE", "endgame", bool))
 
-        ttk.Button(
-            self.endgame_frame,
-            text="NO",
-            style="mono.TButton",
-            command=lambda: ans(False),
-        ).place(relx=0.6, rely=0.75, anchor="center")
+            ttk.Button(
+                self.endgame_frame,
+                text="YES",
+                style="mono.TButton",
+                command=lambda: ans(True),
+            ).place(relx=0.4, rely=0.75, anchor="center")
 
-    def toggle_buttons_end_game(self, state, ended=False):
-        if self.me in self.uuids:
-            for i in self.acc_frame.winfo_children:
-                i.configure(state=state)
-            if not ended:
-                if state == "disabled":
-                    self.roll_button.configure(state=state)
-
-                    def no():
-                        pass
-
-                    self.protocol("WM_DELETE_WINDOW", no)
-                else:
-                    if self.turn == self.me:
-                        self.roll_button.configure(state=state)
-                    self.protocol(
-                        "WM_DELETE_WINDOW",
-                        lambda: self.player_leave(self.me, quitting=True),
-                    )
+            ttk.Button(
+                self.endgame_frame,
+                text="NO",
+                style="mono.TButton",
+                command=lambda: ans(False),
+            ).place(relx=0.6, rely=0.75, anchor="center")
 
     def end_game(self, winner=None):
-        self.toggle_buttons_end_game("normal", True)
+        self.isEnded = True
         self.player_details.update(self.dead_player_details)
         for i in self.player_details.values():
             s = 0
@@ -3384,18 +3395,26 @@ class Monopoly(tk.Toplevel):
             s += i["GOJF"] * 50
             i.update({"NETWORTH": s})
 
-        winner = (
-            max(self.player_details, key=lambda d: d["NETWORTH"])
-            if not winner
-            else winner
-        )
+        winners = [
+            (
+                max(
+                    self.player_details,
+                    key=lambda a: self.player_details[a]["NETWORTH"],
+                )
+                if not winner
+                else winner
+            )
+        ]
+        if not winner:
+            for i, j in self.player_details.items():
+                if j["NETWORTH"] == self.player_details[winners[0]]["NETWORTH"]:
+                    if i not in winners and i in self.uuids:
+                        winners.append(i)
 
         def q():
             self.send_leave("ENDED")
             self.quit_game()
 
-        self.end_game_button.destroy()
-        self.quit_button.configure(text="QUIT", command=q)
         self.protocol("WM_DELETE_WINDOW", q)
         self.roll_button.configure(state="disabled")
 
@@ -3404,17 +3423,38 @@ class Monopoly(tk.Toplevel):
             relx=0.5, rely=0.5, relwidth=1, relheight=1, anchor="center"
         )
 
-        txt = (
-            f"{self.player_details[winner]['Name']} has"
-            if winner != self.me
-            else "You have" + " won the game!"
-        )
-        txt += "\nNetworths:"
-        for i in sorted(self.player_details, key=lambda d: d["NETWORTH"]).values():
-            txt += f"\n{i['Name']} : {i['NETWORTH']}"
-        tk.Label(self.final_frame, text=txt, font=20, justify="center").place(
-            relx=0.5, rely=0.1, anchor="n"
-        )
+        if len(winners) == 1:
+            txt = (
+                f"{self.player_details[winner]['Name']} has"
+                if winner != self.me
+                else "You have"
+            ) + " won the game!"
+        else:
+            winners_list = ""
+            for i in range(len(winners)):
+                winners_list += (
+                    self.player_details[winners[i]]["Name"]
+                    if winners[i] != self.me
+                    else "You"
+                )
+                if len(winners) - i == 2:
+                    winners_list += " & "
+                elif len(winners) - i == 1:
+                    pass
+                else:
+                    winners_list += ", "
+            winners_list = winners_list.strip()
+
+            txt = f"The winners of the game are: {winners_list}"
+        txt += "\n\nNetworths:"
+        for i in sorted(
+            self.player_details,
+            key=lambda a: self.player_details[a]["NETWORTH"],
+        ):
+            txt += f"\n{self.player_details[i]['Name']} : {self.player_details[i]['NETWORTH']}"
+        tk.Label(
+            self.final_frame, text=txt, font=20, justify="center", bg="white"
+        ).place(relx=0.5, rely=0.05, anchor="n")
 
         ttk.Button(
             self.final_frame,
@@ -3429,15 +3469,15 @@ class Monopoly(tk.Toplevel):
                 "PROPERTIES": [j.name for j in i["Properties"]],
                 "PLACES": i["PLACES"],
             }
-            for i in self.player_details
+            for i in self.player_details.values()
         }
 
         if self.me == self.turn:
             Monopoly.http.addgame(
-                "MNPLY",
-                self.player_details[winner]["Name"],
+                "MONOPOLY",
+                [self.player_details[i]["Name"] for i in winners],
                 self.result,
-                self.result.keys(),
+                list(self.result.keys()),
             )
 
     # endregion

@@ -1,7 +1,5 @@
-(A) Close on session expire @ProAltro
-(A) Fix Things @ProAltro
+(A) Beta Tests
 (A) Leaderboard, Stats @arcade @ProAltro @Chaitanya-Keyal
-(A) Test Monopoly Ending @Chaitanya-Keyal
 (B) Timer @chess @ProAltro
 (B) Auto Leave/ Auto End Turn : End Turn Timer @monopoly @Chaitanya-Keyal
 (C) Icons, Window Titles +Arcade
@@ -14,9 +12,9 @@
 (E) Images Resizer +Arcade
 (E) Add Hilarious Trade Meme @monopoly
 (X) Music, Sounds +Arcade #Extra
+(X) Add Default Tab Setting in Account @arcade
 (Y) TakeBack @chess #Extra
 (Y) Choose Color when joining Room @monopoly #Extra
 (Z) Dark Mode +Arcade #Extra
-(Z) Voice Chat @arcade #Extra
 (Z) Auction @monopoly #Extra
 (Z) Speed Game @monopoly #Extra

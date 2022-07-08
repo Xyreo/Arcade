@@ -118,9 +118,6 @@ class Arcade(tk.Toplevel):
         self.config(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.exit)
         self.iconbitmap(os.path.join(ASSET, "icon.ico"))
-        if isWin:
-            self.thr = threading.Thread(target=self.CLI, daemon=True)
-            self.thr.start()
 
         self.current_room = None
 
@@ -154,6 +151,9 @@ class Arcade(tk.Toplevel):
         self.main_notebook.add(self.monopoly_frame, text="Monopoly")
         self.join_create("MNPLY")
 
+        self.main_notebook.select(
+            1
+        )  # ? Add option to select your default tab when log in
         Arcade.store_pfp(self.name)
         self.my_pfp = Arcade.get_cached_pfp(self.name, (40, 40))
 
@@ -1061,25 +1061,6 @@ class Arcade(tk.Toplevel):
         root.quit()
         for file in os.scandir(os.path.join(ASSET, "cached_pfp")):
             os.remove(file.path)
-
-    def CLI(self):
-        while True:
-            t = tuple(i for i in input().split())
-            if t:
-                if t[0] == "cs":
-                    self.send(
-                        (
-                            self.current_room,
-                            "SETTINGS",
-                            {"STATUS": "PRIVATE" if t[1] == "p" else "PUBLIC"},
-                        )
-                    )
-
-                else:
-                    print("Die")
-            else:
-                print("Closed CLI Thread")
-                break
 
 
 class Login(tk.Frame):
