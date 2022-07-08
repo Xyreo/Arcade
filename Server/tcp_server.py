@@ -44,7 +44,8 @@ class Channels:
         player.channels.append(self.uuid)
 
     def leave(self, player):
-        player.channels.remove(self.uuid)
+        if self.uuid in player.channels:
+            player.channels.remove(self.uuid)
         self.members.remove(player)
 
 
@@ -85,6 +86,7 @@ class Room(Channels):
         self.game = game
         super().join(host)
         host.send_instruction(("ROOM", "ADD", self.game, self.details()))
+        host.channels.append(self.uuid)
 
     def delete(self):
         self.broadcast(("ROOM", "REMOVE"))

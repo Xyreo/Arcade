@@ -2,6 +2,7 @@
 (A) Leaderboard, Stats @arcade @ProAltro @Chaitanya-Keyal
 (B) Timer @chess @ProAltro
 (B) Auto Leave/ Auto End Turn : End Turn Timer @monopoly @Chaitanya-Keyal
+(B) Trace Server Line by Line @ProAltro
 (C) Icons, Window Titles +Arcade
 (C) Notifier +Arcade
 (C) Info, Rules +Arcade
