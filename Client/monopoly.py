@@ -832,6 +832,7 @@ class Monopoly(tk.Toplevel):
             music(os.path.join(MONOPOLY_ASSETS, "Die", "diceroll.mp3"))
         except:
             pass
+        self.roll_button.configure(state="disabled")
         dice_roll = roll if received else (random.randint(1, 6), random.randint(1, 6))
         dice_roll = roll if cli else dice_roll
         if not received:
@@ -842,7 +843,6 @@ class Monopoly(tk.Toplevel):
             self.dice_spot1.update()
             self.dice_spot2.update()
             sleep(0.12)
-            self.roll_button.configure(state="disabled")
         self.dice_spot1.configure(image=self.die_dict[dice_roll[0]])
         self.dice_spot2.configure(image=self.die_dict[dice_roll[1]])
         self.dice_spot1.update()

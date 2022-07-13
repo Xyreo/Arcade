@@ -115,7 +115,6 @@ class Arcade(tk.Toplevel):
         self.geometry(
             f"{self.screen_width//2}x{self.screen_height}+{self.x_coord+self.screen_width//4}+{self.y_coord}"
         )
-        self.config(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.exit)
         self.iconbitmap(os.path.join(ASSET, "icon.ico"))
 
@@ -140,13 +139,13 @@ class Arcade(tk.Toplevel):
         self.main_notebook.place(relx=0, rely=0, anchor="nw", relheight=1, relwidth=1)
 
         # Chess stuff
-        self.chess_frame = tk.Frame(self.main_notebook, background="white")
+        self.chess_frame = tk.Frame(self.main_notebook)
         self.chess_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
         self.main_notebook.add(self.chess_frame, text="Chess")
         self.join_create("CHESS")
 
         # Monopoly stuff
-        self.monopoly_frame = tk.Frame(self.main_notebook, background="white")
+        self.monopoly_frame = tk.Frame(self.main_notebook)
         self.monopoly_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
         self.main_notebook.add(self.monopoly_frame, text="Monopoly")
         self.join_create("MNPLY")
@@ -161,7 +160,6 @@ class Arcade(tk.Toplevel):
             self,
             image=self.my_pfp,
             text=f" {self.name} ▾",
-            bg="white",
             highlightthickness=0,
             border=0,
             font=("times 14 bold"),
@@ -652,7 +650,6 @@ class Arcade(tk.Toplevel):
         self.geometry(
             f"{self.screen_width//2}x{self.screen_height}+{self.x_coord+self.screen_width//4}+{self.y_coord}"
         )
-        self.config(bg="white")
         self.protocol("WM_DELETE_WINDOW", self.exit)
 
         self.logo = ImageTk.PhotoImage(
@@ -1515,6 +1512,8 @@ class Register(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
+    # root.tk.call("source", os.path.join(ASSET, "azure.tcl"))
+    # root.tk.call("set_theme", "dark")
     try:
         os.mkdir(os.path.join(ASSET, "cached_pfp"))
     except:
