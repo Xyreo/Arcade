@@ -15,6 +15,6 @@
 (X) Add Default Game Setting in Account Tab +Arcade
 (Y) TakeBack @chess #Extra
 (Y) Choose Color when joining Room @monopoly #Extra
-(Z) Dark Mode +Arcade #Extra
+(Z) Dark Mode Change Arcade & Chess, Add Setting +Arcade #Extra @Chaitanya-Keyal
 (Z) Auction @monopoly #Extra
 (Z) Speed Game @monopoly #Extra

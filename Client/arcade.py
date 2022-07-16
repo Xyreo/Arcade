@@ -1512,8 +1512,9 @@ class Register(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    # root.tk.call("source", os.path.join(ASSET, "azure.tcl"))
-    # root.tk.call("set_theme", "dark")
+    root.tk.call("source", os.path.join(ASSET, "azure.tcl"))
+    root.tk.call("set_theme", "dark")
+    ttk.Style().map("TButton", foreground=[("disabled", "grey")])
     try:
         os.mkdir(os.path.join(ASSET, "cached_pfp"))
     except:

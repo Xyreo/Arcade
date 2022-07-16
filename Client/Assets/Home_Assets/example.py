@@ -137,7 +137,7 @@ class App(ttk.Frame):
         self.optionmenu.grid(row=5, column=0, padx=5, pady=10, sticky="nsew")
 
         # Button
-        self.button = ttk.Button(self.widgets_frame, text="Button")
+        self.button = ttk.Button(self.widgets_frame, text="Disabled Button", state="disabled")
         self.button.grid(row=6, column=0, padx=5, pady=10, sticky="nsew")
 
         # Accentbutton
@@ -292,6 +292,7 @@ if __name__ == "__main__":
     # Simply set the theme
     root.tk.call("source", "azure.tcl")
     root.tk.call("set_theme", "dark")
+    ttk.Style().map('TButton', foreground=[('disabled','grey')])
 
     app = App(root)
     app.pack(fill="both", expand=True)

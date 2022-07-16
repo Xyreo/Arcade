@@ -202,7 +202,7 @@ namespace eval ttk::theme::azure-dark {
         ttk::style element create Button.button image \
             [list $I(rect-basic) \
             	{selected disabled} $I(rect-basic) \
-                disabled $I(rect-basic) \
+                disabled $I(rect-disabled) \
                 pressed $I(rect-basic) \
                 selected $I(rect-basic) \
                 active $I(button-hover) \
@@ -221,7 +221,7 @@ namespace eval ttk::theme::azure-dark {
             ] -border 4 -sticky ewns
 
         # Menubutton
-        ttk::style configure TMenubutton -padding {8 4 4 4}
+        ttk::style configure TMenubutton -padding {3 3 3 3}
 
         ttk::style element create Menubutton.button \
             image [list $I(rect-basic) \
@@ -238,7 +238,7 @@ namespace eval ttk::theme::azure-dark {
             ] -width 15 -sticky e
 
         # OptionMenu
-        ttk::style configure TOptionMenu -padding {8 4 4 4}
+        ttk::style configure TOptionMenu -padding {3 3 3 3}
 
         ttk::style element create OptionMenu.button \
             image [list $I(rect-basic) \
@@ -412,7 +412,7 @@ namespace eval ttk::theme::azure-dark {
                 disabled $I(box-basic) \
                 focus $I(box-accent) \
                 hover $I(box-hover) \
-            ] -border 5 -padding {8} -sticky news
+            ] -border 5 -padding {3 3 3 3} -sticky news
 
         # Combobox
         ttk::style map TCombobox -selectbackground [list \
@@ -440,7 +440,7 @@ namespace eval ttk::theme::azure-dark {
                 disabled $I(box-basic) \
                 focus $I(box-accent) \
                 hover $I(box-hover) \
-            ] -border 5 -padding {8}
+            ] -border 5 -padding {3 3 3 3}
             
         ttk::style element create Combobox.button \
             image [list $I(combo-button-basic) \
@@ -459,28 +459,28 @@ namespace eval ttk::theme::azure-dark {
                 disabled $I(box-basic) \
                 focus $I(box-accent) \
                 hover $I(box-hover) \
-            ] -border 5 -padding {8} -sticky news
+            ] -border 5 -padding {3 6 3 6} -sticky news
 
         ttk::style element create Spinbox.uparrow \
             image [list $I(up) \
                 disabled $I(up) \
                 pressed $I(up-accent) \
                 active $I(up-accent) \
-            ] -border 4 -width 15 -sticky e
+            ] -border 4 -width 15 -sticky n
 
         ttk::style element create Spinbox.downarrow \
             image [list $I(down) \
                 disabled $I(down) \
                 pressed $I(down-accent) \
                 active $I(down-accent) \
-            ] -border 4 -width 15 -sticky e
+            ] -border 4 -width 15 -sticky s
             
         ttk::style element create Spinbox.button \
             image [list $I(combo-button-basic) \
                  {!readonly focus} $I(combo-button-focus) \
                  {readonly focus} $I(combo-button-hover) \
                  {readonly hover} $I(combo-button-hover)
-            ] -border 5 -padding {2 6 6 6}
+            ] -border 5 -padding {3 6 3 6}
 
         # Sizegrip
         ttk::style element create Sizegrip.sizegrip image $I(size) \
