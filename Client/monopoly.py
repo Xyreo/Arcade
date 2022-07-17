@@ -13,6 +13,7 @@ from tkinter import messagebox as msgb
 from PIL import Image, ImageChops, ImageDraw, ImageTk
 from plyer import notification as noti
 
+import theme
 from http_wrapper import Http
 
 try:
@@ -24,6 +25,23 @@ ASSET = "Assets"
 ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)
 HOME_ASSETS = os.path.join(ASSET, "Home_Assets")
 MONOPOLY_ASSETS = os.path.join(ASSET, "Mnply_Assets")
+THEME_FILE = (
+    os.path.join(
+        os.environ["USERPROFILE"],
+        "AppData",
+        "Local",
+        "Arcade",
+        "theme.txt",
+    )
+    if os.name == "nt"
+    else os.path.join(
+        os.environ["HOME"],
+        "Applications",
+        "Arcade",
+        "theme.txt",
+    )
+)
+CURR_THEME = "dark"
 
 
 def resource_path(relative_path):
@@ -119,13 +137,6 @@ class Monopoly(tk.Toplevel):
 
     def initialise(self):
         self.init_objects()
-        button_style = ttk.Style()
-        button_style.configure(
-            "mono.TButton", font=("times", int(self.property_width / 3))
-        )
-        button_style.configure("10.TButton", font=("times", 10))
-        button_style.configure("12.TButton", font=("times", 12))
-
         self.properties = {}
         try:
             details = self.http.mply_details()
@@ -468,7 +479,7 @@ class Monopoly(tk.Toplevel):
         self.mr_monopoly = ImageTk.PhotoImage(
             Image.open(os.path.join(MONOPOLY_ASSETS, "mr_monopoly.png")).resize(
                 (
-                    int((self.board_side - 2) // 2.05),
+                    int((self.board_side - 2) // 2.25),
                     int((self.board_side - 2) // 1.75),
                 ),
                 Image.Resampling.LANCZOS,
@@ -588,6 +599,8 @@ class Monopoly(tk.Toplevel):
                     self.end_game_button,
                     self.acc_frame,
                     self.acc_button,
+                    self.theme_button,
+                    self.theme_label,
                 ]:
                     self.acc_frame.place_forget()
                     self.unbind("<Button-1>")
@@ -629,6 +642,7 @@ class Monopoly(tk.Toplevel):
             self.quit_button.grid(
                 row=0,
                 column=0,
+                columnspan=2,
                 sticky="nsew",
             )
 
@@ -639,7 +653,28 @@ class Monopoly(tk.Toplevel):
                     style="12.TButton",
                     command=end_game_now,
                 )
-                self.end_game_button.grid(row=1, column=0, sticky="nsew")
+                self.end_game_button.grid(row=1, column=0, columnspan=2, sticky="nsew")
+
+            theme_var = tk.StringVar(value=CURR_THEME)
+
+            def tog():
+                global CURR_THEME
+                CURR_THEME = theme_var.get()
+                theme.toggle_theme()
+
+            self.theme_label = tk.Label(
+                self.acc_frame, text="Dark Mode", font=("times", 12)
+            )
+            self.theme_label.grid(row=3, column=0, sticky="e")
+            self.theme_button = ttk.Checkbutton(
+                self.acc_frame,
+                style="Switch.TCheckbutton",
+                variable=theme_var,
+                onvalue="dark",
+                offvalue="light",
+                command=tog,
+            )
+            self.theme_button.grid(row=3, column=1, sticky="e")
 
     # endregion
 
@@ -2002,7 +2037,7 @@ class Monopoly(tk.Toplevel):
                 self.buy_button = ttk.Button(
                     self.action_frame,
                     text="BUY",
-                    style="mono.TButton",
+                    style="16.TButton",
                     command=lambda: self.buy_property(
                         self.player_details[self.turn]["Position"] % 40, self.turn
                     ),
@@ -2012,7 +2047,7 @@ class Monopoly(tk.Toplevel):
                 self.build_button = ttk.Button(
                     self.action_frame,
                     text="BUILD",
-                    style="mono.TButton",
+                    style="16.TButton",
                     command=self.build_sell_action_frame,
                 )
                 self.build_button.place(relx=0.2, rely=0.3, anchor="center")
@@ -2020,7 +2055,7 @@ class Monopoly(tk.Toplevel):
                 self.trade_button = ttk.Button(
                     self.action_frame,
                     text="TRADE",
-                    style="mono.TButton",
+                    style="16.TButton",
                     command=self.trade,
                 )
                 self.trade_button.place(relx=0.2, rely=0.5, anchor="center")
@@ -2028,7 +2063,7 @@ class Monopoly(tk.Toplevel):
                 self.mortgage_button = ttk.Button(
                     self.action_frame,
                     text="MORTGAGE",
-                    style="mono.TButton",
+                    style="16.TButton",
                     command=lambda: self.mortgage_unmortgage(True),
                 )
                 self.mortgage_button.place(relx=0.8, rely=0.1, anchor="center")
@@ -2036,7 +2071,7 @@ class Monopoly(tk.Toplevel):
                 self.unmortgage_button = ttk.Button(
                     self.action_frame,
                     text="UNMORTGAGE",
-                    style="mono.TButton",
+                    style="16.TButton",
                     command=lambda: self.mortgage_unmortgage(False),
                 )
                 self.unmortgage_button.place(relx=0.8, rely=0.3, anchor="center")
@@ -2044,7 +2079,7 @@ class Monopoly(tk.Toplevel):
                 self.sell_button = ttk.Button(
                     self.action_frame,
                     text="SELL HOUSES",
-                    style="mono.TButton",
+                    style="16.TButton",
                     command=lambda: self.build_sell_action_frame(sell=True),
                 )
                 self.sell_button.place(relx=0.8, rely=0.5, anchor="center")
@@ -2052,7 +2087,7 @@ class Monopoly(tk.Toplevel):
                 self.end_button = ttk.Button(
                     self.action_frame,
                     text="END TURN",
-                    style="mono.TButton",
+                    style="16.TButton",
                     command=lambda: self.end_turn(),
                 )
                 self.end_button.place(relx=0.5, rely=0.3, anchor="center")
@@ -3417,14 +3452,14 @@ class Monopoly(tk.Toplevel):
             ttk.Button(
                 self.endgame_frame,
                 text="YES",
-                style="mono.TButton",
+                style="16.TButton",
                 command=lambda: ans(True),
             ).place(relx=0.4, rely=0.75, anchor="center")
 
             ttk.Button(
                 self.endgame_frame,
                 text="NO",
-                style="mono.TButton",
+                style="16.TButton",
                 command=lambda: ans(False),
             ).place(relx=0.6, rely=0.75, anchor="center")
 
@@ -3777,9 +3812,22 @@ class Community:
 if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()
-    root.tk.call("source", os.path.join(HOME_ASSETS, "azure.tcl"))
-    root.tk.call("set_theme", "dark")
-    ttk.Style().map("TButton", foreground=[("disabled", "darkgrey")])
+
+    if not os.path.exists(THEME_FILE):
+        with open(THEME_FILE, "w") as f:
+            f.write("dark")
+    else:
+        with open(THEME_FILE, "r") as f:
+            a = f.read().strip()
+            if a in ["dark", "light"]:
+                CURR_THEME = a
+            else:
+                CURR_THEME = "dark"
+                with open(THEME_FILE, "w") as f:
+                    f.write("dark")
+
+    theme.init(root, CURR_THEME)
+
     try:
         os.mkdir(os.path.join(HOME_ASSETS, "cached_pfp"))
     except:

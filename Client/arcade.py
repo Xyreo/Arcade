@@ -13,6 +13,7 @@ from tkinter import messagebox as msgb
 from PIL import Image, ImageChops, ImageDraw, ImageTk
 from plyer import notification as noti
 
+import theme
 from chess import Chess
 from client_framework import Client
 from http_wrapper import Http
@@ -50,6 +51,24 @@ REMEMBER_ME_FILE = (
         "remember_login.txt",
     )
 )
+
+THEME_FILE = (
+    os.path.join(
+        os.environ["USERPROFILE"],
+        "AppData",
+        "Local",
+        "Arcade",
+        "theme.txt",
+    )
+    if isWin
+    else os.path.join(
+        os.environ["HOME"],
+        "Applications",
+        "Arcade",
+        "theme.txt",
+    )
+)
+CURR_THEME = "dark"
 
 if not isWin:
     print("I don't like your Operating System. Install Windows.")
@@ -172,27 +191,18 @@ class Arcade(tk.Toplevel):
 
     def start_arcade(self):
         root.withdraw()
-        button_style = ttk.Style()
-        button_style.configure("20.TButton", font=("times", 20))
-        button_style.configure("15.TButton", font=("times", 15))
-        button_style.configure("12.TButton", font=("times", 12))
-
-        if os.path.exists(REMEMBER_ME_FILE):
-            self.login = Login(self, self.initialize, remember_login=True)
-        else:
-            self.logo = ImageTk.PhotoImage(
-                Image.open(os.path.join(ASSET, "Logo.png")).resize(
-                    (self.screen_width // 4, self.screen_width // 4),
-                    Image.Resampling.LANCZOS,
-                )
+        self.logo = ImageTk.PhotoImage(
+            Image.open(os.path.join(ASSET, "Logo.png")).resize(
+                (self.screen_width // 4, self.screen_width // 4),
+                Image.Resampling.LANCZOS,
             )
-            a = tk.Frame(self)
-            a.place(relx=0.5, rely=0.3, anchor="center", relheight=0.6, relwidth=1)
-            tk.Label(a, image=self.logo).place(
-                relx=0.5, rely=0.5, anchor="center", relheight=1
-            )
-            self.login = Login(self, self.initialize)
-        self.login.place(relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n")
+        )
+        tk.Label(self, image=self.logo, bg=self.cget("bg")).place(
+            relx=0.5, rely=0.3, anchor="center", relheight=0.6, relwidth=1
+        )
+        Login(
+            self, self.initialize, remember_login=os.path.exists(REMEMBER_ME_FILE)
+        ).place(relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n")
 
     def join_create(self, game):
         parent = self.chess_frame if game == "CHESS" else self.monopoly_frame
@@ -343,6 +353,8 @@ class Arcade(tk.Toplevel):
                     self.change_pfp_button,
                     self.acc_frame,
                     self.acc_button,
+                    self.theme_button,
+                    self.theme_label,
                 ]:
                     self.acc_frame.destroy()
                     self.unbind("<Button-1>")
@@ -357,6 +369,7 @@ class Arcade(tk.Toplevel):
             self.log_out_button.grid(
                 row=0,
                 column=0,
+                columnspan=2,
                 sticky="nsew",
             )
 
@@ -366,7 +379,7 @@ class Arcade(tk.Toplevel):
                 style="12.TButton",
                 command=self.change_password,
             )
-            self.change_pass_button.grid(row=1, column=0, sticky="nsew")
+            self.change_pass_button.grid(row=1, column=0, columnspan=2, sticky="nsew")
 
             self.change_pfp_button = ttk.Button(
                 self.acc_frame,
@@ -374,7 +387,28 @@ class Arcade(tk.Toplevel):
                 style="12.TButton",
                 command=self.change_pfp,
             )
-            self.change_pfp_button.grid(row=2, column=0, sticky="nsew")
+            self.change_pfp_button.grid(row=2, column=0, columnspan=2, sticky="nsew")
+
+            theme_var = tk.StringVar(value=CURR_THEME)
+
+            def tog():
+                global CURR_THEME
+                CURR_THEME = theme_var.get()
+                theme.toggle_theme()
+
+            self.theme_label = tk.Label(
+                self.acc_frame, text="Dark Mode", font=("times", 12)
+            )
+            self.theme_label.grid(row=3, column=0, sticky="e")
+            self.theme_button = ttk.Checkbutton(
+                self.acc_frame,
+                style="Switch.TCheckbutton",
+                variable=theme_var,
+                onvalue="dark",
+                offvalue="light",
+                command=tog,
+            )
+            self.theme_button.grid(row=3, column=1, sticky="e")
 
     def change_password(self):
         self.acc_frame.destroy()
@@ -652,19 +686,12 @@ class Arcade(tk.Toplevel):
         )
         self.protocol("WM_DELETE_WINDOW", self.exit)
 
-        self.logo = ImageTk.PhotoImage(
-            Image.open(os.path.join(ASSET, "Logo.png")).resize(
-                (self.screen_width // 4, self.screen_width // 4),
-                Image.Resampling.LANCZOS,
-            )
+        tk.Label(self, image=self.logo, bg=self.cget("bg")).place(
+            relx=0.5, rely=0.3, anchor="center", relheight=0.6, relwidth=1
         )
-        a = tk.Frame(self)
-        a.place(relx=0.5, rely=0.3, anchor="center", relheight=0.6, relwidth=1)
-        tk.Label(a, image=self.logo).place(
-            relx=0.5, rely=0.5, anchor="center", relheight=1
+        Login(self, self.initialize).place(
+            relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n"
         )
-        self.login = Login(self, self.initialize)
-        self.login.place(relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n")
 
     # endregion
 
@@ -689,9 +716,13 @@ class Arcade(tk.Toplevel):
 
     @staticmethod
     def pfp_make(img):
-        b = base64.b64decode(img.encode("latin1"))
-        c = Image.open(BytesIO(b))
-        return c
+        try:
+            b = base64.b64decode(img.encode("latin1"))
+            c = Image.open(BytesIO(b))
+            return c
+        except:
+            print("Couldn't Access Profile Picture")
+            return Image.open(os.path.join(ASSET, "default_pfp.png"))
 
     @staticmethod
     def store_pfp(name):
@@ -1512,9 +1543,6 @@ class Register(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.tk.call("source", os.path.join(ASSET, "azure.tcl"))
-    root.tk.call("set_theme", "dark")
-    ttk.Style().map("TButton", foreground=[("disabled", "grey")])
     try:
         os.mkdir(os.path.join(ASSET, "cached_pfp"))
     except:
@@ -1536,6 +1564,20 @@ if __name__ == "__main__":
         )
     except:
         pass
+    if not os.path.exists(THEME_FILE):
+        with open(THEME_FILE, "w") as f:
+            f.write("dark")
+    else:
+        with open(THEME_FILE, "r") as f:
+            a = f.read().strip()
+            if a in ["dark", "light"]:
+                CURR_THEME = a
+            else:
+                CURR_THEME = "dark"
+                with open(THEME_FILE, "w") as f:
+                    f.write("dark")
+
+    theme.init(root, CURR_THEME)
     arc = Arcade()
     arc.start_arcade()
     root.mainloop()
