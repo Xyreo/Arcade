@@ -1,5 +1,6 @@
 import base64
 import os
+import pickle
 import sys
 import threading
 import tkinter as tk
@@ -18,20 +19,20 @@ ASSET = "Assets"
 ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)
 HOME_ASSETS = os.path.join(ASSET, "Home_Assets")
 CHESS_ASSETS = os.path.join(ASSET, "Chess_Assets")
-THEME_FILE = (
+SETTINGS_FILE = (
     os.path.join(
         os.environ["USERPROFILE"],
         "AppData",
         "Local",
         "Arcade",
-        "theme.txt",
+        "settings.dat",
     )
     if os.name == "nt"
     else os.path.join(
         os.environ["HOME"],
         "Applications",
         "Arcade",
-        "theme.txt",
+        "settings.dat",
     )
 )
 CURR_THEME = "dark"
@@ -247,7 +248,6 @@ class Chess(tk.Toplevel):
                     self.quit_button,
                     self.acc_frame,
                     self.acc_button,
-                    self.theme_label,
                     self.theme_button,
                 ]:
                     self.acc_frame.destroy()
@@ -258,19 +258,11 @@ class Chess(tk.Toplevel):
             self.acc_frame.place(relx=0.01, rely=0.06, anchor="nw")
 
             self.quit_button = ttk.Button(
-                self.acc_frame,
-                text="QUIT",
-                style="12.TButton",
-                command=self.resign,
+                self.acc_frame, text="QUIT", style="12.TButton", command=self.resign
             )
             if self.isEnded:
                 self.quit_button.configure(command=lambda: self.quit_game("ENDED"))
-            self.quit_button.grid(
-                row=0,
-                column=0,
-                columnspan=2,
-                sticky="nsew",
-            )
+            self.quit_button.grid(row=0, column=0, columnspan=2, sticky="nsew", pady=2)
 
             theme_var = tk.StringVar(value=CURR_THEME)
 
@@ -279,10 +271,9 @@ class Chess(tk.Toplevel):
                 CURR_THEME = theme_var.get()
                 theme.toggle_theme()
 
-            self.theme_label = tk.Label(
-                self.acc_frame, text="Dark Mode", font=("times", 12)
+            tk.Label(self.acc_frame, text="Dark Mode", font=("times", 12)).grid(
+                row=1, column=0, sticky="e", pady=2
             )
-            self.theme_label.grid(row=3, column=0, sticky="e")
             self.theme_button = ttk.Checkbutton(
                 self.acc_frame,
                 style="Switch.TCheckbutton",
@@ -291,7 +282,7 @@ class Chess(tk.Toplevel):
                 offvalue="light",
                 command=tog,
             )
-            self.theme_button.grid(row=3, column=1, sticky="e")
+            self.theme_button.grid(row=1, column=1, sticky="e", pady=2)
 
     def initialize_board(self):
 
@@ -1557,18 +1548,21 @@ class Board:
 if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()
-    if not os.path.exists(THEME_FILE):
-        with open(THEME_FILE, "w") as f:
-            f.write("dark")
+    if not os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "wb") as f:
+            pickle.dump({"THEME": "dark", "DEFAULT_GAME": 0}, f)
     else:
-        with open(THEME_FILE, "r") as f:
-            a = f.read().strip()
-            if a in ["dark", "light"]:
-                CURR_THEME = a
+        with open(SETTINGS_FILE, "rb") as f:
+            d = pickle.load(f)
+            if d["THEME"] in ["dark", "light"]:
+                CURR_THEME = d["THEME"]
             else:
                 CURR_THEME = "dark"
-                with open(THEME_FILE, "w") as f:
-                    f.write("dark")
+                with open(SETTINGS_FILE, "rb+") as f:
+                    d = pickle.load(f)
+                    d.update({"THEME": "dark"})
+                    f.seek(0)
+                    pickle.dump(d, f)
 
     theme.init(root, CURR_THEME)
 

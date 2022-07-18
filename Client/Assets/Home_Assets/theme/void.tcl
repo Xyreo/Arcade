@@ -1,3 +1,5 @@
+# Credits to @rdbende
+
 for {set x 1} { $x < 26 } { incr x } {
     font create $x.buttonFont -size $x -family Times
 }

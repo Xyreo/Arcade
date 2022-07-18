@@ -1,4 +1,5 @@
 import os
+import pickle
 import sys
 
 ASSET = os.path.join("Assets", "Home_Assets", "theme")
@@ -14,20 +15,20 @@ def resource_path(relative_path):
 
 
 ASSET = resource_path(ASSET)
-THEME_FILE = (
+SETTINGS_FILE = (
     os.path.join(
         os.environ["USERPROFILE"],
         "AppData",
         "Local",
         "Arcade",
-        "theme.txt",
+        "settings.dat",
     )
     if os.name == "nt"
     else os.path.join(
         os.environ["HOME"],
         "Applications",
         "Arcade",
-        "theme.txt",
+        "settings.dat",
     )
 )
 
@@ -52,5 +53,8 @@ def toggle_theme():
         t = "dark"
 
     win.tk.call("set_theme", t)
-    with open(THEME_FILE, "w") as f:
-        f.write(t)
+    with open(SETTINGS_FILE, "rb+") as f:
+        d = pickle.load(f)
+        d.update({"THEME": t})
+        f.seek(0)
+        pickle.dump(d, f)

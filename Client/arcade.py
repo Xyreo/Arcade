@@ -1,5 +1,6 @@
 import base64
 import os
+import pickle
 import random
 import sys
 import threading
@@ -52,20 +53,20 @@ REMEMBER_ME_FILE = (
     )
 )
 
-THEME_FILE = (
+SETTINGS_FILE = (
     os.path.join(
         os.environ["USERPROFILE"],
         "AppData",
         "Local",
         "Arcade",
-        "theme.txt",
+        "settings.dat",
     )
     if isWin
     else os.path.join(
         os.environ["HOME"],
         "Applications",
         "Arcade",
-        "theme.txt",
+        "settings.dat",
     )
 )
 CURR_THEME = "dark"
@@ -171,9 +172,10 @@ class Arcade(tk.Toplevel):
         self.main_notebook.add(self.monopoly_frame, text="Monopoly")
         self.join_create("MNPLY")
 
-        self.main_notebook.select(
-            1
-        )  # ? Add option to select your default tab when log in
+        with open(SETTINGS_FILE, "rb") as f:
+            d = pickle.load(f)
+            self.main_notebook.select(d["DEFAULT_GAME"])
+
         Arcade.store_pfp(self.name)
         self.my_pfp = Arcade.get_cached_pfp(self.name, (40, 40))
 
@@ -356,7 +358,8 @@ class Arcade(tk.Toplevel):
                     self.acc_frame,
                     self.acc_button,
                     self.theme_button,
-                    self.theme_label,
+                    self.ch_rb,
+                    self.mo_rb,
                 ]:
                     self.acc_frame.destroy()
                     self.unbind("<Button-1>")
@@ -372,6 +375,7 @@ class Arcade(tk.Toplevel):
                 row=0,
                 column=0,
                 columnspan=2,
+                pady=2,
                 sticky="nsew",
             )
 
@@ -381,7 +385,9 @@ class Arcade(tk.Toplevel):
                 style="12.TButton",
                 command=self.change_password,
             )
-            self.change_pass_button.grid(row=1, column=0, columnspan=2, sticky="nsew")
+            self.change_pass_button.grid(
+                row=1, column=0, columnspan=2, sticky="nsew", pady=2
+            )
 
             self.change_pfp_button = ttk.Button(
                 self.acc_frame,
@@ -389,7 +395,9 @@ class Arcade(tk.Toplevel):
                 style="12.TButton",
                 command=self.change_pfp,
             )
-            self.change_pfp_button.grid(row=2, column=0, columnspan=2, sticky="nsew")
+            self.change_pfp_button.grid(
+                row=2, column=0, columnspan=2, sticky="nsew", pady=2
+            )
 
             theme_var = tk.StringVar(value=CURR_THEME)
 
@@ -398,10 +406,9 @@ class Arcade(tk.Toplevel):
                 CURR_THEME = theme_var.get()
                 theme.toggle_theme()
 
-            self.theme_label = tk.Label(
-                self.acc_frame, text="Dark Mode", font=("times", 12)
+            tk.Label(self.acc_frame, text="Dark Mode", font=("times", 12)).grid(
+                row=3, column=0, sticky="e", pady=2
             )
-            self.theme_label.grid(row=3, column=0, sticky="e")
             self.theme_button = ttk.Checkbutton(
                 self.acc_frame,
                 style="Switch.TCheckbutton",
@@ -410,7 +417,45 @@ class Arcade(tk.Toplevel):
                 offvalue="light",
                 command=tog,
             )
-            self.theme_button.grid(row=3, column=1, sticky="e")
+            self.theme_button.grid(row=3, column=1, sticky="e", pady=2)
+
+            ttk.Separator(self.acc_frame, orient="horizontal").grid(
+                row=4, column=0, columnspan=2, sticky="nsew", pady=2
+            )
+
+            tk.Label(
+                self.acc_frame, text="Default Game", font=("times", 13, "underline")
+            ).grid(row=5, column=0, columnspan=2, sticky="nsew")
+
+            default = tk.IntVar()
+
+            with open(SETTINGS_FILE, "rb") as f:
+                d = pickle.load(f)
+                default.set(d["DEFAULT_GAME"])
+
+            def default_game():
+                with open(SETTINGS_FILE, "rb+") as f:
+                    d = pickle.load(f)
+                    d.update({"DEFAULT_GAME": default.get()})
+                    f.seek(0)
+                    pickle.dump(d, f)
+
+            self.ch_rb = ttk.Radiobutton(
+                self.acc_frame,
+                text="Chess",
+                variable=default,
+                value=0,
+                command=default_game,
+            )
+            self.ch_rb.grid(row=6, column=0, columnspan=2, sticky="nsew")
+            self.mo_rb = ttk.Radiobutton(
+                self.acc_frame,
+                text="Monopoly",
+                variable=default,
+                value=1,
+                command=default_game,
+            )
+            self.mo_rb.grid(row=7, column=0, columnspan=2, sticky="nsew", pady=2)
 
     def change_password(self):
         self.acc_frame.destroy()
@@ -1565,18 +1610,21 @@ if __name__ == "__main__":
         )
     except:
         pass
-    if not os.path.exists(THEME_FILE):
-        with open(THEME_FILE, "w") as f:
-            f.write("dark")
+    if not os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE, "wb") as f:
+            pickle.dump({"THEME": "dark", "DEFAULT_GAME": 0}, f)
     else:
-        with open(THEME_FILE, "r") as f:
-            a = f.read().strip()
-            if a in ["dark", "light"]:
-                CURR_THEME = a
+        with open(SETTINGS_FILE, "rb") as f:
+            d = pickle.load(f)
+            if d["THEME"] in ["dark", "light"]:
+                CURR_THEME = d["THEME"]
             else:
                 CURR_THEME = "dark"
-                with open(THEME_FILE, "w") as f:
-                    f.write("dark")
+                with open(SETTINGS_FILE, "rb+") as f:
+                    d = pickle.load(f)
+                    d.update({"THEME": "dark"})
+                    f.seek(0)
+                    pickle.dump(d, f)
 
     theme.init(root, CURR_THEME)
     arc = Arcade()
