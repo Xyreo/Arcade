@@ -136,6 +136,7 @@ class Arcade(tk.Toplevel):
         )
         self.protocol("WM_DELETE_WINDOW", self.exit)
         self.iconbitmap(os.path.join(ASSET, "icon.ico"))
+        self.minsize(self.screen_width // 2, self.screen_height)
 
         self.current_room = None
 
@@ -145,6 +146,7 @@ class Arcade(tk.Toplevel):
         self.geometry(
             f"{self.screen_width}x{self.screen_height}+{self.x_coord}+{self.y_coord}"
         )
+        self.minsize(self.screen_width, self.screen_height)
         self.name = name
         self.token = token
         self.rooms = Rooms()
@@ -794,7 +796,7 @@ class Arcade(tk.Toplevel):
 
     def join_lobby(self, game):
         parent = self.chess_frame if game == "CHESS" else self.monopoly_frame
-        self.lobby_frames[game] = tk.Frame(parent)
+        self.lobby_frames[game] = ttk.Frame(parent, style="Card.TFrame")
         self.lobby_frames[game].place(
             relx=0.5, rely=0.5, anchor="center", relwidth=0.33, relheight=0.9
         )
@@ -820,15 +822,15 @@ class Arcade(tk.Toplevel):
             yscrollcommand=scroll.set,
         )
         tree = self.lobby_trees[game]
-        tree.place(relx=0, rely=0.05, anchor="nw", relheight=0.9, relwidth=0.96)
+        tree.place(relx=0.49, rely=0.5, anchor="center", relheight=0.85, relwidth=0.96)
 
-        self.join_select_room_button = tk.Button(
+        self.join_select_room_button = ttk.Button(
             frame,
             text="Join",
-            font=("times", 13),
+            style="13.TButton",
             command=lambda: self.join_selected_room(tree.selection(), game),
         )
-        self.join_select_room_button.place(relx=0.96, rely=1, anchor="se")
+        self.join_select_room_button.place(relx=0.51, rely=0.99, anchor="s")
 
         scroll.configure(command=tree.yview)
         tree.column(
@@ -952,7 +954,7 @@ class Arcade(tk.Toplevel):
             "You" if self.me == room["host"] else room["members"][room["host"]]["name"]
         )
 
-        self.room_frames[game] = tk.Frame(parent)
+        self.room_frames[game] = ttk.Frame(parent, style="Card.TFrame")
         frame = self.room_frames[game]
         frame.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.33, relheight=0.9)
 
@@ -988,7 +990,7 @@ class Arcade(tk.Toplevel):
 
         self.room_members[game] = tk.Frame(frame)
         self.room_members[game].place(
-            relx=0.5, rely=0.3, anchor="center", relwidth=1, relheight=0.25
+            relx=0.5, rely=0.3, anchor="center", relwidth=0.95, relheight=0.25
         )
 
         tk.Label(
@@ -1001,10 +1003,10 @@ class Arcade(tk.Toplevel):
 
         # TODO: Show/Select Settings
         if hostname == "You":
-            self.room_start_button = tk.Button(
+            self.room_start_button = ttk.Button(
                 frame,
                 text="START",
-                font=("times", 13),
+                style="13.TButton",
                 command=lambda: self.start_room(game, room["id"]),
                 state="disabled",
             )

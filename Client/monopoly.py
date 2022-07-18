@@ -274,6 +274,8 @@ class Monopoly(tk.Toplevel):
         self.end_button.destroy()
         self.buy_button = ttk.Button()
         self.buy_button.destroy()
+        self.build_button = ttk.Button()
+        self.build_button.destroy()
         self.mortgage_button = ttk.Button()
         self.mortgage_button.destroy()
         self.unmortgage_button = ttk.Button()
@@ -282,16 +284,6 @@ class Monopoly(tk.Toplevel):
         self.sell_button.destroy()
         self.trade_button = ttk.Button()
         self.trade_button.destroy()
-        self.build_button = ttk.Button()
-        self.build_button.destroy()
-        self.final_build_button = tk.Button()
-        self.final_build_button.destroy()
-        self.mortgage_frame = tk.Frame()
-        self.mortgage_frame.destroy()
-        self.build_frame = tk.Frame()
-        self.build_frame.destroy()
-        self.end_game_button = ttk.Button()
-        self.end_game_button.destroy()
 
         self.property_pos_displayed = None
         self.current_txt = "Default"
@@ -1875,6 +1867,11 @@ class Monopoly(tk.Toplevel):
             self.colour_property_frame(position)
 
         if self.properties[position].isMortgaged:
+
+            def dest():
+                lbl.destroy()
+                but.destroy()
+
             lbl = tk.Label(
                 self.property_frame,
                 text="MORTGAGED\nPROPERTY",
@@ -1882,14 +1879,28 @@ class Monopoly(tk.Toplevel):
                 fg="red",
                 font=("times", (self.board_side - 2) // 30),
             )
+            but = tk.Button(
+                self.property_frame,
+                text="✕",
+                font=("courier", (self.board_side - 2) // 60),
+                fg="red",
+                activeforeground="red",
+                bg="#F9FBFF",
+                highlightthickness=0,
+                border=0,
+                activebackground="#F9FBFF",
+                command=dest,
+            )
             if position in [5, 15, 25, 35, 12, 28]:
                 lbl.place(
                     relx=0.5, rely=0.7, relheight=0.35, relwidth=1, anchor="center"
                 )
+                but.place(relx=0.875, rely=0.525, anchor="ne")
             else:
                 lbl.place(
-                    relx=0.5, rely=0.53, relheight=0.48, relwidth=1, anchor="center"
+                    relx=0.5, rely=0.53, relheight=0.4225, relwidth=1, anchor="center"
                 )
+                but.place(relx=0.875, rely=0.3175, anchor="ne")
 
     # endregion
 
@@ -2071,7 +2082,7 @@ class Monopoly(tk.Toplevel):
                 self.unmortgage_button = ttk.Button(
                     self.action_frame,
                     text="UNMORTGAGE",
-                    style="16.TButton",
+                    style="13.TButton",
                     command=lambda: self.mortgage_unmortgage(False),
                 )
                 self.unmortgage_button.place(relx=0.8, rely=0.3, anchor="center")
@@ -2079,7 +2090,7 @@ class Monopoly(tk.Toplevel):
                 self.sell_button = ttk.Button(
                     self.action_frame,
                     text="SELL HOUSES",
-                    style="16.TButton",
+                    style="14.TButton",
                     command=lambda: self.build_sell_action_frame(sell=True),
                 )
                 self.sell_button.place(relx=0.8, rely=0.5, anchor="center")
@@ -2183,7 +2194,9 @@ class Monopoly(tk.Toplevel):
                 offvalue=False,
                 onvalue=True,
                 command=update_mortgage,
-                selectcolor=i.hex if i.hex else "",
+                fg=i.hex if i.hex else "",
+                selectcolor=self.list_frame.cget("bg"),
+                activebackground=self.list_frame.cget("bg"),
             )
         x = y = 0
         k = 1
@@ -2204,23 +2217,21 @@ class Monopoly(tk.Toplevel):
             except:
                 pass
 
-        self.final_mortgage_button = tk.Button(
+        self.final_mortgage_button = ttk.Button(
             self.mortgage_frame,
             text="MORTGAGE" if mortgage else "UNMORTGAGE",
-            activebackground=self.mortgage_frame.cget("bg"),
-            font=("times", (self.board_side - 2) // 60),
+            style=f"{(self.board_side - 2) // 60}.TButton",
             command=lambda: self.final_mortgage(mortgage, self.mortgage_list),
         )
-        self.final_mortgage_button.place(relx=0.75, rely=0.85, anchor="nw")
+        self.final_mortgage_button.place(relx=0.65, rely=0.875, anchor="nw")
 
-        self.clear_mort_button = tk.Button(
+        self.clear_mort_button = ttk.Button(
             self.mortgage_frame,
             text="CLEAR",
-            activebackground=self.mortgage_frame.cget("bg"),
-            font=("times", (self.board_side - 2) // 60),
+            style=f"{(self.board_side - 2) // 60}.TButton",
             command=clear_mort,
         )
-        self.clear_mort_button.place(relx=0.9, rely=0.85, anchor="nw")
+        self.clear_mort_button.place(relx=0.825, rely=0.875, anchor="nw")
 
     def final_mortgage(self, mortgage, l, received=False):
         try:
@@ -2386,7 +2397,7 @@ class Monopoly(tk.Toplevel):
                     text=finaltxt,
                     font=("times", (self.board_side - 2) // 50),
                 )
-                self.final_build_txt_label.place(relx=0.5, rely=0.5, anchor="nw")
+                self.final_build_txt_label.place(relx=0.5, rely=0.475, anchor="nw")
 
             def extrahouse_clicked(val, opposite):
                 if sell:
@@ -2479,8 +2490,10 @@ class Monopoly(tk.Toplevel):
                             variable=self.checkbuttons_vals[i.name],
                             onvalue=False,
                             offvalue=True,
-                            selectcolor=i.hex,
+                            fg=i.hex,
                             command=lambda i=i: check(i.name),
+                            selectcolor=self.build_frame.cget("bg"),
+                            activebackground=self.build_frame.cget("bg"),
                         )
                         self.checkbuttons_dict[i.name].invoke()
                         self.checkbuttons_dict[i.name].place(
@@ -2536,23 +2549,21 @@ class Monopoly(tk.Toplevel):
                     except:
                         pass
 
-            self.final_build_button = tk.Button(
+            self.final_build_button = ttk.Button(
                 self.build_frame,
                 text="SELL" if sell else "BUILD",
-                font=("times", (self.board_side - 2) // 60),
-                activebackground=self.build_frame.cget("bg"),
+                style=f"{(self.board_side - 2) // 60}.TButton",
                 command=build_all,
             )
-            self.final_build_button.place(relx=0.75, rely=0.9, anchor="nw")
+            self.final_build_button.place(relx=0.65, rely=0.875, anchor="nw")
 
-            self.clear_build_button = tk.Button(
+            self.clear_build_button = ttk.Button(
                 self.build_frame,
                 text="CLEAR",
-                font=("times", (self.board_side - 2) // 60),
-                activebackground=self.build_frame.cget("bg"),
+                style=f"{(self.board_side - 2) // 60}.TButton",
                 command=lambda: clear_all(True),
             )
-            self.clear_build_button.place(relx=0.9, rely=0.9, anchor="nw")
+            self.clear_build_button.place(relx=0.8, rely=0.875, anchor="nw")
 
         def clear_all(all):
             try:
@@ -2911,14 +2922,13 @@ class Monopoly(tk.Toplevel):
         )
         self.select_user.place(relx=0.5, rely=0.1, anchor="w")
 
-        self.clear_trade_button = tk.Button(
+        self.clear_trade_button = ttk.Button(
             self.trade_frame,
             text="CLEAR ALL",
-            font=("times", (self.board_side - 2) // 60),
-            activebackground=self.trade_frame.cget("bg"),
+            style=f"{(self.board_side - 2) // 60}.TButton",
             command=lambda: clear_all(True),
         )
-        self.clear_trade_button.place(relx=0.85, rely=0.9, anchor="nw")
+        self.clear_trade_button.place(relx=0.8, rely=0.875, anchor="nw")
 
         def clear_all(all):
             try:
@@ -2978,19 +2988,17 @@ class Monopoly(tk.Toplevel):
                     i.delete(0, "end")
                 final_trade(offeree)
 
-            tk.Button(
+            ttk.Button(
                 self.trade_options_frame,
                 text="CLEAR",
-                font=("times", (self.board_side - 2) // 60),
-                activebackground=self.trade_options_frame.cget("bg"),
+                style=f"{(self.board_side - 2) // 60}.TButton",
                 command=lambda: clear_prop(offeree),
             ).grid(row=1, column=3, sticky="nsew", padx=2, pady=8)
 
-            tk.Button(
+            ttk.Button(
                 self.trade_options_frame,
                 text="CLEAR",
-                font=("times", (self.board_side - 2) // 60),
-                activebackground=self.trade_options_frame.cget("bg"),
+                style=f"{(self.board_side - 2) // 60}.TButton",
                 command=lambda: clear_cash(offeree),
             ).grid(row=2, column=3, sticky="nsew", padx=2, pady=8)
 
@@ -3078,14 +3086,13 @@ class Monopoly(tk.Toplevel):
 
             final_trade(offeree)
 
-            self.final_trade_button = tk.Button(
+            self.final_trade_button = ttk.Button(
                 self.trade_frame,
                 text="OFFER",
-                font=("times", (self.board_side - 2) // 60),
-                activebackground=self.trade_frame.cget("bg"),
+                style=f"{(self.board_side - 2) // 60}.TButton",
                 command=lambda: send_trade(offeree, self.p, self.r, self.cash_val),
             )
-            self.final_trade_button.place(relx=0.75, rely=0.9, anchor="nw")
+            self.final_trade_button.place(relx=0.725, rely=0.875, anchor="nw")
 
         def send_trade(offeree, propertyrecv, propertygive, cash):
             print(offeree, propertyrecv, propertygive, cash)

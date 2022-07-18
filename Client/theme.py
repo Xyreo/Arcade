@@ -1,8 +1,7 @@
 import os
 import sys
-import tkinter.ttk as ttk
 
-ASSET = os.path.join("Assets", "Home_Assets")
+ASSET = os.path.join("Assets", "Home_Assets", "theme")
 ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)
 
 
@@ -36,27 +35,18 @@ THEME_FILE = (
 def init(root, theme="dark"):
     global win
     win = root
+    win.tk.call("source", os.path.join(ASSET, "void.tcl"))
 
-    win.tk.call("source", os.path.join(ASSET, "azure.tcl"))
-    st = ttk.Style()
-
-    win.tk.call("set_theme", "light")
-    st.map("TButton", foreground=[("disabled", "grey")])
-    for i in range(10, 21):
-        st.configure(f"{i}.TButton", font=("times", i))
-
-    win.tk.call("set_theme", "dark")
-    st.map("TButton", foreground=[("disabled", "grey")])
-    for i in range(10, 21):
-        st.configure(f"{i}.TButton", font=("times", i))
+    for i in ["dark", "light"]:
+        win.tk.call("init", i, os.path.join(ASSET, i))
 
     win.tk.call("set_theme", theme)
 
 
 def toggle_theme():
     global win
-    t = ""
-    if win.tk.call("ttk::style", "theme", "use") == "azure-dark":
+
+    if win.tk.call("ttk::style", "theme", "use") == "void-dark":
         t = "light"
     else:
         t = "dark"

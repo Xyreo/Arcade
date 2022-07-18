@@ -1,32 +1,42 @@
-# Copyright (c) 2021 rdbende <rdbende@gmail.com>
+for {set x 1} { $x < 26 } { incr x } {
+        font create $x.buttonFont -size $x -family Times
+    }
 
-# The Azure theme is a beautiful modern ttk theme inspired by Microsoft's fluent design.
+proc load_images {imgdir} {
+    variable I
+    foreach file [glob -directory $imgdir *.png] {
+        set img [file tail [file rootname $file]]
+        set I($img) [image create photo -file $file -format png]
+    }
+}
 
-package require Tk 8.6
+array set darkcolors {
+    -fg             "#ffffff"
+    -bg             "#333333"
+    -disabledtxt    "#bebebe"
+}
+array set lightcolors {
+    -fg             "#000000"
+    -bg             "#ffffff"
+    -disabledtxt    "#bebebe"
+}
 
-namespace eval ttk::theme::azure-light {
-    variable version 2.0
-    package provide ttk::theme::azure-light $version
+option add *tearOff 0
 
-    ttk::style theme create azure-light -parent clam -settings {
-        proc load_images {imgdir} {
-            variable I
-            foreach file [glob -directory $imgdir *.png] {
-                set img [file tail [file rootname $file]]
-                set I($img) [image create photo -file $file -format png]
-            }
-        }
+proc init {mode path} {
+    variable I
+    variable darkcolors
+    variable lightcolors
+	if {$mode == "dark"} {
+		array set colors [array get darkcolors]
+	} elseif {$mode == "light"} {
+        array set colors [array get lightcolors]
+	}
+    
+    ttk::style theme create void-$mode -parent clam -settings {
+        load_images $path
 
-        load_images [file join [file dirname [info script]] light]
-        
-        array set colors {
-            -fg             "#000000"
-            -bg             "#ffffff"
-            -disabledfg     "#737373"
-            -disabledbg     "#ffffff"
-            -selectfg       "#ffffff"
-            -selectbg       "#007fff"
-        }
+        # Layouts
 
         ttk::style layout TButton {
             Button.button -children {
@@ -127,7 +137,7 @@ namespace eval ttk::theme::azure-light {
                 Combobox.arrow -sticky nsew
             }
         }
-        
+
         ttk::style layout TSpinbox {
             Spinbox.field -sticky nsew -children {
                 Spinbox.padding -expand true -sticky nswe -children {
@@ -142,7 +152,7 @@ namespace eval ttk::theme::azure-light {
                 }
             }
         }
-        
+
         ttk::style layout Horizontal.TSeparator {
             Horizontal.separator -sticky nswe
         }
@@ -201,19 +211,27 @@ namespace eval ttk::theme::azure-light {
 
         ttk::style element create Button.button image \
             [list $I(rect-basic) \
-            	{selected disabled} $I(rect-basic) \
+                {selected disabled} $I(rect-basic) \
                 disabled $I(rect-disabled) \
                 pressed $I(rect-basic) \
                 selected $I(rect-basic) \
                 active $I(button-hover) \
             ] -border 4 -sticky ewns
 
+        ttk::style map TButton -foreground [list \
+                    disabled $colors(-disabledtxt) \
+                ]
+        
+        for {set x 1} { $x < 26 } { incr x } {
+            ttk::style configure $x.TButton -font $x.buttonFont
+        }
+
         # Toolbutton
         ttk::style configure Toolbutton -padding {8 4 8 4} -width -10 -anchor center
 
         ttk::style element create Toolbutton.button image \
             [list $I(empty) \
-            	{selected disabled} $I(empty) \
+                {selected disabled} $I(empty) \
                 disabled $I(empty) \
                 pressed $I(rect-basic) \
                 selected $I(rect-basic) \
@@ -259,7 +277,7 @@ namespace eval ttk::theme::azure-light {
 
         ttk::style element create AccentButton.button image \
             [list $I(rect-accent) \
-            	{selected disabled} $I(rect-accent-hover) \
+                {selected disabled} $I(rect-accent-hover) \
                 disabled $I(rect-accent-hover) \
                 pressed $I(rect-accent) \
                 selected $I(rect-accent) \
@@ -274,11 +292,11 @@ namespace eval ttk::theme::azure-light {
                 {alternate disabled} $I(check-tri-basic) \
                 {selected disabled} $I(check-basic) \
                 disabled $I(box-basic) \
-                {pressed alternate} $I(check-tri-hover) \
-                {active alternate} $I(check-tri-hover) \
+                {pressed alternate} $I(check-tri-accent) \
+                {active alternate} $I(check-tri-accent) \
                 alternate $I(check-tri-accent) \
-                {pressed selected} $I(check-hover) \
-                {active selected} $I(check-hover) \
+                {pressed selected} $I(check-accent) \
+                {active selected} $I(check-accent) \
                 selected $I(check-accent) \
                 {pressed !selected} $I(rect-hover) \
                 active $I(box-hover) \
@@ -289,11 +307,11 @@ namespace eval ttk::theme::azure-light {
             [list $I(off-basic) \
                 {selected disabled} $I(on-basic) \
                 disabled $I(off-basic) \
-                {pressed selected} $I(on-hover) \
-                {active selected} $I(on-hover) \
+                {pressed selected} $I(on-accent) \
+                {active selected} $I(on-accent) \
                 selected $I(on-accent) \
-                {pressed !selected} $I(off-hover) \
-                active $I(off-hover) \
+                {pressed !selected} $I(off-basic) \
+                active $I(off-basic) \
             ] -width 46 -sticky w
 
         # ToggleButton
@@ -318,11 +336,11 @@ namespace eval ttk::theme::azure-light {
                 {alternate disabled} $I(radio-tri-basic) \
                 {selected disabled} $I(radio-basic) \
                 disabled $I(outline-basic) \
-                {pressed alternate} $I(radio-tri-hover) \
-                {active alternate} $I(radio-tri-hover) \
+                {pressed alternate} $I(radio-tri-accent) \
+                {active alternate} $I(radio-tri-accent) \
                 alternate $I(radio-tri-accent) \
-                {pressed selected} $I(radio-hover) \
-                {active selected} $I(radio-hover) \
+                {pressed selected} $I(radio-accent) \
+                {active selected} $I(radio-accent) \
                 selected $I(radio-accent) \
                 {pressed !selected} $I(circle-hover) \
                 active $I(outline-hover) \
@@ -333,7 +351,7 @@ namespace eval ttk::theme::azure-light {
             -sticky ew
 
         ttk::style element create Horizontal.Scrollbar.thumb \
-             image [list $I(hor-accent) \
+            image [list $I(hor-accent) \
                 disabled $I(hor-basic) \
                 pressed $I(hor-hover) \
                 active $I(hor-hover) \
@@ -416,15 +434,15 @@ namespace eval ttk::theme::azure-light {
 
         # Combobox
         ttk::style map TCombobox -selectbackground [list \
-            {!focus} $colors(-selectbg) \
-            {readonly hover} $colors(-selectbg) \
-            {readonly focus} $colors(-selectbg) \
+            {!focus} $colors(-bg) \
+            {readonly hover} $colors(-bg) \
+            {readonly focus} $colors(-bg) \
         ]
             
         ttk::style map TCombobox -selectforeground [list \
-            {!focus} $colors(-selectfg) \
-            {readonly hover} $colors(-selectfg) \
-            {readonly focus} $colors(-selectfg) \
+            {!focus} $colors(-bg) \
+            {readonly hover} $colors(-bg) \
+            {readonly focus} $colors(-bg) \
         ]
 
         ttk::style element create Combobox.field \
@@ -444,11 +462,11 @@ namespace eval ttk::theme::azure-light {
 
         ttk::style element create Combobox.button \
             image [list $I(combo-button-basic) \
-                 {!readonly focus} $I(combo-button-focus) \
-                 {readonly focus} $I(combo-button-hover) \
-                 {readonly hover} $I(combo-button-hover)
+                {!readonly focus} $I(combo-button-focus) \
+                {readonly focus} $I(combo-button-hover) \
+                {readonly hover} $I(combo-button-hover)
             ] -border 5 -padding {2 6 6 6}
-            
+
         ttk::style element create Combobox.arrow image $I(down) \
             -width 15 -sticky e
 
@@ -477,9 +495,9 @@ namespace eval ttk::theme::azure-light {
             
         ttk::style element create Spinbox.button \
             image [list $I(combo-button-basic) \
-                 {!readonly focus} $I(combo-button-focus) \
-                 {readonly focus} $I(combo-button-hover) \
-                 {readonly hover} $I(combo-button-hover)
+                {!readonly focus} $I(combo-button-focus) \
+                {readonly focus} $I(combo-button-hover) \
+                {readonly hover} $I(combo-button-hover)
             ] -border 5 -padding {3 6 3 6}
 
         # Sizegrip
@@ -527,11 +545,49 @@ namespace eval ttk::theme::azure-light {
         ttk::style configure Treeview -background $colors(-bg)
         ttk::style configure Treeview.Item -padding {2 0 0 0}
         ttk::style map Treeview \
-            -background [list selected #ccc] \
-            -foreground [list selected $colors(-fg)]
+            -background [list selected $colors(-bg)] \
+            -foreground [list selected $colors(-bg)]
 
-        # Panedwindow
-        # Insane hack to remove clam's ugly sash
+        # Hack to remove clam's ugly sash
         ttk::style configure Sash -gripcount 0
     }
+}
+
+proc set_theme {mode} {
+    ttk::style theme use "void-$mode"
+    
+    variable darkcolors
+    variable lightcolors
+	if {$mode == "dark"} {
+		array set colors [array get darkcolors]
+	} elseif {$mode == "light"} {
+        array set colors [array get lightcolors]
+	}
+
+    ttk::style configure . \
+        -background $colors(-bg) \
+        -foreground $colors(-fg) \
+        -troughcolor $colors(-bg) \
+        -focuscolor $colors(-bg) \
+        -selectbackground $colors(-bg) \
+        -selectforeground $colors(-fg) \
+        -insertcolor $colors(-fg) \
+        -insertwidth 1 \
+        -fieldbackground $colors(-bg) \
+        -font {"Segoe Ui" 10} \
+        -borderwidth 1 \
+        -relief flat
+
+    tk_setPalette background [ttk::style lookup . -background] \
+        foreground [ttk::style lookup . -foreground] \
+        highlightColor [ttk::style lookup . -focuscolor] \
+        selectBackground [ttk::style lookup . -selectbackground] \
+        selectForeground [ttk::style lookup . -selectforeground] \
+        activeBackground [ttk::style lookup . -selectbackground] \
+        activeForeground [ttk::style lookup . -selectforeground]
+
+    ttk::style map . -foreground [list disabled $colors(-fg)]
+
+    option add *font [ttk::style lookup . -font]
+    option add *Menu.selectcolor $colors(-fg)
 }
