@@ -14,23 +14,10 @@ from plyer import notification as noti
 import theme
 from http_wrapper import Http
 
-ASSET_PATH = "Assets"
-ASSET_PATH = (
-    ASSET_PATH if os.path.exists(ASSET_PATH) else os.path.join("Client", ASSET_PATH)
-)
-HOME_ASSETS = os.path.join(ASSET_PATH, "Home_Assets")
-
-
-def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
-
-
-ASSET_PATH = resource_path(ASSET_PATH)
-HOME_ASSETS = resource_path(HOME_ASSETS)
+ASSET = "Assets"
+ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)
+HOME_ASSETS = os.path.join(ASSET, "Home_Assets")
+CHESS_ASSETS = os.path.join(ASSET, "Chess_Assets")
 THEME_FILE = (
     os.path.join(
         os.environ["USERPROFILE"],
@@ -48,6 +35,19 @@ THEME_FILE = (
     )
 )
 CURR_THEME = "dark"
+
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
+ASSET = resource_path(ASSET)
+HOME_ASSETS = resource_path(HOME_ASSETS)
+CHESS_ASSETS = resource_path(CHESS_ASSETS)
 
 
 class Chess(tk.Toplevel):
@@ -122,6 +122,7 @@ class Chess(tk.Toplevel):
         self.geometry(f"{screen_width}x{screen_height}+{x_coord}+{y_coord}")
         self.protocol("WM_DELETE_WINDOW", self.resign)
         self.title("Chess")
+        self.iconbitmap(os.path.join(CHESS_ASSETS, "icon.ico"))
         self.canvas = tk.Canvas(self)
         self.canvas.place(relx=0.125, rely=0.5, relheight=0.95, relwidth=1, anchor="w")
         self.canvas.update()
@@ -151,18 +152,14 @@ class Chess(tk.Toplevel):
             for j in range(8):
                 self.imgs[i * 10 + j] = (
                     ImageTk.PhotoImage(
-                        Image.open(
-                            os.path.join(ASSET_PATH, "Chess_Assets", "circle.png")
-                        ).resize(
+                        Image.open(os.path.join(CHESS_ASSETS, "circle.png")).resize(
                             (Chess.size // (8 * 4), Chess.size // (8 * 4)),
                             Image.Resampling.LANCZOS,
                         ),
                         master=self.canvas,
                     ),
                     ImageTk.PhotoImage(
-                        Image.open(
-                            os.path.join(ASSET_PATH, "Chess_Assets", "circle.png")
-                        ).resize(
+                        Image.open(os.path.join(CHESS_ASSETS, "circle.png")).resize(
                             (Chess.size // (8), Chess.size // (8)),
                             Image.Resampling.LANCZOS,
                         ),
@@ -1258,7 +1255,7 @@ class ChessPiece(Piece):
         self.game.canvas.tag_raise(self.img_id)
 
     def img(self, color: str, piece: str):
-        path = os.path.join(ASSET_PATH, "Chess_Assets", "Pieces")
+        path = os.path.join(CHESS_ASSETS, "Pieces")
         size = int((Chess.size / 8) * 0.75)
         i = (color[0] + "_" + piece + ".png").lower()
         p = os.path.join(path, i)

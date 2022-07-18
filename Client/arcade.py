@@ -681,8 +681,7 @@ class Arcade(tk.Toplevel):
         self.screen_height = int(self.screen_width / 1.9)
         self.x_coord = self.winfo_screenwidth() // 2 - self.screen_width // 2
         self.y_coord = (self.winfo_screenheight() - 70) // 2 - self.screen_height // 2
-
-        self.title("Arcade")
+        self.minsize(self.screen_width // 2, self.screen_height)
         self.geometry(
             f"{self.screen_width//2}x{self.screen_height}+{self.x_coord+self.screen_width//4}+{self.y_coord}"
         )

@@ -1,6 +1,6 @@
 for {set x 1} { $x < 26 } { incr x } {
-        font create $x.buttonFont -size $x -family Times
-    }
+    font create $x.buttonFont -size $x -family Times
+}
 
 proc load_images {imgdir} {
     variable I
@@ -20,8 +20,6 @@ array set lightcolors {
     -bg             "#ffffff"
     -disabledtxt    "#bebebe"
 }
-
-option add *tearOff 0
 
 proc init {mode path} {
     variable I
