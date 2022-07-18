@@ -6,15 +6,13 @@
 (C) Icons, Window Titles +Arcade
 (C) Notifier +Arcade
 (C) Info, Rules +Arcade
-(D) Custom Notebook +Arcade
 (D) Private Room +Arcade
 (D) Game Settings +Arcade
 (E) Images Resizer +Arcade
 (E) Add Hilarious Trade Meme @monopoly
 (X) Music, Sounds +Arcade #Extra
-(X) Add Default Game Setting in Account Tab +Arcade
+(X) Add Default Game Setting in Account Tab +Arcade @Chaitanya-Keyal
 (Y) TakeBack @chess #Extra
 (Y) Choose Color when joining Room @monopoly #Extra
-(Z) Dark Mode Change Arcade & Chess +Arcade #Extra @Chaitanya-Keyal
 (Z) Auction @monopoly #Extra
 (Z) Speed Game @monopoly #Extra

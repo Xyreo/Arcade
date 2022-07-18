@@ -11,6 +11,7 @@ from tkinter import messagebox as msgb
 from PIL import Image, ImageChops, ImageDraw, ImageTk
 from plyer import notification as noti
 
+import theme
 from http_wrapper import Http
 
 ASSET_PATH = "Assets"
@@ -30,6 +31,23 @@ def resource_path(relative_path):
 
 ASSET_PATH = resource_path(ASSET_PATH)
 HOME_ASSETS = resource_path(HOME_ASSETS)
+THEME_FILE = (
+    os.path.join(
+        os.environ["USERPROFILE"],
+        "AppData",
+        "Local",
+        "Arcade",
+        "theme.txt",
+    )
+    if os.name == "nt"
+    else os.path.join(
+        os.environ["HOME"],
+        "Applications",
+        "Arcade",
+        "theme.txt",
+    )
+)
+CURR_THEME = "dark"
 
 
 class Chess(tk.Toplevel):
@@ -97,25 +115,22 @@ class Chess(tk.Toplevel):
         self.lock.acquire(blocking=False)
 
     def initialize_canvas(self):
-        Chess.size = int(self.winfo_screenheight() * 4) // 5
         screen_width = int(0.9 * self.winfo_screenwidth())
         screen_height = int(screen_width / 1.9)
         x_coord = self.winfo_screenwidth() // 2 - screen_width // 2
         y_coord = (self.winfo_screenheight() - 70) // 2 - screen_height // 2
         self.geometry(f"{screen_width}x{screen_height}+{x_coord}+{y_coord}")
-        self.minsize(int(Chess.size * 1.6), Chess.size)
         self.protocol("WM_DELETE_WINDOW", self.resign)
         self.title("Chess")
-        self.canvas = tk.Canvas(
-            self,
-            height=Chess.size,
-            width=Chess.size,
+        self.canvas = tk.Canvas(self)
+        self.canvas.place(relx=0.125, rely=0.5, relheight=0.95, relwidth=1, anchor="w")
+        self.canvas.update()
+        Chess.size = self.canvas.winfo_height()
+        self.minsize(int(Chess.size * 1.75), screen_height)
+        self.main_frame = tk.Frame(self)
+        self.main_frame.place(
+            relx=0.95, rely=0.5, relheight=0.95, relwidth=0.25, anchor="e"
         )
-        self.canvas.place(relx=0.1, rely=0.5, anchor="w")
-        self.main_frame = tk.Frame(
-            self, height=Chess.size, width=Chess.size // 2, bg="grey"
-        )
-        self.main_frame.place(relx=0.9, rely=0.5, anchor="e")
 
         self.disimg = ImageTk.PhotoImage(
             Image.new(
@@ -132,9 +147,6 @@ class Chess(tk.Toplevel):
             anchor=tk.CENTER,
         )
 
-        button_style = ttk.Style()
-        button_style.configure("20.TButton", font=("times", 20))
-        button_style.configure("15.TButton", font=("times", 15))
         for i in range(8):
             for j in range(8):
                 self.imgs[i * 10 + j] = (
@@ -170,7 +182,7 @@ class Chess(tk.Toplevel):
             compound="left",
             command=self.account_tab,
         )
-        self.acc_button.place(relx=0.01, rely=0.025, anchor="w")
+        self.acc_button.place(relx=0.01, rely=0.03, anchor="w")
         self.acc_frame = tk.Frame()
         self.acc_frame.destroy()
 
@@ -238,13 +250,15 @@ class Chess(tk.Toplevel):
                     self.quit_button,
                     self.acc_frame,
                     self.acc_button,
+                    self.theme_label,
+                    self.theme_button,
                 ]:
                     self.acc_frame.destroy()
                     self.unbind("<Button-1>")
 
             self.bind("<Button-1>", lambda e: clicked(e))
-            self.acc_frame = tk.Frame(self, bg="white")
-            self.acc_frame.place(relx=0.01, rely=0.04, anchor="nw")
+            self.acc_frame = tk.Frame(self)
+            self.acc_frame.place(relx=0.01, rely=0.06, anchor="nw")
 
             self.quit_button = ttk.Button(
                 self.acc_frame,
@@ -257,8 +271,30 @@ class Chess(tk.Toplevel):
             self.quit_button.grid(
                 row=0,
                 column=0,
+                columnspan=2,
                 sticky="nsew",
             )
+
+            theme_var = tk.StringVar(value=CURR_THEME)
+
+            def tog():
+                global CURR_THEME
+                CURR_THEME = theme_var.get()
+                theme.toggle_theme()
+
+            self.theme_label = tk.Label(
+                self.acc_frame, text="Dark Mode", font=("times", 12)
+            )
+            self.theme_label.grid(row=3, column=0, sticky="e")
+            self.theme_button = ttk.Checkbutton(
+                self.acc_frame,
+                style="Switch.TCheckbutton",
+                variable=theme_var,
+                onvalue="dark",
+                offvalue="light",
+                command=tog,
+            )
+            self.theme_button.grid(row=3, column=1, sticky="e")
 
     def initialize_board(self):
 
@@ -961,7 +997,7 @@ class Chess(tk.Toplevel):
     def quit_game(self, reason="None"):
         if __name__ == "__main__":
             Chess.http.logout()
-            app.quit()
+            root.quit()
         else:
             self.send(("LEAVE", reason))
             self.destroy()
@@ -1522,8 +1558,23 @@ class Board:
 
 
 if __name__ == "__main__":
-    app = tk.Tk()
-    app.withdraw()
+    root = tk.Tk()
+    root.withdraw()
+    if not os.path.exists(THEME_FILE):
+        with open(THEME_FILE, "w") as f:
+            f.write("dark")
+    else:
+        with open(THEME_FILE, "r") as f:
+            a = f.read().strip()
+            if a in ["dark", "light"]:
+                CURR_THEME = a
+            else:
+                CURR_THEME = "dark"
+                with open(THEME_FILE, "w") as f:
+                    f.write("dark")
+
+    theme.init(root, CURR_THEME)
+
     try:
         os.mkdir(os.path.join(HOME_ASSETS, "cached_pfp"))
     except:
@@ -1544,4 +1595,4 @@ if __name__ == "__main__":
         hobj,
         debug=True,
     )
-    app.mainloop()
+    root.mainloop()
