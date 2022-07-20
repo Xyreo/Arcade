@@ -14,13 +14,15 @@ from tkinter import messagebox as msgb
 from PIL import Image, ImageChops, ImageDraw, ImageTk
 from plyer import notification as noti
 
-import theme
-from chess import Chess
-from client_framework import Client
-from http_wrapper import Http
-from monopoly import Monopoly
+sys.path.append(os.path.join(os.path.abspath("."), "Client"))
 
-ASSET = os.path.join("Assets", "Home_Assets")
+from games.chess import Chess
+from games.monopoly import Monopoly
+from utils import theme
+from utils.client_framework import Client
+from utils.http_wrapper import Http
+
+ASSET = os.path.join("assets", "home_assets")
 ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)
 
 
@@ -196,7 +198,7 @@ class Arcade(tk.Toplevel):
     def start_arcade(self):
         root.withdraw()
         self.logo = ImageTk.PhotoImage(
-            Image.open(os.path.join(ASSET, "Logo.png")).resize(
+            Image.open(os.path.join(ASSET, "logo.png")).resize(
                 (self.screen_width // 4, self.screen_width // 4),
                 Image.Resampling.LANCZOS,
             )
@@ -241,8 +243,9 @@ class Arcade(tk.Toplevel):
             if msg[1] == "SESSION_EXP":
                 self.show_message(
                     "Session Expired",
-                    "You have been inactive for too long! Please Restart the App to Continue!",
-                )  # ? Relogin or Restart
+                    "You have been inactive for too long! Please Re-login to Continue!",
+                )
+                self.log_out(True)
         elif dest in ["CHESS", "MNPLY"]:
             if msg[1] == "INIT":
                 self.rooms.initialize(dest, msg[2])
@@ -478,14 +481,14 @@ class Arcade(tk.Toplevel):
         tk.Label(self.change_frame, text="New Password: ").place(
             relx=0.49, rely=0.25, anchor="e"
         )
-        self.pwdentry = tk.Entry(self.change_frame, textvariable=self.pwd, show="*")
+        self.pwdentry = ttk.Entry(self.change_frame, textvariable=self.pwd, show="*")
         self.pass_hidden = True
         self.pwdentry.place(relx=0.5, rely=0.25, relwidth=0.275, anchor="w")
         self.pwdentry.focus_set()
         tk.Label(self.change_frame, text="Confirm Password: ").place(
             relx=0.49, rely=0.4, anchor="e"
         )
-        self.confpwdentry = tk.Entry(
+        self.confpwdentry = ttk.Entry(
             self.change_frame, textvariable=self.confpwd, show="*"
         )
         self.conf_pass_hidden = True
@@ -708,12 +711,13 @@ class Arcade(tk.Toplevel):
         else:
             self.confirm_button.place(relx=0.5, rely=0.9, anchor="center")
 
-    def log_out(self):
-        self.send(("GAME", "LEAVE"))
-        try:
-            os.remove(REMEMBER_ME_FILE)
-        except FileNotFoundError:
-            pass
+    def log_out(self, session=False):
+        if not session:
+            self.send(("GAME", "LEAVE"))
+            try:
+                os.remove(REMEMBER_ME_FILE)
+            except FileNotFoundError:
+                pass
         self.main_notebook.destroy()
         self.acc_button.destroy()
         self.acc_frame.destroy()
@@ -735,9 +739,9 @@ class Arcade(tk.Toplevel):
         tk.Label(self, image=self.logo, bg=self.cget("bg")).place(
             relx=0.5, rely=0.3, anchor="center", relheight=0.6, relwidth=1
         )
-        Login(self, self.initialize).place(
-            relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n"
-        )
+        Login(
+            self, self.initialize, remember_login=os.path.exists(REMEMBER_ME_FILE)
+        ).place(relx=0.5, rely=0.6, relheight=0.4, relwidth=1, anchor="n")
 
     # endregion
 

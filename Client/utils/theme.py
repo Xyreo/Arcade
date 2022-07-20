@@ -2,7 +2,7 @@ import os
 import pickle
 import sys
 
-ASSET = os.path.join("Assets", "Home_Assets", "theme")
+ASSET = os.path.join("assets", "home_assets", "theme")
 ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)
 
 

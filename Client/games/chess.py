@@ -12,13 +12,16 @@ from tkinter import messagebox as msgb
 from PIL import Image, ImageChops, ImageDraw, ImageTk
 from plyer import notification as noti
 
-import theme
-from http_wrapper import Http
+sys.path.append(os.path.join(os.path.abspath('.'),'Client'))
 
-ASSET = "Assets"
+from utils import theme
+from utils.http_wrapper import Http
+from utils.timer import Timer
+
+ASSET = "assets"
 ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)
-HOME_ASSETS = os.path.join(ASSET, "Home_Assets")
-CHESS_ASSETS = os.path.join(ASSET, "Chess_Assets")
+HOME_ASSETS = os.path.join(ASSET, "home_assets")
+CHESS_ASSETS = os.path.join(ASSET, "chess_assets")
 SETTINGS_FILE = (
     os.path.join(
         os.environ["USERPROFILE"],
@@ -1246,7 +1249,7 @@ class ChessPiece(Piece):
         self.game.canvas.tag_raise(self.img_id)
 
     def img(self, color: str, piece: str):
-        path = os.path.join(CHESS_ASSETS, "Pieces")
+        path = os.path.join(CHESS_ASSETS, "pieces")
         size = int((Chess.size / 8) * 0.75)
         i = (color[0] + "_" + piece + ".png").lower()
         p = os.path.join(path, i)

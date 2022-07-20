@@ -1,7 +1,7 @@
 (A) LOGO @Chaitanya-Keyal
 (A) Leaderboard, Stats +Arcade @ProAltro @Chaitanya-Keyal
 (A) Auto Leave/ Auto End Turn : End Turn Timer @monopoly @Chaitanya-Keyal
-(A) Timer @chess @ProAltro
+(A) Timer @chess @Chaitanya-Keyal
 (B) Info, Rules +Arcade
 (B) Trace Server Line by Line @ProAltro
 (B) Session Expiry just after Login / Profile Picture Error @ProAltro
@@ -13,5 +13,6 @@
 (X) TakeBack @chess #Extra @ProAltro
 (Y) Change Chess Pieces @chess #Extra
 (Y) Choose Color when joining Room @monopoly #Extra
+(Z) PGN Moves @chess
 (Z) Auction @monopoly #Extra
 (Z) Speed Game @monopoly #Extra

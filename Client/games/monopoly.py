@@ -14,18 +14,21 @@ from tkinter import messagebox as msgb
 from PIL import Image, ImageChops, ImageDraw, ImageTk
 from plyer import notification as noti
 
-import theme
-from http_wrapper import Http
+sys.path.append(os.path.join(os.path.abspath("."), "Client"))
+
+from utils import theme
+from utils.http_wrapper import Http
+from utils.timer import Timer
 
 try:
-    from musicplayer import play as music
+    from utils.musicplayer import play as music
 except:
     print("No Output Devices Found")
 
-ASSET = "Assets"
+ASSET = "assets"
 ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)
-HOME_ASSETS = os.path.join(ASSET, "Home_Assets")
-MONOPOLY_ASSETS = os.path.join(ASSET, "Mnply_Assets")
+HOME_ASSETS = os.path.join(ASSET, "home_assets")
+MONOPOLY_ASSETS = os.path.join(ASSET, "mnply_assets")
 SETTINGS_FILE = (
     os.path.join(
         os.environ["USERPROFILE"],
@@ -368,78 +371,84 @@ class Monopoly(tk.Toplevel):
         self.board_canvas.create_image(2, 2, image=self.board_image, anchor="nw")
 
         self.info_tag = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "Info", "big_info.png")).resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "info.png")).resize(
                 (int(self.property_width / 2), int(self.property_width / 2)),
                 Image.Resampling.LANCZOS,
             )
         )
 
         self.station_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "station.png")).resize(
+            Image.open(
+                os.path.join(MONOPOLY_ASSETS, "utility_imgs", "station.png")
+            ).resize(
                 (int(2.5 * self.property_width), int(2.5 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
 
         self.water_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "water.png")).resize(
+            Image.open(
+                os.path.join(MONOPOLY_ASSETS, "utility_imgs", "water.png")
+            ).resize(
                 (int(2.5 * self.property_width), int(2 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
 
         self.electric_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "electric.png")).resize(
+            Image.open(
+                os.path.join(MONOPOLY_ASSETS, "utility_imgs", "electric.png")
+            ).resize(
                 (int(2 * self.property_width), int(2.25 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
 
         self.dice1 = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "Die", "dice1.png")).resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "die", "dice1.png")).resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice2 = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "Die", "dice2.png")).resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "die", "dice2.png")).resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice3 = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "Die", "dice3.png")).resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "die", "dice3.png")).resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice4 = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "Die", "dice4.png")).resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "die", "dice4.png")).resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice5 = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "Die", "dice5.png")).resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "die", "dice5.png")).resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.dice6 = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "Die", "dice6.png")).resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "die", "dice6.png")).resize(
                 (int(0.9 * self.property_width), int(0.9 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.roll_normal = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "Die", "roll_normal.png")).resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "die", "roll_normal.png")).resize(
                 (int(2.25 * self.property_width), int(0.8 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
         self.roll_disabled = ImageTk.PhotoImage(
             Image.open(
-                os.path.join(MONOPOLY_ASSETS, "Die", "roll_disabled.png")
+                os.path.join(MONOPOLY_ASSETS, "die", "roll_disabled.png")
             ).resize(
                 (int(2.25 * self.property_width), int(0.8 * self.property_width)),
                 Image.Resampling.LANCZOS,
@@ -447,25 +456,25 @@ class Monopoly(tk.Toplevel):
         )
 
         self.red_token_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "Tokens", "red.png")).resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "tokens", "red.png")).resize(
                 (self.token_width, self.token_width),
                 Image.Resampling.LANCZOS,
             )
         )
         self.green_token_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "Tokens", "green.png")).resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "tokens", "green.png")).resize(
                 (self.token_width, self.token_width),
                 Image.Resampling.LANCZOS,
             )
         )
         self.blue_token_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "Tokens", "blue.png")).resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "tokens", "blue.png")).resize(
                 (self.token_width, self.token_width),
                 Image.Resampling.LANCZOS,
             )
         )
         self.yellow_token_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "Tokens", "yellow.png")).resize(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "tokens", "yellow.png")).resize(
                 (self.token_width, self.token_width),
                 Image.Resampling.LANCZOS,
             )
@@ -877,7 +886,7 @@ class Monopoly(tk.Toplevel):
 
     def roll_dice(self, roll=None, received=False, cli=False):
         try:
-            music(os.path.join(MONOPOLY_ASSETS, "Die", "diceroll.mp3"))
+            music(os.path.join(MONOPOLY_ASSETS, "die", "diceroll.mp3"))
         except:
             pass
         self.roll_button.configure(state="disabled")
@@ -2686,7 +2695,7 @@ class Monopoly(tk.Toplevel):
             self.pay(payer, amt, receiver)
 
     def place_houses(self):
-        HOUSES = os.path.join(MONOPOLY_ASSETS, "Houses")
+        HOUSES = os.path.join(MONOPOLY_ASSETS, "houses")
         d = {
             1: ["house_1", 0.2],
             2: ["house_2", 0.36],
@@ -3584,7 +3593,7 @@ class Monopoly(tk.Toplevel):
                     except:
                         pass
                 else:
-                    print("Die")
+                    print("die")
             else:
                 print("Closed CLI Thread")
                 break
