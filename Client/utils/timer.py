@@ -4,7 +4,7 @@ import time
 
 class Timer(threading.Thread):
     def __init__(self, total):
-        threading.Thread.__init__(self, daemon=True)
+        super().__init__(target=self, daemon=True)
         self.isPaused = False
         self.counter = total
         self.lock = threading.Lock()
@@ -33,7 +33,7 @@ class Timer(threading.Thread):
 
 
 if __name__ == "__main__":
-    t = Timer(10)
+    t = Timer(100)
     t.start()
 
     b = time.perf_counter()
@@ -46,7 +46,7 @@ if __name__ == "__main__":
             min, sec, ms = 0, 0, 0
         min, sec, ms = int(a // 60), int(a % 60), int(a * 100 % 100)
         print("{:02d}:{:02d}:{:02d}".format(min, sec, ms), sep=":", end="\r")
-        time.sleep(0.01)
+        time.sleep(0.005)
         c += 1
     print()
     print(time.perf_counter() - b - 0.01)
