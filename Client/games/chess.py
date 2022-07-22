@@ -12,7 +12,7 @@ from tkinter import messagebox as msgb
 from PIL import Image, ImageChops, ImageDraw, ImageTk
 from plyer import notification as noti
 
-sys.path.append(os.path.join(os.path.abspath('.'),'Client'))
+sys.path.append(os.path.join(os.path.abspath("."), "Client"))
 
 from utils import theme
 from utils.http_wrapper import Http
