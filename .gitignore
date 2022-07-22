@@ -55,7 +55,6 @@ docs/_build/
 venv/
 *.pem
 .env
-remember_login.txt
 test.py
 try.ipynb
 .DS_Store
