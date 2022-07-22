@@ -1,18 +1,18 @@
-(A) LOGO @Chaitanya-Keyal
-(A) Leaderboard, Stats +Arcade @ProAltro @Chaitanya-Keyal
-(A) Auto Leave/ Auto End Turn : End Turn Timer @monopoly @Chaitanya-Keyal
-(A) Timer @chess @Chaitanya-Keyal
-(B) Info, Rules +Arcade
-(B) Trace Server Line by Line @ProAltro
-(B) Session Expiry just after Login / Profile Picture Error @ProAltro
-(C) Game Settings + Private Room +Arcade
-(D) Notifier +Arcade
-(D) Images Resizer +Arcade
+(A) Leaderboard, Stats @arcade
+(A) Timer @chess
+(B) LOGO @Chaitanya-Keyal
+(B) Trace Server Line by Line @server @ProAltro
+(B) Session Expiry just after Login / Profile Picture Error @server @ProAltro
+(B) Info, Rules @arcade @chess @monopoly @Chaitanya-Keyal
+(C) Game Settings + Private Room @arcade @Chaitanya-Keyal
+(D) Notifier @arcade @chess @monopoly
+(D) Images Resizer @arcade @chess @monopoly
 (E) Add Hilarious Trade Meme @monopoly
-(X) Music, Sounds +Arcade #Extra
-(X) TakeBack @chess #Extra @ProAltro
-(Y) Change Chess Pieces @chess #Extra
-(Y) Choose Color when joining Room @monopoly #Extra
+(X) TakeBack @chess @ProAltro
+(X) Music, Sounds @arcade @chess @monopoly
+(Y) Change Chess Pieces @chess
+(Y) Choose Color when joining room @monopoly
 (Z) PGN Moves @chess
-(Z) Auction @monopoly #Extra
-(Z) Speed Game @monopoly #Extra
+(Z) Auction @monopoly
+(Z) Speed Game @monopoly
+(Z) Add Timers Animation (Loading - Circular/Bar) @chess @monopoly

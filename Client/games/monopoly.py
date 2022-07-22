@@ -61,6 +61,25 @@ HOME_ASSETS = resource_path(HOME_ASSETS)
 MONOPOLY_ASSETS = resource_path(MONOPOLY_ASSETS)
 
 
+class StoppableThread(threading.Thread):
+    def __init__(self, func, alive_condition, sleep_time=0):
+        super().__init__(target=self, daemon=True)
+        self.alive = alive_condition
+        self.func = func
+        self.sleep_time = sleep_time
+
+    def run(self):
+        while self.alive:
+            try:
+                self.func()
+            except tk.TclError as e:
+                print("Tcl:", e)
+            sleep(self.sleep_time)
+
+    def stop(self):
+        self.alive = False
+
+
 class Property:
     def __init__(self, details):
         self.name = details[0]
@@ -136,8 +155,21 @@ class Monopoly(tk.Toplevel):
         self.action_frame_popup("Default")
         self.player_frame_popup()
         self.dead_player_details = {}
+
         for i in self.player_details:
             self.move(i, 0)
+
+        if self.turn == self.me:
+            self.bg_timer_thr = threading.Thread(
+                target=self.timer_init,
+                args=(
+                    600,
+                    lambda: self.player_leave(self.me, inactive=True),
+                    "Inactivity Timer",
+                ),
+                daemon=True,
+            )
+            self.bg_timer_thr.start()
 
     def initialise(self):
         self.init_objects()
@@ -301,6 +333,8 @@ class Monopoly(tk.Toplevel):
         self.debt_details = []
         self.isEnding = False
         self.isEnded = False
+        self.timer_display_thread = None
+        self.timer: Timer = None
 
     def create_window(self):
         screen_width = int(0.9 * self.winfo_screenwidth())
@@ -361,6 +395,9 @@ class Monopoly(tk.Toplevel):
         )
         self.acc_button.place(relx=0.01, rely=0.03, anchor="w")
         self.acc_frame = tk.Frame()
+
+        self.timer_label = tk.Label(self, font="consolas 12")
+        self.timer_label.place(relx=0.1, rely=0.03, anchor="w")
 
     def create_image_obj(self):
         self.board_image = ImageTk.PhotoImage(
@@ -846,11 +883,22 @@ class Monopoly(tk.Toplevel):
         except:
             self.turn = self.uuids[0]
 
+        self.timer.stop()
         if not (received or force):
             self.send_msg(("END",))
 
         if self.turn == self.me:
             self.roll_button.configure(state="normal")
+            self.bg_timer_thr = threading.Thread(
+                target=self.timer_init,
+                args=(
+                    600,
+                    lambda: self.player_leave(self.me, inactive=True),
+                    "Inactivity Timer",
+                ),
+                daemon=True,
+            )
+            self.bg_timer_thr.start()
             if self.player_details[self.turn]["Injail"][0]:
                 if self.player_details[self.turn]["Injail"][1] == 0:
                     text = "Do you wish to pay 50"
@@ -882,9 +930,46 @@ class Monopoly(tk.Toplevel):
 
     # endregion
 
+    # region # Timers
+
+    def timer_init(self, time, func, name, precision="minsec"):
+        self.timer = Timer(time)
+        self.timer.start()
+        if self.timer_display_thread:
+            self.timer_display_thread.stop()
+            self.timer_display_thread = None
+        self.timer_display_thread = StoppableThread(
+            lambda: self.display_timer(self.timer, self.timer_label, precision, name),
+            self.timer.is_alive,
+            0.005,
+        )
+        self.timer_display_thread.start()
+        while True:
+            if self.timer.time_left() <= 0:
+                self.timer.stop()
+                func()
+                break
+
+    @staticmethod
+    def display_timer(timer: Timer, lbl: tk.Label, precision="sec", init_txt=""):
+        a = round(timer.time_left(), 2)
+        if a < 0.01:
+            min, sec, ms = 0, 0, 0
+        min, sec, ms = int(a // 60), int(a % 60), int(a * 100 % 100)
+        if precision == "sec":
+            things = "{:02d}".format(sec)
+        elif precision == "minsec":
+            things = "{:02d}:{:02d}".format(min, sec)
+        else:
+            things += "{:02d}:{:02d}:{:02d}".format(min, sec, ms)
+        lbl.configure(text=init_txt + " → " + things)
+
+    # endregion
+
     # region # Roll, Move
 
     def roll_dice(self, roll=None, received=False, cli=False):
+        self.timer.reset()
         try:
             music(os.path.join(MONOPOLY_ASSETS, "die", "diceroll.mp3"))
         except:
@@ -923,6 +1008,7 @@ class Monopoly(tk.Toplevel):
                     self.ask_pay_jail()
         else:
             if dice_roll[0] == dice_roll[1]:
+                self.timer.reset()
                 self.doubles_counter += 1
                 if self.doubles_counter == 3:
                     self.doubles_counter = 0
@@ -1088,7 +1174,22 @@ class Monopoly(tk.Toplevel):
             self.roll_button.configure(state="disabled")
             if self.end_button.winfo_exists():
                 self.end_button.configure(state="normal")
+            if self.me == player and pos not in [2, 17, 33, 7, 22, 36]:
+                self.timer.stop()
+                self.end_timer_thr = threading.Thread(
+                    target=self.timer_init,
+                    args=(
+                        60,
+                        lambda: self.end_turn(force=True),
+                        "Time Left for Turn to End",
+                        "sec",
+                    ),
+                    daemon=True,
+                )
+                self.end_timer_thr.start()
         else:
+            if move:
+                self.timer.reset()
             self.roll_button.configure(state="normal")
             if self.end_button.winfo_exists():
                 self.end_button.configure(state="disabled")
@@ -2120,6 +2221,7 @@ class Monopoly(tk.Toplevel):
     # region # Mortgage, Unmortgage
 
     def mortgage_unmortgage(self, mortgage):
+        self.timer.reset()
         self.mortgage_frame = tk.Frame(
             self.action_frame,
         )
@@ -2200,10 +2302,11 @@ class Monopoly(tk.Toplevel):
                 offvalue=False,
                 onvalue=True,
                 command=update_mortgage,
-                fg=i.hex if i.hex else "",
                 selectcolor=self.list_frame.cget("bg"),
                 activebackground=self.list_frame.cget("bg"),
             )
+            if i.hex:
+                self.mortgage_checkboxes[i].configure(fg=i.hex)
         x = y = 0
         k = 1
         for i in self.mortgage_checkboxes.values():
@@ -2305,6 +2408,7 @@ class Monopoly(tk.Toplevel):
         return my_sets
 
     def build_sell_action_frame(self, sell=False):
+        self.timer.reset()
         self.build_frame = tk.Frame(self.action_frame)
         self.build_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
 
@@ -2744,6 +2848,7 @@ class Monopoly(tk.Toplevel):
     # endregion
 
     def buy_property(self, propertypos, buyer, received=False):
+        self.timer.reset()
         self.toggle_action_buttons()
         if not received:
             if self.show_message(
@@ -2901,6 +3006,7 @@ class Monopoly(tk.Toplevel):
             self.update_game()
 
     def trade(self):
+        self.timer.reset()
         self.trade_frame = tk.Frame(self.action_frame)
         self.trade_frame.place(relx=0, rely=0, relwidth=1, relheight=1, anchor="nw")
 
@@ -3216,6 +3322,7 @@ class Monopoly(tk.Toplevel):
         self.update_game("You received 200 as salary!")
 
     def pay(self, payer, amt, receiver=None):
+        self.timer.pause()
         rollstate = str(self.roll_button["state"])
         if self.player_details[payer]["Money"] < amt:
             if self.isBankrupt(amt, payer):
@@ -3260,6 +3367,7 @@ class Monopoly(tk.Toplevel):
                     f"{self.player_details[payer]['Name']} received {-amt} from {self.player_details[receiver]['Name'] if receiver else 'The Bank'}"
                 )
             self.toggle_action_buttons(True)
+            self.timer.resume()
 
     # region # End Game
 
@@ -3294,7 +3402,7 @@ class Monopoly(tk.Toplevel):
             payer, amt, receiver = self.debt_details
             self.player_details[receiver]["Money"] += amt
 
-    def player_leave(self, player_id, debtee=None, quitting=False):
+    def player_leave(self, player_id, debtee=None, quitting=False, inactive=False):
         name = self.player_details[player_id]["Name"]
         if self.turn == player_id:
             self.end_turn(force=True)
@@ -3320,7 +3428,7 @@ class Monopoly(tk.Toplevel):
                 )
                 return
         if self.me == player_id:
-            if not quitting:
+            if not quitting and not inactive:
                 self.poll(self.me, ("CREATE", "endgame", True, name))
                 if self.show_message(
                     "You are bankrupt!",
@@ -3329,7 +3437,14 @@ class Monopoly(tk.Toplevel):
                 ):
                     watch = True
             else:
-                self.send_leave("Bankrupt")
+                if inactive:
+                    self.show_message(
+                        "Inactive!",
+                        "You have been removed from the game due to inactivity!",
+                    )
+                    self.send_leave("Inactive")
+                else:
+                    self.send_leave("Bankrupt")
 
         for i in self.player_details[player_id]["Properties"]:
             i.owner = debtee
