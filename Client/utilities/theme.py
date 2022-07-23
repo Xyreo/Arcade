@@ -2,9 +2,6 @@ import os
 import pickle
 import sys
 
-ASSET = os.path.join("assets", "home_assets", "theme")
-ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)
-
 
 def resource_path(relative_path):
     try:
@@ -14,7 +11,11 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-ASSET = resource_path(ASSET)
+ASSET = resource_path(
+    os.path.join("assets", "home_assets", "theme")
+    if os.path.exists(os.path.join("assets", "home_assets", "theme"))
+    else os.path.join("Client", os.path.join("assets", "home_assets", "theme"))
+)
 SETTINGS_FILE = (
     os.path.join(
         os.environ["USERPROFILE"],
@@ -33,28 +34,29 @@ SETTINGS_FILE = (
 )
 
 
-def init(root, theme="dark"):
-    global win
-    win = root
-    win.tk.call("source", os.path.join(ASSET, "void.tcl"))
+class Theme:
+    def __init__(self, root, theme="dark"):
+        self.root = root
+        self.root.tk.call("source", os.path.join(ASSET, "void.tcl"))
 
-    for i in ["dark", "light"]:
-        win.tk.call("init", i, os.path.join(ASSET, i))
+        for i in ["dark", "light"]:
+            self.root.tk.call("init", i, os.path.join(ASSET, i))
 
-    win.tk.call("set_theme", theme)
+        self.root.tk.call("set_theme", theme)
 
+    def toggle_theme(self):
+        if self.root.tk.call("ttk::style", "theme", "use") == "void-dark":
+            t = "light"
+        else:
+            t = "dark"
 
-def toggle_theme():
-    global win
+        self.root.tk.call("set_theme", t)
 
-    if win.tk.call("ttk::style", "theme", "use") == "void-dark":
-        t = "light"
-    else:
-        t = "dark"
+        with open(SETTINGS_FILE, "rb+") as f:
+            d = pickle.load(f)
+            d["THEME"] = t
+            f.seek(0)
+            pickle.dump(d, f)
 
-    win.tk.call("set_theme", t)
-    with open(SETTINGS_FILE, "rb+") as f:
-        d = pickle.load(f)
-        d.update({"THEME": t})
-        f.seek(0)
-        pickle.dump(d, f)
+    def curr_theme(self):
+        return self.root.tk.call("ttk::style", "theme", "use")[5:]

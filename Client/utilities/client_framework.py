@@ -5,9 +5,9 @@ import threading
 
 class Client:
     # Class that creates the client object for handling communications from the client's end
-    # Implemented seperately to abstract the communications part from the game logic
+    # Implemented seperately to abstract the communications from games
     def __init__(self, ADDRESS, updater, authtoken=None):
-        # Takes the address and connects to the server. Also strats a thread to handle listening
+        # Takes the address and connects to the server. Also starts a thread to handle listening
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.token = authtoken
         self.conn.connect(ADDRESS)

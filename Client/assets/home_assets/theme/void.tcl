@@ -545,7 +545,7 @@ proc init {mode path} {
         ttk::style configure Treeview -background $colors(-bg)
         ttk::style configure Treeview.Item -padding {2 0 0 0}
         ttk::style map Treeview \
-            -background [list selected $colors(-bg)] \
+            -background [list selected $colors(-fg)] \
             -foreground [list selected $colors(-bg)]
 
         # Hack to remove clam's ugly sash

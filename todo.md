@@ -1,5 +1,6 @@
+(A) Allow App to close if no internet @ProAltro
 (A) Leaderboard, Stats @arcade
-(A) Timer @chess
+(A) Timer @chess @Chaitanya-Keyal @ProAltro
 (B) LOGO @Chaitanya-Keyal
 (B) Trace Server Line by Line @server @ProAltro
 (B) Session Expiry just after Login / Profile Picture Error @server @ProAltro

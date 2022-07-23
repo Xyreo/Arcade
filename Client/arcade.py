@@ -22,12 +22,9 @@ sys.path.append(
 
 from games.chess import Chess
 from games.monopoly import Monopoly
-from utilities import theme
 from utilities.client_framework import Client
 from utilities.http_wrapper import Http
-
-ASSET = os.path.join("assets", "home_assets")
-ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)
+from utilities.theme import Theme
 
 
 def resource_path(relative_path):
@@ -38,10 +35,16 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-ASSET = resource_path(ASSET)
+ASSET = resource_path(
+    os.path.join("assets", "home_assets")
+    if os.path.exists(os.path.join("assets", "home_assets"))
+    else os.path.join("Client", os.path.join("assets", "home_assets"))
+)
+
 HTTP = Http("http://167.71.231.52:5000")
 CLIENT_ADDRESS = "167.71.231.52"
 isWin = os.name == "nt"
+
 REMEMBER_ME_FILE = (
     os.path.join(
         os.environ["USERPROFILE"],
@@ -75,7 +78,6 @@ SETTINGS_FILE = (
         "settings.dat",
     )
 )
-CURR_THEME = "dark"
 
 if not isWin:
     print("I don't like your Operating System. Install Windows.")
@@ -306,6 +308,7 @@ class Arcade(tk.Toplevel):
                             lambda move: self.send((dest, "MSG", move)),
                             HTTP,
                             back=self.end_game,
+                            theme=theme,
                         )
                     elif game == "MNPLY":
                         details = msg[3]
@@ -316,6 +319,7 @@ class Arcade(tk.Toplevel):
                             HTTP,
                             details[2],
                             back=self.end_game,
+                            theme=theme,
                         )
 
             elif msg[1] == "MSG":
@@ -406,12 +410,7 @@ class Arcade(tk.Toplevel):
                 row=2, column=0, columnspan=2, sticky="nsew", pady=2
             )
 
-            theme_var = tk.StringVar(value=CURR_THEME)
-
-            def tog():
-                global CURR_THEME
-                CURR_THEME = theme_var.get()
-                theme.toggle_theme()
+            theme_var = tk.StringVar(value=theme.curr_theme())
 
             tk.Label(self.acc_frame, text="Dark Mode", font=("times", 12)).grid(
                 row=3, column=0, sticky="e", pady=2
@@ -422,7 +421,7 @@ class Arcade(tk.Toplevel):
                 variable=theme_var,
                 onvalue="dark",
                 offvalue="light",
-                command=tog,
+                command=theme.toggle_theme,
             )
             self.theme_button.grid(row=3, column=1, sticky="e", pady=2)
 
@@ -443,7 +442,7 @@ class Arcade(tk.Toplevel):
             def default_game():
                 with open(SETTINGS_FILE, "rb+") as f:
                     d = pickle.load(f)
-                    d.update({"DEFAULT_GAME": default.get()})
+                    d["DEFAULT_GAME"] = default.get()
                     f.seek(0)
                     pickle.dump(d, f)
 
@@ -1530,9 +1529,7 @@ class Register(tk.Frame):
         missing = Register.check_pass(pwd)
 
         msg = ""
-        if uname in [
-            "none",
-        ]:
+        if uname in ["none", "Unknown"]:
             self.uentry.delete(0, tk.END)
             msg = "Illegal Username!"
             self.prompt(msg)
@@ -1634,7 +1631,7 @@ if __name__ == "__main__":
                     f.seek(0)
                     pickle.dump(d, f)
 
-    theme.init(root, CURR_THEME)
+    theme = Theme(root, CURR_THEME)
     arc = Arcade()
     arc.start_arcade()
     root.mainloop()

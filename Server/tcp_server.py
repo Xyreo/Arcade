@@ -213,7 +213,7 @@ class Client(threading.Thread):
     # Class that gets threaded for every new client object
     # Handles all communication from client to servers
 
-    def __init__(self, conn, addr, auth=True):
+    def __init__(self, conn, addr, auth=False):
         # Object creation with conn -> socket, addr -> player ip address
 
         threading.Thread.__init__(self)
@@ -272,7 +272,7 @@ class Client(threading.Thread):
                 self.send_instruction(("GAME", "SESSION_EXP"))
                 self.close()
         else:
-            self.instruction_handler(message)
+            self.instruction_handler(message[1:])
 
     def instruction_handler(self, instruction):
         channel = instruction[0]

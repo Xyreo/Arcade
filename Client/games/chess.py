@@ -18,14 +18,10 @@ sys.path.append(
     )
 )
 
-from utilities import theme
 from utilities.http_wrapper import Http
+from utilities.theme import Theme
 from utilities.timer import Timer
 
-ASSET = "assets"
-ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)
-HOME_ASSETS = os.path.join(ASSET, "home_assets")
-CHESS_ASSETS = os.path.join(ASSET, "chess_assets")
 SETTINGS_FILE = (
     os.path.join(
         os.environ["USERPROFILE"],
@@ -42,7 +38,6 @@ SETTINGS_FILE = (
         "settings.dat",
     )
 )
-CURR_THEME = "dark"
 
 
 def resource_path(relative_path):
@@ -53,9 +48,11 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-ASSET = resource_path(ASSET)
-HOME_ASSETS = resource_path(HOME_ASSETS)
-CHESS_ASSETS = resource_path(CHESS_ASSETS)
+ASSET = resource_path(
+    "assets" if os.path.exists("assets") else os.path.join("Client", "assets")
+)
+HOME_ASSETS = os.path.join(ASSET, "home_assets")
+CHESS_ASSETS = os.path.join(ASSET, "chess_assets")
 
 
 class Chess(tk.Toplevel):
@@ -74,8 +71,17 @@ class Chess(tk.Toplevel):
     size = None
     swap = {"WHITE": "BLACK", "BLACK": "WHITE"}
 
-    def __init__(self, initialize, update, http: Http, debug=False, back=None):
+    def __init__(
+        self,
+        initialize,
+        update,
+        http: Http,
+        debug=False,
+        back=None,
+        theme: Theme = None,
+    ):
         super().__init__()
+        self.theme = theme
         self.me = initialize["ME"]
         self.players = initialize["PLAYERS"]
         self.opponent = [i for i in self.players if i != self.me][0]
@@ -271,12 +277,7 @@ class Chess(tk.Toplevel):
                 self.quit_button.configure(command=lambda: self.quit_game("ENDED"))
             self.quit_button.grid(row=0, column=0, columnspan=2, sticky="nsew", pady=2)
 
-            theme_var = tk.StringVar(value=CURR_THEME)
-
-            def tog():
-                global CURR_THEME
-                CURR_THEME = theme_var.get()
-                theme.toggle_theme()
+            theme_var = tk.StringVar(value=self.theme.curr_theme())
 
             tk.Label(self.acc_frame, text="Dark Mode", font=("times", 12)).grid(
                 row=1, column=0, sticky="e", pady=2
@@ -287,7 +288,7 @@ class Chess(tk.Toplevel):
                 variable=theme_var,
                 onvalue="dark",
                 offvalue="light",
-                command=tog,
+                command=self.theme.toggle_theme,
             )
             self.theme_button.grid(row=1, column=1, sticky="e", pady=2)
 
@@ -831,7 +832,7 @@ class Chess(tk.Toplevel):
             if self.get_active_window() != "Chess":
                 noti.notify(
                     title="Your Turn has started",
-                    app_name="Chess",
+                    app_name="Arcade",
                     message=message,
                     timeout=5,
                 )
@@ -1571,7 +1572,7 @@ if __name__ == "__main__":
                     f.seek(0)
                     pickle.dump(d, f)
 
-    theme.init(root, CURR_THEME)
+    theme = Theme(root, CURR_THEME)
 
     try:
         os.mkdir(os.path.join(HOME_ASSETS, "cached_pfp"))
@@ -1592,5 +1593,6 @@ if __name__ == "__main__":
         print,
         hobj,
         debug=True,
+        theme=theme,
     )
     root.mainloop()
