@@ -14,7 +14,11 @@ from tkinter import messagebox as msgb
 from PIL import Image, ImageChops, ImageDraw, ImageTk
 from plyer import notification as noti
 
-sys.path.append(os.path.join(os.path.abspath("."), "Client"))
+sys.path.append(
+    os.path.join(
+        os.path.abspath("."), "Client" if "Client" not in os.path.abspath(".") else ""
+    )
+)
 
 from utils import theme
 from utils.http_wrapper import Http
@@ -160,16 +164,15 @@ class Monopoly(tk.Toplevel):
             self.move(i, 0)
 
         if self.turn == self.me:
-            self.bg_timer_thr = threading.Thread(
-                target=self.timer_init,
-                args=(
+            self.timer_thr = StoppableThread(
+                lambda: self.timer_init(
                     600,
                     lambda: self.player_leave(self.me, inactive=True),
                     "Inactivity Timer",
                 ),
-                daemon=True,
+                True,
             )
-            self.bg_timer_thr.start()
+            self.timer_thr.start()
 
     def initialise(self):
         self.init_objects()
@@ -333,6 +336,7 @@ class Monopoly(tk.Toplevel):
         self.debt_details = []
         self.isEnding = False
         self.isEnded = False
+        self.timer_thr = None
         self.timer_display_thread = None
         self.timer: Timer = None
 
@@ -363,12 +367,15 @@ class Monopoly(tk.Toplevel):
             self.n += 1
 
     def resizer(self, n):
-        sleep(0.1)
-        if n == self.n:
-            if self.property_frame.winfo_exists():
-                self.property_frame.destroy()
-                self.property_frame_popup(self.property_pos_displayed)
-            self.n = 0
+        try:
+            sleep(0.1)
+            if n == self.n:
+                if self.property_frame.winfo_exists():
+                    self.property_frame.destroy()
+                    self.property_frame_popup(self.property_pos_displayed)
+                self.n = 0
+        except tk.TclError as e:
+            print("tcl:", e)
 
     def create_gui_divisions(self):
         self.board_canvas = tk.Canvas(
@@ -884,21 +891,21 @@ class Monopoly(tk.Toplevel):
             self.turn = self.uuids[0]
 
         self.timer.stop()
+        self.timer_thr.stop()
         if not (received or force):
             self.send_msg(("END",))
 
         if self.turn == self.me:
             self.roll_button.configure(state="normal")
-            self.bg_timer_thr = threading.Thread(
-                target=self.timer_init,
-                args=(
+            self.timer_thr = StoppableThread(
+                lambda: self.timer_init(
                     600,
                     lambda: self.player_leave(self.me, inactive=True),
                     "Inactivity Timer",
                 ),
-                daemon=True,
+                True,
             )
-            self.bg_timer_thr.start()
+            self.timer_thr.start()
             if self.player_details[self.turn]["Injail"][0]:
                 if self.player_details[self.turn]["Injail"][1] == 0:
                     text = "Do you wish to pay 50"
@@ -1176,17 +1183,17 @@ class Monopoly(tk.Toplevel):
                 self.end_button.configure(state="normal")
             if self.me == player and pos not in [2, 17, 33, 7, 22, 36]:
                 self.timer.stop()
-                self.end_timer_thr = threading.Thread(
-                    target=self.timer_init,
-                    args=(
+                self.timer_thr.stop()
+                self.timer_thr = StoppableThread(
+                    lambda: self.timer_init(
                         60,
                         lambda: self.end_turn(force=True),
                         "Time Left for Turn to End",
                         "sec",
                     ),
-                    daemon=True,
+                    True,
                 )
-                self.end_timer_thr.start()
+                self.timer_thr.start()
         else:
             if move:
                 self.timer.reset()
@@ -3404,8 +3411,6 @@ class Monopoly(tk.Toplevel):
 
     def player_leave(self, player_id, debtee=None, quitting=False, inactive=False):
         name = self.player_details[player_id]["Name"]
-        if self.turn == player_id:
-            self.end_turn(force=True)
         watch = False
         if quitting:
             if self.show_message(
@@ -3413,6 +3418,8 @@ class Monopoly(tk.Toplevel):
                 "Are you sure you wish to leave this game? This will imply you are forfeiting and will be bankrupt!",
                 type="okcancel",
             ):
+                if self.turn == player_id:
+                    self.end_turn(force=True)
                 self.send_leave("Forfeit")
                 if len(self.player_details) == 2:
                     self.end_game(
@@ -3422,6 +3429,8 @@ class Monopoly(tk.Toplevel):
             else:
                 return
         else:
+            if self.turn == player_id:
+                self.end_turn(force=True)
             if len(self.player_details) == 2:
                 self.end_game(
                     winner=[i for i in self.player_details if i != player_id][0]
