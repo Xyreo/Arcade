@@ -1460,9 +1460,7 @@ class Register(tk.Frame):
         self.pfp_image = ImageTk.PhotoImage(
             Arcade.circle_PIL_Image(Image.open(self.pfp_path), (100, 100))
         )
-        tk.Label(self, image=self.pfp_image).place(
-            relx=0.75, rely=0.26, anchor="center"
-        )
+        tk.Label(self, image=self.pfp_image).place(relx=0.8, rely=0.26, anchor="center")
         self.remove_image = ImageTk.PhotoImage(
             Image.open(os.path.join(ASSET, "remove.png")).resize(
                 (32, 32),
@@ -1493,7 +1491,7 @@ class Register(tk.Frame):
         if self.pfp_path == os.path.join(ASSET, "default_pfp.png"):
             self.remove_button.destroy()
         else:
-            self.remove_button.place(relx=0.85, rely=0.35, anchor="center")
+            self.remove_button.place(relx=0.9, rely=0.35, anchor="center")
 
         self.choose_button = ttk.Button(
             self,
@@ -1501,7 +1499,7 @@ class Register(tk.Frame):
             style="15.TButton",
             command=choose,
         )
-        self.choose_button.place(relx=0.75, rely=0.5, anchor="center")
+        self.choose_button.place(relx=0.8, rely=0.51, anchor="center")
 
     @staticmethod
     def check_pass(pwd):
