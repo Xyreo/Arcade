@@ -22,9 +22,9 @@ sys.path.append(
 
 from games.chess import Chess
 from games.monopoly import Monopoly
-from utils import theme
-from utils.client_framework import Client
-from utils.http_wrapper import Http
+from utilities import theme
+from utilities.client_framework import Client
+from utilities.http_wrapper import Http
 
 ASSET = os.path.join("assets", "home_assets")
 ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)

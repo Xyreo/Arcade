@@ -20,12 +20,12 @@ sys.path.append(
     )
 )
 
-from utils import theme
-from utils.http_wrapper import Http
-from utils.timer import Timer
+from utilities import theme
+from utilities.http_wrapper import Http
+from utilities.timer import Timer
 
 try:
-    from utils.musicplayer import play as music
+    from utilities.musicplayer import play as music
 except:
     print("No Output Devices Found")
 

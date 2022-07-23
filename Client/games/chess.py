@@ -18,9 +18,9 @@ sys.path.append(
     )
 )
 
-from utils import theme
-from utils.http_wrapper import Http
-from utils.timer import Timer
+from utilities import theme
+from utilities.http_wrapper import Http
+from utilities.timer import Timer
 
 ASSET = "assets"
 ASSET = ASSET if os.path.exists(ASSET) else os.path.join("Client", ASSET)
