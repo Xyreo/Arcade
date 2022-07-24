@@ -182,7 +182,9 @@ def check_session():
 def delete_user():
     authorisation = request.headers.get("Authorization")
     auth_token = authorisation.split()[1]
-    db.data_change(f'DELETE FROM user WHERE name="{auth.get_user(auth_token)}"')
+    db.data_change(
+        f'DELETE FROM user WHERE name="{auth.get_user_from_session(auth_token)}"'
+    )
     auth.end_session(auth_token)
     return jsonify("Success"), 200
 
@@ -197,7 +199,9 @@ def logout():
 @req_authorisation.route("/change_password", methods=["POST"])
 def change_password():
     data = json.loads(request.data)
-    username = auth.get_user(request.headers.get("Authorization").split()[1])
+    username = auth.get_user_from_session(
+        request.headers.get("Authorization").split()[1]
+    )
     new_password = data["newpass"].encode("utf-8")
     p = str(bcrypt.hashpw(new_password, bcrypt.gensalt(12)))[2:-1]
     db.data_change(f"UPDATE user SET password='{p}' WHERE name='{username}'")
@@ -215,7 +219,9 @@ def fetch_pfp(name):
 @req_authorisation.route("/change_pfp", methods=["POST"])
 def change_pfp():
     data = json.loads(request.data)
-    username = auth.get_user(request.headers.get("Authorization").split()[1])
+    username = auth.get_user_from_session(
+        request.headers.get("Authorization").split()[1]
+    )
     img = data["image"]
     save_img(img, username)
     return jsonify("Success"), 200

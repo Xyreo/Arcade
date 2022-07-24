@@ -46,7 +46,8 @@ class Channels:
     def leave(self, player):
         if self.uuid in player.channels:
             player.channels.remove(self.uuid)
-        self.members.remove(player)
+        if player in self.members:
+            self.members.remove(player)
 
 
 class Lobby(Channels):
@@ -93,8 +94,8 @@ class Room(Channels):
         for i in self.members:
             if self.uuid in i.channels:
                 i.channels.remove(self.uuid)
-
-        lobbies[self.game].rooms.remove(self)
+        if self in lobbies[self.game].rooms:
+            lobbies[self.game].rooms.remove(self)
         del rooms[self.uuid]
 
     def start(self, player):
@@ -333,6 +334,7 @@ class Client(threading.Thread):
         return d
 
     def close(self):
+        self.connected = False
         for i in self.channels:
             if i in lobbies:
                 lobbies[i].leave(self)
@@ -342,9 +344,7 @@ class Client(threading.Thread):
         if self.uuid in players:
             del players[self.uuid]
         self.conn.close()
-        u = Driver.auth.get_user(self.name)
-        if u:
-            Driver.auth.end_session(u)
+        Driver.auth.end_session_by_name(self.name)
         log(
             f"Connection to {self.addr} closed. {threading.active_count() - 2} players connected"
         )

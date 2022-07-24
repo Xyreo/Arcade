@@ -251,6 +251,7 @@ class Arcade(tk.Toplevel):
                     "Session Expired",
                     "You have been inactive for too long! Please Re-login to Continue!",
                 )
+                self.cobj.close()
                 self.log_out(True)
         elif dest in ["CHESS", "MNPLY"]:
             if msg[1] == "INIT":
