@@ -1250,7 +1250,7 @@ class Monopoly(tk.Toplevel):
         else:
             text += " or Pay 50"
         self.end_turn(force=True)
-        if self.me==player:
+        if self.me == player:
             self.update_game(text)
         else:
             self.update_game()
@@ -3201,7 +3201,7 @@ class Monopoly(tk.Toplevel):
                 style=f"{(self.board_side - 2) // 60}.TButton",
                 command=lambda: send_trade(offeree, self.p, self.r, self.cash_val),
             )
-            self.final_trade_button.place(relx=0.725, rely=0.875, anchor="nw")
+            self.final_trade_button.place(relx=0.65, rely=0.875, anchor="nw")
 
         def send_trade(offeree, propertyrecv, propertygive, cash):
             print(offeree, propertyrecv, propertygive, cash)
