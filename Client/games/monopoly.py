@@ -351,13 +351,11 @@ class Monopoly(tk.Toplevel):
 
     def win_resized(self, e):
         if e.widget == self:
-            t = threading.Thread(target=self.resizer, args=((self.resize_no + 1),))
-            t.start()
             self.resize_no += 1
+            self.after(100, lambda i=self.resize_no: self.resizer(i))
 
     def resizer(self, n):
         try:
-            sleep(0.1)
             if n == self.resize_no:
                 if self.property_frame.winfo_exists():
                     self.property_frame.destroy()
@@ -928,7 +926,7 @@ class Monopoly(tk.Toplevel):
                 break
             else:
                 self.display_timer(self.timer, self.timer_label, precision, name)
-            sleep(0.005)
+            sleep(0.09)
 
     @staticmethod
     def display_timer(timer: Timer, lbl: tk.Label, precision="sec", init_txt=""):
@@ -1250,10 +1248,11 @@ class Monopoly(tk.Toplevel):
             text += ",\nPay 50 or Use your Get out of Jail Free Card"
         else:
             text += " or Pay 50"
-        self.action_frame_popup(text)
-        sleep(2)
         self.end_turn(force=True)
-        self.update_game()
+        if self.me==player:
+            self.update_game(text)
+        else:
+            self.update_game()
 
     def ask_pay_jail(self):
         if self.turn == self.me:
