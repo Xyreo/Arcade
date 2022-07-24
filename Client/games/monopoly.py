@@ -556,21 +556,8 @@ class Monopoly(tk.Toplevel):
         )
         self.roll_button.place(relx=0.5, rely=0.5, anchor="center")
 
-        def dis_roll():
-            while True:
-                try:
-                    if str(self.roll_button["state"]) == "disabled":
-                        self.roll_button.configure(image=self.roll_disabled)
-                    else:
-                        self.roll_button.configure(image=self.roll_normal)
-                except tk.TclError as e:
-                    print("Tcl:", e)
-
-        t = threading.Thread(target=dis_roll, daemon=True)
-        t.start()
-
         if self.turn != self.me:
-            self.roll_button.configure(state="disabled")
+            self.roll_button_state("disabled")
 
         self.dice_spot1 = tk.Label(
             self.board_canvas,
@@ -783,7 +770,7 @@ class Monopoly(tk.Toplevel):
             else:
                 self.action_frame_popup(self.current_txt)
         if self.turn != self.me:
-            self.roll_button.configure(state="disabled")
+            self.roll_button_state("disabled")
 
         try:
             self.acc_frame.place_forget()
@@ -885,7 +872,7 @@ class Monopoly(tk.Toplevel):
         self.timer_label.place_forget()
         if self.turn == self.me:
             self.timer_label.place(relx=0.15, rely=0.03, anchor="w")
-            self.roll_button.configure(state="normal")
+            self.roll_button_state("normal")
             self.timer_thr = threading.Thread(
                 target=self.timer_init,
                 args=(
@@ -895,7 +882,7 @@ class Monopoly(tk.Toplevel):
                 ),
                 daemon=True,
             )
-            self.after(100, self.timer_thr.start)
+            self.after(900, self.timer_thr.start)
             if self.player_details[self.turn]["Injail"][0]:
                 if self.player_details[self.turn]["Injail"][1] == 0:
                     text = "Do you wish to pay 50"
@@ -961,6 +948,13 @@ class Monopoly(tk.Toplevel):
 
     # region # Roll, Move
 
+    def roll_button_state(self, state):
+        self.roll_button.configure(state=state)
+        if state == "disabled":
+            self.roll_button.configure(image=self.roll_disabled)
+        else:
+            self.roll_button.configure(image=self.roll_normal)
+
     def roll_dice(self, roll=None, received=False, cli=False):
         if self.timer:
             self.timer.reset()
@@ -968,7 +962,7 @@ class Monopoly(tk.Toplevel):
             music(os.path.join(MONOPOLY_ASSETS, "die", "diceroll.mp3"))
         except:
             pass
-        self.roll_button.configure(state="disabled")
+        self.roll_button_state("disabled")
         dice_roll = roll if received else (random.randint(1, 6), random.randint(1, 6))
         dice_roll = roll if cli else dice_roll
         if not received:
@@ -1137,7 +1131,7 @@ class Monopoly(tk.Toplevel):
             return int(x + self.token_width / 2 + 1), int(y + self.token_width / 2 + 2)
 
     def move(self, player, move, endturn=False, showmove=True):
-        self.roll_button.configure(state="disabled")
+        self.roll_button_state("disabled")
         if self.turn == player:
             self.end_button.configure(state="disabled")
         colour = self.player_details[player]["Colour"]
@@ -1169,7 +1163,7 @@ class Monopoly(tk.Toplevel):
         pos = self.player_details[player]["Position"] % 40
 
         if endturn:
-            self.roll_button.configure(state="disabled")
+            self.roll_button_state("disabled")
             if self.end_button.winfo_exists():
                 self.end_button.configure(state="normal")
             if self.me == player and pos not in [2, 17, 33, 7, 22, 36]:
@@ -1184,12 +1178,12 @@ class Monopoly(tk.Toplevel):
                     ),
                     daemon=True,
                 )
-                self.after(100, self.timer_thr.start)
+                self.after(900, self.timer_thr.start)
 
         else:
             if move and self.timer:
                 self.timer.reset()
-            self.roll_button.configure(state="normal")
+            self.roll_button_state("normal")
             if self.end_button.winfo_exists():
                 self.end_button.configure(state="disabled")
 
@@ -2132,7 +2126,7 @@ class Monopoly(tk.Toplevel):
         self.action_frame.place(relx=0, rely=0, relwidth=1, relheight=0.4, anchor="nw")
 
         if self.me not in self.uuids:
-            self.roll_button.configure(state="disabled")
+            self.roll_button_state("disabled")
             tk.Label(
                 self.action_frame,
                 text=f"You are bankrupt!\n\n{self.player_details[self.turn]['Name']} is playing!",
@@ -2142,7 +2136,7 @@ class Monopoly(tk.Toplevel):
         else:
 
             if self.turn != self.me:
-                self.roll_button.configure(state="disabled")
+                self.roll_button_state("disabled")
                 not_your_turn = tk.Label(
                     self.action_frame,
                     text=f'{self.player_details[self.turn]["Name"]} is playing!',
@@ -3332,7 +3326,7 @@ class Monopoly(tk.Toplevel):
                 self.player_leave(payer, receiver)
             else:
                 self.isInDebt = True
-                self.roll_button.configure(state="disabled")
+                self.roll_button_state("disabled")
                 self.debt_details = (payer, amt, receiver)
                 self.update_game(
                     f"You don't have enough money to pay!\nMortgage properties or sell houses worth {amt- self.player_details[payer]['Money']}"
@@ -3354,7 +3348,7 @@ class Monopoly(tk.Toplevel):
         else:
             if amt > 0:
                 self.isInDebt = False
-                self.roll_button.configure(state=rollstate)
+                self.roll_button_state(rollstate)
             self.player_details[payer]["Money"] -= amt
             if receiver:
                 self.player_details[receiver]["Money"] += amt
@@ -3522,7 +3516,7 @@ class Monopoly(tk.Toplevel):
                         "The Majority of players wish to continue the game!"
                     )
                     if self.turn == self.me:
-                        self.roll_button.configure(state="normal")
+                        self.roll_button_state("normal")
                     self.isEnding = False
                 del self.collective[thing]
 
@@ -3542,7 +3536,7 @@ class Monopoly(tk.Toplevel):
 
     def get_input(self, bankrupt, ender):
         self.isEnding = True
-        self.roll_button.configure(state="disabled")
+        self.roll_button_state("disabled")
         self.endgame_frame = tk.Frame(self.action_frame)
         self.endgame_frame.place(
             relx=0.5, rely=0.5, relwidth=1, relheight=1, anchor="center"
@@ -3630,7 +3624,7 @@ class Monopoly(tk.Toplevel):
             self.quit_game()
 
         self.protocol("WM_DELETE_WINDOW", q)
-        self.roll_button.configure(state="disabled")
+        self.roll_button_state("disabled")
 
         self.final_frame = tk.Frame(self.action_frame)
         self.final_frame.place(
