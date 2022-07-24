@@ -44,8 +44,3 @@ class Auth:
             self.r.expire(name=self.r.get(session_id), time=timedelta(minutes=expire))
             return True
         return False
-
-
-if __name__ == "__main__":
-    auth = Auth()
-    print(auth('6p}ruUO5"VpP[)p|'))

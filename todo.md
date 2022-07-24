@@ -1,4 +1,3 @@
-(A) Fix Server @ProAltro
 (A) Leaderboard, Stats @arcade
 (A) Timer @chess @ProAltro
 (B) Remove Random Stuff from all Code @Chaitanya-Keyal

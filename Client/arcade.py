@@ -980,7 +980,7 @@ class Arcade(tk.Toplevel):
             settings = {
                 "STATUS": "PUBLIC",
                 "MAX_PLAYERS": 2,
-                "TIME": 10,
+                "TIME": 600,
                 "HOST_SIDE": random.choice(("BLACK", "WHITE")),
                 "ADD_TIME": 5,
             }
