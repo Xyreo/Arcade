@@ -60,3 +60,5 @@ test.py
 try.ipynb
 .DS_Store
 cached_pfp/
+proj/
+tcp_log.txt

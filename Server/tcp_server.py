@@ -213,7 +213,7 @@ class Client(threading.Thread):
     # Class that gets threaded for every new client object
     # Handles all communication from client to servers
 
-    def __init__(self, conn, addr, auth=False):
+    def __init__(self, conn, addr, auth=True):
         # Object creation with conn -> socket, addr -> player ip address
 
         threading.Thread.__init__(self)
@@ -360,9 +360,6 @@ class Driver:
 
         l, c = Lobby("MNPLY"), Lobby("CHESS")
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        """sslcontext = SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        sslcontext.load_cert_chain("certificate.pem", keyfile="key.pem")
-        self.server = sslcontext.wrap_socket(sock=self.server, server_side=True)"""
         self.server.bind(ADDRESS)
 
     def start(self):

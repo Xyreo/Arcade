@@ -23,13 +23,13 @@ class Auth:
 
     def end_session(self, session_id):
         if self.r.exists(session_id):
-            self.r.delete(self.r.get(session_id))
+            self.r.delete(self.r.get(session_id).decode("utf-8").lower())
             self.r.delete(session_id)
 
     def get_user(self, session_id):
         user = self.r.get(session_id)
         if user:
-            return user.decode("utf-8")
+            return user.decode("utf-8").lower()
         else:
             return None
 
