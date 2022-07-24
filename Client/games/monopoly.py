@@ -895,7 +895,7 @@ class Monopoly(tk.Toplevel):
                 ),
                 daemon=True,
             )
-            self.after(50, self.timer_thr.start)
+            self.after(100, self.timer_thr.start)
             if self.player_details[self.turn]["Injail"][0]:
                 if self.player_details[self.turn]["Injail"][1] == 0:
                     text = "Do you wish to pay 50"
@@ -1184,7 +1184,7 @@ class Monopoly(tk.Toplevel):
                     ),
                     daemon=True,
                 )
-                self.after(50, self.timer_thr.start)
+                self.after(100, self.timer_thr.start)
 
         else:
             if move and self.timer:

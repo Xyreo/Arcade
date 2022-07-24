@@ -14,6 +14,7 @@
 (X) Music, Sounds @arcade @chess @monopoly
 (Y) Change Chess Pieces @chess
 (Y) Choose Color when joining room @monopoly
+(Y) Select First Player by diceroll @monopoly
 (Z) PGN Moves @chess
 (Z) Auction @monopoly
 (Z) Speed Game @monopoly
