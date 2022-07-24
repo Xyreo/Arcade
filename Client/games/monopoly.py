@@ -1130,7 +1130,7 @@ class Monopoly(tk.Toplevel):
 
     def move(self, player, move, endturn=False, showmove=True):
         self.roll_button_state("disabled")
-        if self.turn == player:
+        if self.turn == player == self.me:
             self.end_button.configure(state="disabled")
         colour = self.player_details[player]["Colour"]
         self.colour_token_dict = {
@@ -1165,7 +1165,8 @@ class Monopoly(tk.Toplevel):
             if self.end_button.winfo_exists():
                 self.end_button.configure(state="normal")
             if self.me == player and pos not in [2, 17, 33, 7, 22, 36]:
-                self.timer.stop()
+                if self.timer:
+                    self.timer.stop()
                 self.timer_thr = threading.Thread(
                     target=self.timer_init,
                     args=(
@@ -3318,7 +3319,8 @@ class Monopoly(tk.Toplevel):
         self.update_game("You received 200 as salary!")
 
     def pay(self, payer, amt, receiver=None):
-        self.timer.pause()
+        if self.timer:
+            self.timer.pause()
         rollstate = str(self.roll_button["state"])
         if self.player_details[payer]["Money"] < amt:
             if self.isBankrupt(amt, payer):
@@ -3363,7 +3365,8 @@ class Monopoly(tk.Toplevel):
                     f"{self.player_details[payer]['Name']} received {-amt} from {self.player_details[receiver]['Name'] if receiver else 'The Bank'}"
                 )
             self.toggle_action_buttons(True)
-            self.timer.resume()
+            if self.timer:
+                self.timer.resume()
 
     # region # End Game
 
