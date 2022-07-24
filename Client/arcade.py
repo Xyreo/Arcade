@@ -1147,7 +1147,10 @@ class Arcade(tk.Toplevel):
                 pass
             else:
                 return
-        HTTP.logout()
+        try:
+            HTTP.logout()
+        except:
+            pass
         root.quit()
         for file in os.scandir(os.path.join(ASSET, "cached_pfp")):
             os.remove(file.path)
@@ -1227,7 +1230,7 @@ class Login(tk.Frame):
             self,
             text="New User? Click Here To Sign Up",
             font=("times", 11),
-            fg="blue",
+            fg="#15a8cd",
             highlightthickness=0,
             border=0,
             command=lambda: register(),
@@ -1632,5 +1635,13 @@ if __name__ == "__main__":
 
     theme = Theme(root, CURR_THEME)
     arc = Arcade()
-    arc.start_arcade()
-    root.mainloop()
+    try:
+        arc.start_arcade()
+        root.mainloop()
+    except:
+        noti.notify(
+            title="No Internet",
+            appname="Arcade",
+            message="You need an active Internet Connection to play the game!",
+            timeout=5,
+        )

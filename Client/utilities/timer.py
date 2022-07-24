@@ -42,3 +42,6 @@ class Timer(threading.Thread):
 
     def set_time(self, time):
         self.counter = time
+
+    def add_time(self, time):
+        self.counter += time

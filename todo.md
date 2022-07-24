@@ -1,7 +1,6 @@
-(A) Allow App to close if no internet @ProAltro
 (A) Fix Server @ProAltro
 (A) Leaderboard, Stats @arcade
-(A) Timer @chess @Chaitanya-Keyal @ProAltro
+(A) Timer @chess @ProAltro
 (B) Remove Random Stuff from all Code @Chaitanya-Keyal
 (B) LOGO @Chaitanya-Keyal
 (B) Trace Server Line by Line @server @ProAltro

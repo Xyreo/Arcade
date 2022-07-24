@@ -109,9 +109,9 @@ class Chess(tk.Toplevel):
         self.board_ids: dict = {}
         self.imgs: dict = {}
         self.possible_moves: list = []
-        self.initialize_canvas()
+        self.initialize_gui()
         self.initialize_board()
-        self.timer_buttons()
+        self.action_buttons()
         self.selected: int = None
         self.hover: int = None
         self.state: str = "Nothing"
@@ -127,8 +127,9 @@ class Chess(tk.Toplevel):
         self.isEnded = False
         self.lock = threading.Lock()
         self.lock.acquire(blocking=False)
+        self.place_timers()
 
-    def initialize_canvas(self):
+    def initialize_gui(self):
         screen_width = int(0.9 * self.winfo_screenwidth())
         screen_height = int(screen_width / 1.9)
         x_coord = self.winfo_screenwidth() // 2 - screen_width // 2
@@ -381,9 +382,91 @@ class Chess(tk.Toplevel):
 
         # endregion
 
-    def timer_buttons(self):
-        # TODO: TIMERS + username, pfp
+    # region # Timers
 
+    def place_timers(self):
+        self.timer_labels: dict[str, tk.Label] = {}
+        self.timers: dict[str, Timer] = {}
+        self.timer_threads: dict[str, threading.Thread] = {}
+        self.user_pfp_display: dict[str, tk.Label] = {}
+
+        self.timer_labels[self.me] = tk.Label(self.main_frame, font="consolas 45")
+        self.timer_labels[self.me].place(relx=0.5, rely=0.125, anchor="center")
+        self.timer_threads[self.me] = threading.Thread(
+            target=self.timer_init,
+            args=(self.me,),
+            daemon=True,
+        )
+        self.user_pfp_display[self.me] = tk.Label(
+            self.main_frame,
+            image=self.players[self.me]["PFP"],
+            text=f" {self.players[self.me]['NAME']}",
+            highlightthickness=0,
+            border=0,
+            font=("arial 16"),
+            compound="left",
+        )
+        self.user_pfp_display[self.me].place(relx=0.5, rely=0.2, anchor="center")
+
+        self.timer_labels[self.opponent] = tk.Label(self.main_frame, font="consolas 45")
+        self.timer_labels[self.opponent].place(relx=0.5, rely=0.875, anchor="center")
+        self.timer_threads[self.opponent] = threading.Thread(
+            target=self.timer_init,
+            args=(self.opponent,),
+            daemon=True,
+        )
+        self.user_pfp_display[self.opponent] = tk.Label(
+            self.main_frame,
+            image=self.players[self.opponent]["PFP"],
+            text=f" {self.players[self.opponent]['NAME']}",
+            highlightthickness=0,
+            border=0,
+            font=("arial 16"),
+            compound="left",
+        )
+        self.user_pfp_display[self.opponent].place(relx=0.5, rely=0.8, anchor="center")
+
+        for i in self.players:
+            self.timer_threads[i].start()
+            self.timers[i].pause()
+            self.timers[i].set_time(self.time)
+
+    def timer_init(self, player, precision="minsec"):
+        self.timers[player] = Timer(self.time)
+        self.timers[player].start()
+        while True:
+            if not self.timers[player].is_alive():
+                break
+            if self.turn == self.me and self.timers[player].time_left() <= 0:
+                self.timers[player].stop()
+                lambda: self.final_frame(
+                    "TIME",
+                    [i for i in self.players if i != player][0],
+                )
+                break
+            else:
+                self.display_timer(
+                    self.timers[player], self.timer_labels[player], precision
+                )
+            sleep(0.09)
+
+    @staticmethod
+    def display_timer(timer: Timer, lbl: tk.Label, precision="sec"):
+        a = round(timer.time_left(), 2)
+        if a < 0.01:
+            min, sec, ms = 0, 0, 0
+        min, sec, ms = int(a // 60), int(a % 60), int(a * 100 % 100)
+        if precision == "sec":
+            things = "{:02d}".format(sec)
+        elif precision == "minsec":
+            things = "{:02d}:{:02d}".format(min, sec)
+        else:
+            things += "{:02d}:{:02d}:{:02d}".format(min, sec, ms)
+        lbl.configure(text=things)
+
+    # endregion
+
+    def action_buttons(self):
         resign = ttk.Button(
             self.main_frame,
             text="Resign",
@@ -902,6 +985,8 @@ class Chess(tk.Toplevel):
             txt = f"Opponent disconnected!\n\nPoints:\n\n{self.players[self.me]['NAME']}: {1 if self.me==winner else 0}\n\n{self.players[self.opponent]['NAME']}: {1 if self.opponent==winner else 0}"
         elif type == "RESIGN":
             txt = f"Opponent resigned!\n\nPoints:\n\n{self.players[self.me]['NAME']}: {1 if self.me==winner else 0}\n\n{self.players[self.opponent]['NAME']}: {1 if self.opponent==winner else 0}"
+        elif type == "TIME":
+            txt = f"Opponent ran out of time!\n\nPoints:\n\n{self.players[self.me]['NAME']}: {1 if self.me==winner else 0}\n\n{self.players[self.opponent]['NAME']}: {1 if self.opponent==winner else 0}"
         else:
             print(f"ERROR: {type} is invalid!")
         self.end_game_frame = tk.Frame(
@@ -1587,8 +1672,8 @@ if __name__ == "__main__":
                 "123456": {"NAME": "user1", "SIDE": "BLACK"},
                 "456789": {"NAME": "user1", "SIDE": "WHITE"},
             },
-            "TIME": 10,  # minutes
-            "ADD_TIME": 5,  # seconds
+            "TIME": 600,
+            "ADD_TIME": 5,
         },
         print,
         hobj,
