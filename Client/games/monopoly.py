@@ -865,7 +865,7 @@ class Monopoly(tk.Toplevel):
         if not (received or force):
             self.send_msg(("END",))
 
-        if self.timer:
+        if self.turn == self.me and self.timer:
             self.timer.stop()
         self.timer_label.place_forget()
         if self.turn == self.me:
@@ -920,7 +920,7 @@ class Monopoly(tk.Toplevel):
         while True:
             if not self.timer.is_alive():
                 break
-            if self.timer.time_left() <= 0:
+            if self.turn == self.me and self.timer.time_left() <= 0:
                 self.timer.stop()
                 func()
                 break
@@ -954,7 +954,7 @@ class Monopoly(tk.Toplevel):
             self.roll_button.configure(image=self.roll_normal)
 
     def roll_dice(self, roll=None, received=False, cli=False):
-        if self.timer:
+        if self.turn == self.me and self.timer:
             self.timer.reset()
         try:
             music(os.path.join(MONOPOLY_ASSETS, "die", "diceroll.mp3"))
@@ -994,7 +994,7 @@ class Monopoly(tk.Toplevel):
                     self.ask_pay_jail()
         else:
             if dice_roll[0] == dice_roll[1]:
-                if self.timer:
+                if self.turn == self.me and self.timer:
                     self.timer.reset()
                 self.doubles_counter += 1
                 if self.doubles_counter == 3:
@@ -1165,7 +1165,7 @@ class Monopoly(tk.Toplevel):
             if self.end_button.winfo_exists():
                 self.end_button.configure(state="normal")
             if self.me == player and pos not in [2, 17, 33, 7, 22, 36]:
-                if self.timer:
+                if self.turn == self.me and self.timer:
                     self.timer.stop()
                 self.timer_thr = threading.Thread(
                     target=self.timer_init,
@@ -1180,7 +1180,7 @@ class Monopoly(tk.Toplevel):
                 self.after(900, self.timer_thr.start)
 
         else:
-            if move and self.timer:
+            if move and self.timer and self.turn == self.me:
                 self.timer.reset()
             self.roll_button_state("normal")
             if self.end_button.winfo_exists():
@@ -2214,7 +2214,7 @@ class Monopoly(tk.Toplevel):
     # region # Mortgage, Unmortgage
 
     def mortgage_unmortgage(self, mortgage):
-        if self.timer:
+        if self.turn == self.me and self.timer:
             self.timer.reset()
         self.mortgage_frame = tk.Frame(
             self.action_frame,
@@ -2402,7 +2402,7 @@ class Monopoly(tk.Toplevel):
         return my_sets
 
     def build_sell_action_frame(self, sell=False):
-        if self.timer:
+        if self.turn == self.me and self.timer:
             self.timer.reset()
         self.build_frame = tk.Frame(self.action_frame)
         self.build_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
@@ -2843,7 +2843,7 @@ class Monopoly(tk.Toplevel):
     # endregion
 
     def buy_property(self, propertypos, buyer, received=False):
-        if self.timer:
+        if self.turn == self.me and self.timer:
             self.timer.reset()
         self.toggle_action_buttons()
         if not received:
@@ -3002,7 +3002,7 @@ class Monopoly(tk.Toplevel):
             self.update_game()
 
     def trade(self):
-        if self.timer:
+        if self.turn == self.me and self.timer:
             self.timer.reset()
         self.trade_frame = tk.Frame(self.action_frame)
         self.trade_frame.place(relx=0, rely=0, relwidth=1, relheight=1, anchor="nw")
@@ -3204,7 +3204,6 @@ class Monopoly(tk.Toplevel):
             self.final_trade_button.place(relx=0.65, rely=0.875, anchor="nw")
 
         def send_trade(offeree, propertyrecv, propertygive, cash):
-            print(offeree, propertyrecv, propertygive, cash)
             if not (propertyrecv or propertygive or cash):
                 return
             else:
@@ -3319,7 +3318,7 @@ class Monopoly(tk.Toplevel):
         self.update_game("You received 200 as salary!")
 
     def pay(self, payer, amt, receiver=None):
-        if self.timer:
+        if self.turn == self.me and self.timer:
             self.timer.pause()
         rollstate = str(self.roll_button["state"])
         if self.player_details[payer]["Money"] < amt:
@@ -3365,7 +3364,7 @@ class Monopoly(tk.Toplevel):
                     f"{self.player_details[payer]['Name']} received {-amt} from {self.player_details[receiver]['Name'] if receiver else 'The Bank'}"
                 )
             self.toggle_action_buttons(True)
-            if self.timer:
+            if self.turn == self.me and self.timer:
                 self.timer.resume()
 
     # region # End Game
