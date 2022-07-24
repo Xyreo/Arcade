@@ -440,9 +440,9 @@ proc init {mode path} {
         ]
             
         ttk::style map TCombobox -selectforeground [list \
-            {!focus} $colors(-bg) \
-            {readonly hover} $colors(-bg) \
-            {readonly focus} $colors(-bg) \
+            {!focus} $colors(-fg) \
+            {readonly hover} $colors(-fg) \
+            {readonly focus} $colors(-fg) \
         ]
 
         ttk::style element create Combobox.field \
