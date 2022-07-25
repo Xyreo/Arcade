@@ -268,7 +268,7 @@ class Chess(tk.Toplevel):
                     self.unbind("<Button-1>")
 
             self.bind("<Button-1>", lambda e: clicked(e))
-            self.acc_frame = tk.Frame(self)
+            self.acc_frame = ttk.Frame(self,style='Card.TFrame',padding=4)
             self.acc_frame.place(relx=0.01, rely=0.06, anchor="nw")
 
             self.quit_button = ttk.Button(
@@ -281,7 +281,7 @@ class Chess(tk.Toplevel):
             theme_var = tk.StringVar(value=self.theme.curr_theme())
 
             tk.Label(self.acc_frame, text="Dark Mode", font=("times", 12)).grid(
-                row=1, column=0, sticky="e", pady=2
+                row=1, column=0, sticky="e", pady=2,padx=6
             )
             self.theme_button = ttk.Checkbutton(
                 self.acc_frame,
@@ -592,9 +592,10 @@ class Chess(tk.Toplevel):
         elif not self.board[k]:
             pass
 
-        elif self.board[k].color != self.side:
+        elif self.board[k].color != self.turn:
             if self.debug:
-                self.state = "PieceSelected"
+                # self.state = "PieceSelected"
+                pass
             else:
                 pass
         else:
@@ -729,6 +730,9 @@ class Chess(tk.Toplevel):
         t.start()
 
     def move(self, start, end, multi, snap):
+        self.timers[
+            self.opponent if self.players[self.me]["SIDE"] == self.turn else self.me
+        ].pause()
         if "DRAW" in self.poll:
             if self.poll["DRAW"] == "ACK":
                 self.draw_frame.destroy()
@@ -798,6 +802,9 @@ class Chess(tk.Toplevel):
             self.set(a, "normal")
 
         self.turn = Chess.swap[self.turn]
+        self.timers[
+            self.opponent if self.players[self.me]["SIDE"] == self.turn else self.me
+        ].resume()
 
         check = self.board.is_in_check(Chess.swap[color])
         if check:

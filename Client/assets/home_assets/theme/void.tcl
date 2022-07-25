@@ -351,7 +351,7 @@ proc init {mode path} {
             -sticky ew
 
         ttk::style element create Horizontal.Scrollbar.thumb \
-            image [list $I(hor-accent) \
+            image [list $I(hor-basic) \
                 disabled $I(hor-basic) \
                 pressed $I(hor-hover) \
                 active $I(hor-hover) \
@@ -361,7 +361,7 @@ proc init {mode path} {
             -sticky ns
 
         ttk::style element create Vertical.Scrollbar.thumb \
-            image [list $I(vert-accent) \
+            image [list $I(vert-basic) \
                 disabled  $I(vert-basic) \
                 pressed $I(vert-hover) \
                 active $I(vert-hover) \

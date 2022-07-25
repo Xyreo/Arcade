@@ -629,7 +629,7 @@ class Monopoly(tk.Toplevel):
                     self.unbind("<Button-1>")
 
             self.bind("<Button-1>", lambda e: clicked(e))
-            self.acc_frame = tk.Frame(self)
+            self.acc_frame = ttk.Frame(self, style="Card.TFrame", padding=4)
             self.acc_frame.place(relx=0.01, rely=0.06, anchor="nw")
 
             def end_game_now():
@@ -678,7 +678,7 @@ class Monopoly(tk.Toplevel):
             theme_var = tk.StringVar(value=self.theme.curr_theme())
 
             tk.Label(self.acc_frame, text="Dark Mode", font=("times", 12)).grid(
-                row=2, column=0, sticky="e", pady=2
+                row=2, column=0, sticky="e", pady=2, padx=6
             )
             self.theme_button = ttk.Checkbutton(
                 self.acc_frame,
@@ -3600,7 +3600,7 @@ class Monopoly(tk.Toplevel):
             s = 0
             s += i["Money"]
             for k in i["Properties"]:
-                s += k.value
+                s += k.value()
             s += i["GOJF"] * 50
             i.update({"NETWORTH": s})
 

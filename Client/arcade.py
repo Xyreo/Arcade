@@ -11,6 +11,7 @@ from io import BytesIO
 from tkinter import filedialog as fd
 from tkinter import messagebox as msgb
 
+import requests
 from PIL import Image, ImageChops, ImageDraw, ImageTk
 from plyer import notification as noti
 
@@ -130,8 +131,17 @@ class Arcade(tk.Toplevel):
         self.lobby_trees = {"CHESS": None, "MNPLY": None}
         self.room_frames = {"CHESS": None, "MNPLY": None}
         self.room_members = {"CHESS": None, "MNPLY": None}
+        self.leaderboard_details = {"chess": None, "monopoly": None}
+        self.stats_details = {"chess": {}, "monopoly": {}}
+        self.pfps: dict[str, ImageTk.PhotoImage] = {}
+
         self.current_room = None
         self.sent_time = time.perf_counter()
+        self.refresh = ImageTk.PhotoImage(
+            Image.open(os.path.join(ASSET, "refresh.png")).resize(
+                (16, 16), Image.Resampling.LANCZOS
+            )
+        )
 
         # GUI Initializing
         self.screen_width = int(0.9 * self.winfo_screenwidth())
@@ -167,17 +177,20 @@ class Arcade(tk.Toplevel):
 
         self.main_notebook = ttk.Notebook(self)
         self.main_notebook.place(relx=0, rely=0, anchor="nw", relheight=1, relwidth=1)
+        self.main_notebook.enable_traversal()
 
-        # Chess stuff
         self.chess_frame = tk.Frame(self.main_notebook)
         self.chess_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
         self.main_notebook.add(self.chess_frame, text="Chess")
+        self.after(300, lambda: self.leaderboard("chess"))
+        self.after(300, lambda: self.stats("chess"))
         self.join_create("CHESS")
 
-        # Monopoly stuff
         self.monopoly_frame = tk.Frame(self.main_notebook)
         self.monopoly_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
         self.main_notebook.add(self.monopoly_frame, text="Monopoly")
+        self.after(300, lambda: self.leaderboard("monopoly"))
+        self.after(300, lambda: self.stats("monopoly"))
         self.join_create("MNPLY")
 
         with open(SETTINGS_FILE, "rb") as f:
@@ -198,7 +211,7 @@ class Arcade(tk.Toplevel):
             command=self.account_tab,
         )
         self.acc_button.place(relx=0.99, rely=0.07, anchor="e")
-        self.acc_frame = tk.Frame()
+        self.acc_frame = ttk.Frame()
         self.acc_frame.destroy()
 
     def start_arcade(self):
@@ -250,6 +263,7 @@ class Arcade(tk.Toplevel):
                 self.show_message(
                     "Session Expired",
                     "You have been inactive for too long! Please Re-login to Continue!",
+                    type="error",
                 )
                 self.cobj.close()
                 self.log_out(True)
@@ -281,6 +295,7 @@ class Arcade(tk.Toplevel):
                     "Room Full",
                     "The Room you tried to Join is full and can't accept any more players!",
                     timeout=4000,
+                    type="warning",
                 )
 
         elif dest == self.current_room:
@@ -377,7 +392,7 @@ class Arcade(tk.Toplevel):
                     self.unbind("<Button-1>")
 
             self.bind("<Button-1>", lambda e: clicked(e))
-            self.acc_frame = tk.Frame(self)
+            self.acc_frame = ttk.Frame(self, style="Card.TFrame", padding=4)
             self.acc_frame.place(relx=0.99, rely=0.1, anchor="ne")
 
             self.log_out_button = ttk.Button(
@@ -414,7 +429,7 @@ class Arcade(tk.Toplevel):
             theme_var = tk.StringVar(value=theme.curr_theme())
 
             tk.Label(self.acc_frame, text="Dark Mode", font=("times", 12)).grid(
-                row=3, column=0, sticky="e", pady=2
+                row=3, column=0, sticky="e", pady=2, padx=6
             )
             self.theme_button = ttk.Checkbutton(
                 self.acc_frame,
@@ -466,7 +481,7 @@ class Arcade(tk.Toplevel):
 
     def change_password(self):
         self.acc_frame.destroy()
-        self.change_frame = tk.Frame(self)
+        self.change_frame = ttk.Frame(self, style="Card.TFrame", padding=4)
         self.change_frame.place(
             relx=0.99, rely=0.1, relheight=0.3, relwidth=0.25, anchor="ne"
         )
@@ -631,7 +646,7 @@ class Arcade(tk.Toplevel):
     def change_pfp(self):
         self.acc_frame.destroy()
         self.pfp_path = os.path.join(ASSET, "cached_pfp", self.name + ".png")
-        self.change_frame = tk.Frame(self)
+        self.change_frame = ttk.Frame(self, style="Card.TFrame", padding=4)
         self.change_frame.place(
             relx=0.99, rely=0.1, relheight=0.3, relwidth=0.25, anchor="ne"
         )
@@ -850,7 +865,7 @@ class Arcade(tk.Toplevel):
         parent = self.chess_frame if game == "CHESS" else self.monopoly_frame
         self.lobby_frames[game] = ttk.Frame(parent, style="Card.TFrame")
         self.lobby_frames[game].place(
-            relx=0.5, rely=0.5, anchor="center", relwidth=0.33, relheight=0.9
+            relx=0.5, rely=0.525, anchor="center", relwidth=0.33, relheight=0.9
         )
         frame = self.lobby_frames[game]
 
@@ -866,7 +881,10 @@ class Arcade(tk.Toplevel):
         self.bind("<Escape>", lambda a: self.leave_lobby(game))
 
         scroll = ttk.Scrollbar(frame, orient="vertical")
-        scroll.place(relx=1, rely=0, anchor="ne", relheight=1)
+        scroll.place(relx=0.9975, rely=0.5, anchor="e", relheight=0.85)
+        tk.Label(frame, text="Select A Room", font="times 13 underline").place(
+            relx=0.5, rely=0.025, anchor="center"
+        )
 
         self.lobby_trees[game] = ttk.Treeview(
             frame,
@@ -1133,6 +1151,180 @@ class Arcade(tk.Toplevel):
 
     # endregion
 
+    # region # Leaderboard & stats
+
+    def leaderboard(self, game):
+        parent = self.chess_frame if game == "chess" else self.monopoly_frame
+        self.leaderboard_details[game] = sorted(
+            HTTP.leaderboard(game).items(), key=lambda i: i[1], reverse=True
+        )
+        for i, j in self.leaderboard_details[game]:
+            Arcade.store_pfp(i)
+            self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
+
+        frame = ttk.Frame(parent, style="Card.TFrame")
+        frame.place(relx=0, rely=0.525, anchor="w", relwidth=0.3, relheight=0.9)
+        scroll = ttk.Scrollbar(frame, orient="vertical")
+        scroll.place(relx=0.9975, rely=0.5, anchor="e", relheight=0.9)
+
+        tk.Label(frame, text="LEADERBOARD", font="times 15 underline").place(
+            relx=0.5, rely=0.025, anchor="center"
+        )
+
+        def refresh():
+            self.leaderboard_details[game] = sorted(
+                HTTP.leaderboard(game).items(), key=lambda i: i[1], reverse=True
+            )
+            for i, j in self.leaderboard_details[game]:
+                if not os.path.isfile(os.path.join(ASSET, "cached_pfp", i + ".png")):
+                    Arcade.store_pfp(i)
+                    self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
+            for i in tree.get_children():
+                tree.delete(i)
+            for i, j in self.leaderboard_details[game]:
+                tree.insert(
+                    parent="",
+                    index="end",
+                    iid=i,
+                    text="",
+                    image=self.pfps[i],
+                    values=(i, j),
+                    tag=i,
+                )
+            tree.tag_configure(self.name, background="#15a8cd")
+
+        tk.Button(
+            frame,
+            image=self.refresh,
+            highlightthickness=0,
+            border=0,
+            command=refresh,
+        ).place(relx=0.98, rely=0.025, anchor="e")
+
+        tree = ttk.Treeview(
+            frame,
+            columns=("Players", "Score"),
+            yscrollcommand=scroll.set,
+        )
+        tree.place(relx=0.49, rely=0.5, anchor="center", relheight=0.9, relwidth=0.96)
+
+        scroll.configure(command=tree.yview)
+        tree.column(
+            "#0",
+            width=self.screen_width // 50,
+            anchor="center",
+            minwidth=self.screen_width // 50,
+        )
+
+        tree.column(
+            "Players",
+            width=self.screen_width // 10,
+            anchor="center",
+            minwidth=self.screen_width // 10,
+        )
+        tree.column(
+            "Score",
+            width=self.screen_width // 10,
+            anchor="center",
+            minwidth=self.screen_width // 10,
+        )
+
+        tree.heading("#0", text="")
+        tree.heading("Players", text="Players", anchor="center")
+        tree.heading(
+            "Score",
+            text="Points" if game == "chess" else "Highest NetWorth",
+            anchor="center",
+        )
+
+        for i, j in self.leaderboard_details[game]:
+            tree.insert(
+                parent="",
+                index="end",
+                iid=i,
+                text="",
+                image=self.pfps[i],
+                values=(i, j),
+                tag=i,
+            )
+        tree.tag_configure(self.name, background="#15a8cd")
+
+    def stats(self, game):
+        parent = self.chess_frame if game == "chess" else self.monopoly_frame
+        frame = ttk.Frame(parent, style="Card.TFrame")
+        frame.place(relx=1, rely=0.525, anchor="e", relwidth=0.3, relheight=0.9)
+
+        def refresh():
+            stats = HTTP.stats(game, self.name)
+            for i in frame.winfo_children():
+                if i != refresh_but:
+                    i.destroy()
+            if stats == "Bad Request":
+                tk.Label(frame, text="No Stats Available!", font="times 20").place(
+                    relx=0.5, rely=0.5, anchor="center"
+                )
+                return
+            if game == "chess":
+                self.stats_details[game]["Total Games Played"] = len(stats)
+                self.stats_details[game]["Number of Games Won"] = len(
+                    [i for i in stats if i[-1] == self.name]
+                )
+                self.stats_details[game]["Number of Games Drawn"] = len(
+                    [i for i in stats if i[-1] == "none"]
+                )
+                self.stats_details[game]["Total Points"] = (
+                    len([i for i in stats if i[-1] == self.name])
+                    + len([i for i in stats if i[-1] == "none"]) * 0.5
+                )
+                # ? Add Board Representations display, replay games with PGN, etc.
+            else:
+                self.stats_details[game]["Total Games Played"] = len(stats)
+                self.stats_details[game]["Individual Victories"] = len(
+                    [i for i in stats if self.name in i[-1] and len(i[-1]) == 1]
+                )
+                self.stats_details[game]["Group Victories"] = len(
+                    [i for i in stats if self.name in i[-1] and len(i[-1]) != 1]
+                )
+                self.stats_details[game]["Highest NetWorth"] = max(
+                    [i[1][self.name]["NETWORTH"] for i in stats]
+                )
+                properties = []
+                places = []
+                for i in stats:
+                    properties.extend(i[1][self.name]["PROPERTIES"])
+                    places.extend(i[1][self.name]["PLACES"])
+                self.stats_details[game]["Favourite Property"] = max(
+                    properties, key=lambda i: properties.count(i)
+                )
+                self.stats_details[game]["Favourite Spot"] = max(
+                    places, key=lambda i: places.count(i)
+                )
+            tk.Label(frame, text="YOUR STATS", font="times 20 underline").place(
+                relx=0.5, rely=0.1, anchor="center"
+            )
+            k = 0
+            for i, j in self.stats_details[game].items():
+                tk.Label(
+                    frame,
+                    text=f"{i} : {j}",
+                    font="arial 15",
+                    fg="spring green" if k % 2 else "lime green",
+                ).place(relx=0.5, rely=0.2 + k / 10, anchor="center")
+                k += 1
+
+        refresh_but = tk.Button(
+            frame,
+            image=self.refresh,
+            highlightthickness=0,
+            border=0,
+            command=refresh,
+        )
+        refresh_but.place(relx=0.975, rely=0.025, anchor="e")
+
+        refresh()
+
+    # endregion
+
     def end_game(self):
         self.deiconify()
         self.current_room = None
@@ -1291,9 +1483,17 @@ class Login(tk.Frame):
             pwd = ""
             self.prompt(msg)
         else:
-            self.check_login = HTTP.login(
-                uname.strip(), pwd.strip(), remember_me=self.remember_me.get()
-            )
+            try:
+                self.check_login = HTTP.login(
+                    uname.strip(), pwd.strip(), remember_me=self.remember_me.get()
+                )
+            except requests.exceptions.ConnectionError:
+                msgb.showerror(
+                    "Connection Error",
+                    "Unable to connect to the Server at the moment, please try again later!\nThings you can do:\n1. Check your network connection\n2. Restart your system\n3. If this issue persists, wait for sometime. The server might be down, We are working on it!",
+                    master=root,
+                )
+                quit()
             if self.check_login:
                 if self.check_login != -1:
                     msg = "Logging in..."
@@ -1558,19 +1758,27 @@ class Register(tk.Frame):
             msg = "Password does not match"
             self.prompt(msg)
         else:
-            if HTTP.register(
-                uname.strip(),
-                pwd.strip(),
-                Arcade.pfp_send(self.pfp_path),
-            ):
-                msg = "Registering..."
-                self.prompt(msg)
-                self.after(1000, self.complete)
-            else:
-                self.uentry.delete(0, tk.END)
-                self.pwdentry.delete(0, tk.END)
-                msg = "User Already Registered"
-                self.prompt(msg)
+            try:
+                if HTTP.register(
+                    uname.strip(),
+                    pwd.strip(),
+                    Arcade.pfp_send(self.pfp_path),
+                ):
+                    msg = "Registering..."
+                    self.prompt(msg)
+                    self.after(1000, self.complete)
+                else:
+                    self.uentry.delete(0, tk.END)
+                    self.pwdentry.delete(0, tk.END)
+                    msg = "User Already Registered"
+                    self.prompt(msg)
+            except requests.exceptions.ConnectionError:
+                msgb.showerror(
+                    "Try Again Later",
+                    "Unable to connect to the Server at the moment, please try again later!\nThings you can do:\n1. Check your network connection\n2. Restart your system\n3. If this issue persists, wait for sometime. The server might be down, We are working on it!",
+                    master=root,
+                )
+                quit()
 
     def prompt(self, msg):
         try:
@@ -1638,10 +1846,9 @@ if __name__ == "__main__":
     try:
         arc.start_arcade()
         root.mainloop()
-    except:
-        noti.notify(
-            title="No Internet",
-            appname="Arcade",
-            message="You need an active Internet Connection to play the game!",
-            timeout=5,
+    except requests.exceptions.ConnectionError:
+        msgb.showerror(
+            "Try Again Later",
+            "Unable to connect to the Server at the moment, please try again later!\nThings you can do:\n1. Check your network connection\n2. Restart your system\n3. If this issue persists, wait for sometime. The server might be down, We are working on it!",
+            master=root,
         )
