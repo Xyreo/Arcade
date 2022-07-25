@@ -642,7 +642,7 @@ class Monopoly(tk.Toplevel):
                         self.me,
                         (
                             "CREATE",
-                            "endgame",
+                            "ENDGAME",
                             False,
                             self.player_details[self.me]["Name"],
                         ),
@@ -759,14 +759,15 @@ class Monopoly(tk.Toplevel):
         self.player_frame_popup(l)
         self.house_images = []
         self.place_houses()
-        self.action_frame.destroy()
-        if playerleft:
-            self.action_frame_popup(f"{playerleft} is bankrupt!")
-        else:
-            if action_frame_text:
-                self.action_frame_popup(action_frame_text)
+        if not any(i in self.collective for i in ["TRADE", "ENDGAME"]):
+            self.action_frame.destroy()
+            if playerleft:
+                self.action_frame_popup(f"{playerleft} is bankrupt!")
             else:
-                self.action_frame_popup(self.current_txt)
+                if action_frame_text:
+                    self.action_frame_popup(action_frame_text)
+                else:
+                    self.action_frame_popup(self.current_txt)
         if self.turn != self.me:
             self.roll_button_state("disabled")
 
@@ -3383,9 +3384,9 @@ class Monopoly(tk.Toplevel):
             pass
 
     def post_leave(self, usr):
-        if "endgame" in self.collective:
-            if usr in self.collective["endgame"]:
-                self.poll(usr, ("UPDATE", "endgame", -1))
+        if "ENDGAME" in self.collective:
+            if usr in self.collective["ENDGAME"]:
+                self.poll(usr, ("UPDATE", "ENDGAME", -1))
 
         if "TRADE" in self.collective:
             if self.collective["TRADE"][0] == "SEND":
@@ -3425,7 +3426,7 @@ class Monopoly(tk.Toplevel):
 
         if self.me == player_id:
             if not (quitting or inactive):
-                self.poll(self.me, ("CREATE", "endgame", True, name))
+                self.poll(self.me, ("CREATE", "ENDGAME", True, name))
                 if self.show_message(
                     "You are bankrupt!",
                     "Unfortunately, you have lost this game, Do you want to watch the other players play?",
@@ -3522,7 +3523,7 @@ class Monopoly(tk.Toplevel):
                 del self.collective[thing]
 
             if not received:
-                self.send_msg(("POLL", ("UPDATE", "endgame", res)))
+                self.send_msg(("POLL", ("UPDATE", "ENDGAME", res)))
 
         elif poll[0] == "CREATE":
             inst, thing, bankr, name = poll
@@ -3533,7 +3534,7 @@ class Monopoly(tk.Toplevel):
                 self.collective[thing] = {user: True}
                 self.get_input(bankr, name)
             if not received:
-                self.send_msg(("POLL", ("CREATE", "endgame", bankr, name)))
+                self.send_msg(("POLL", ("CREATE", "ENDGAME", bankr, name)))
 
     def get_input(self, bankrupt, ender):
         self.isEnding = True
@@ -3577,7 +3578,7 @@ class Monopoly(tk.Toplevel):
                     font=20,
                 ).place(relx=0.5, rely=0.5, anchor="center")
 
-                self.poll(self.me, ("UPDATE", "endgame", bool))
+                self.poll(self.me, ("UPDATE", "ENDGAME", bool))
 
             ttk.Button(
                 self.endgame_frame,
