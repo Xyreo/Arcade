@@ -1289,15 +1289,16 @@ class Arcade(tk.Toplevel):
                     [i[1][self.name]["NETWORTH"] for i in stats]
                 )
                 properties = []
-                places = []
+                places = {}
                 for i in stats:
                     properties.extend(i[1][self.name]["PROPERTIES"])
-                    places.extend(i[1][self.name]["PLACES"])
+                    for j, k in i[1][self.name]["PLACES"].items():
+                        places[j] += k
                 self.stats_details[game]["Favourite Property"] = max(
                     properties, key=lambda i: properties.count(i)
                 )
                 self.stats_details[game]["Favourite Spot"] = max(
-                    places, key=lambda i: places.count(i)
+                    places, key=lambda i: places[i]
                 )
             tk.Label(frame, text="YOUR STATS", font="times 20 underline").place(
                 relx=0.5, rely=0.1, anchor="center"
