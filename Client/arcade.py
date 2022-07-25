@@ -1260,7 +1260,7 @@ class Arcade(tk.Toplevel):
                 if i != refresh_but:
                     i.destroy()
             if stats == "Bad Request":
-                tk.Label(frame, text="No Stats Available!", font="times 20").place(
+                tk.Label(frame, text="No Stats Available!", font="arial 20").place(
                     relx=0.5, rely=0.5, anchor="center"
                 )
                 return
