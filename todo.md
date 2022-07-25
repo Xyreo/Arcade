@@ -1,9 +1,9 @@
 (A) Leaderboard, Stats @arcade @ProAltro
+(A) Session Expiry just after Login / Profile Picture Error @ProAltro @Chaitanya-Keyal
 (A) Timer @chess @ProAltro
 (B) Remove Random Stuff from all Code @Chaitanya-Keyal
 (B) LOGO @Chaitanya-Keyal
 (B) Trace Server Line by Line @ProAltro
-(B) Session Expiry just after Login / Profile Picture Error @ProAltro
 (B) Info, Rules @arcade @chess @monopoly @Chaitanya-Keyal
 (C) Game Settings + Private Room @arcade @Chaitanya-Keyal
 (D) Notifier @arcade @chess @monopoly
