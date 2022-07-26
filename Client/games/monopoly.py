@@ -936,11 +936,11 @@ class Monopoly(tk.Toplevel):
             min, sec, ms = 0, 0, 0
         min, sec, ms = int(a // 60), int(a % 60), int(a * 100 % 100)
         if precision == "sec":
-            things = "{:02d}".format(sec)
+            things = f"{sec:02d}"
         elif precision == "minsec":
-            things = "{:02d}:{:02d}".format(min, sec)
+            things = f"{min:02d}:{sec:02d}"
         else:
-            things += "{:02d}:{:02d}:{:02d}".format(min, sec, ms)
+            things += f"{min:02d}:{sec:02d}:{ms:02d}"
         lbl.configure(text=init_txt + " → " + things)
 
     # endregion
@@ -2951,15 +2951,13 @@ class Monopoly(tk.Toplevel):
         r = propertyrecv
         finaltxt1 = f"You will receive: " + (p if p else "")
         finaltxt1 += (
-            ((" & " if p else "") + str((-cash if cash < 0 else "")))
-            if cash < 0
-            else ""
+            ((" & " if p else "") + str(-cash if cash < 0 else "")) if cash < 0 else ""
         )
         if not (p or cash < 0):
             finaltxt1 += "Nothing"
         finaltxt2 = f"You will give: " + (r if r else "")
         finaltxt2 += (
-            ((" & " if r else "") + str((cash if cash > 0 else ""))) if cash > 0 else ""
+            ((" & " if r else "") + str(cash if cash > 0 else "")) if cash > 0 else ""
         )
         if not (r or cash > 0):
             finaltxt2 += "Nothing"
@@ -3241,7 +3239,7 @@ class Monopoly(tk.Toplevel):
             finaltxt1 += (
                 (
                     (" & " if self.p else "")
-                    + str((self.cash_val if self.cash_val > 0 else ""))
+                    + str(self.cash_val if self.cash_val > 0 else "")
                 )
                 if self.cash_val > 0
                 else ""
@@ -3252,7 +3250,7 @@ class Monopoly(tk.Toplevel):
             finaltxt2 += (
                 (
                     (" & " if self.r else "")
-                    + str((-self.cash_val if self.cash_val < 0 else ""))
+                    + str(-self.cash_val if self.cash_val < 0 else "")
                 )
                 if self.cash_val < 0
                 else ""

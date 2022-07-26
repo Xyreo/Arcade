@@ -268,7 +268,7 @@ class Chess(tk.Toplevel):
                     self.unbind("<Button-1>")
 
             self.bind("<Button-1>", lambda e: clicked(e))
-            self.acc_frame = ttk.Frame(self,style='Card.TFrame',padding=4)
+            self.acc_frame = ttk.Frame(self, style="Card.TFrame", padding=4)
             self.acc_frame.place(relx=0.01, rely=0.06, anchor="nw")
 
             self.quit_button = ttk.Button(
@@ -281,7 +281,7 @@ class Chess(tk.Toplevel):
             theme_var = tk.StringVar(value=self.theme.curr_theme())
 
             tk.Label(self.acc_frame, text="Dark Mode", font=("times", 12)).grid(
-                row=1, column=0, sticky="e", pady=2,padx=6
+                row=1, column=0, sticky="e", pady=2, padx=6
             )
             self.theme_button = ttk.Checkbutton(
                 self.acc_frame,
@@ -457,11 +457,11 @@ class Chess(tk.Toplevel):
             min, sec, ms = 0, 0, 0
         min, sec, ms = int(a // 60), int(a % 60), int(a * 100 % 100)
         if precision == "sec":
-            things = "{:02d}".format(sec)
+            things = f"{sec:02d}"
         elif precision == "minsec":
-            things = "{:02d}:{:02d}".format(min, sec)
+            things = f"{min:02d}:{sec:02d}"
         else:
-            things += "{:02d}:{:02d}:{:02d}".format(min, sec, ms)
+            things += f"{min:02d}:{sec:02d}:{ms:02d}"
         lbl.configure(text=things)
 
     # endregion

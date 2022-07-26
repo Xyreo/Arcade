@@ -1286,7 +1286,7 @@ class Arcade(tk.Toplevel):
                     [i for i in stats if self.name in i[-1] and len(i[-1]) != 1]
                 )
                 self.stats_details[game]["Highest NetWorth"] = max(
-                    [i[1][self.name]["NETWORTH"] for i in stats]
+                    i[1][self.name]["NETWORTH"] for i in stats
                 )
                 properties = []
                 places = {}
@@ -1358,10 +1358,7 @@ class Login(tk.Frame):
 
         if remember_login:
             master.withdraw()
-            with open(
-                REMEMBER_ME_FILE,
-                "r",
-            ) as f:
+            with open(REMEMBER_ME_FILE) as f:
                 uname, pwd = eval(f.readlines()[-1])
                 self.check_login = HTTP.login(uname, pwd, remember_login=True)
                 if self.check_login == 1:
