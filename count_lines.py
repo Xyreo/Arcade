@@ -14,3 +14,6 @@ print(
         showindex=list(range(1, len(a))) + [None],
     )
 )
+while True:
+    if not input():
+        break
