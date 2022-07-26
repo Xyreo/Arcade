@@ -2,6 +2,7 @@
 (A) Leaderboard, Stats @arcade @ProAltro
 (A) Timer @chess @ProAltro
 (A) Info, Rules @arcade @chess @monopoly @Chaitanya-Keyal
+(B) If CLI Thread is used, Timer glitch happens again
 (B) Add Timers Animation (Loading Bar) @chess @monopoly @Chaitanya-Keyal
 (B) Notifier @arcade @chess @monopoly @Chaitanya-Keyal
 (C) Game Settings + Private Room @arcade @Chaitanya-Keyal

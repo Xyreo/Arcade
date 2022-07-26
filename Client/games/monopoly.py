@@ -2091,7 +2091,7 @@ class Monopoly(tk.Toplevel):
 
         for i in self.properties.values():
             try:
-                self.player_tree.tag_configure(i.hex, background=i.hex)
+                self.player_tree.tag_configure(i.hex, foreground=i.hex)
             except:
                 pass
 
