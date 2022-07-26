@@ -267,7 +267,7 @@ class Chess(tk.Toplevel):
                     self.acc_frame.destroy()
                     self.unbind("<Button-1>")
 
-            self.bind("<Button-1>", lambda e: clicked(e))
+            self.bind("<Button-1>", clicked)
             self.acc_frame = ttk.Frame(self, style="Card.TFrame", padding=4)
             self.acc_frame.place(relx=0.01, rely=0.06, anchor="nw")
 
@@ -596,8 +596,6 @@ class Chess(tk.Toplevel):
             if self.debug:
                 # self.state = "PieceSelected"
                 pass
-            else:
-                pass
         else:
             self.state = "PieceSelected"
 
@@ -630,7 +628,7 @@ class Chess(tk.Toplevel):
             x1, y1, x2, y2 = self.grid_to_coords(k)
 
             if self.old_selected == self.selected:
-                if self.hover == None:
+                if self.hover is None:
                     self.unselect()
 
                     self.selected = None
@@ -642,19 +640,13 @@ class Chess(tk.Toplevel):
                     self.start_move(self.selected, self.hover, snap=True)
                     didMove = True
 
-                else:
-                    pass
-
             else:
-                if self.hover == None:
+                if self.hover is None:
                     self.set(self.selected, "normal", preserve_select=True)
 
                 elif self.hover in self.possible_moves:
                     self.start_move(self.selected, self.hover, snap=True)
                     didMove = True
-
-                else:
-                    pass
             if not didMove:
                 self.move_obj(self.board[k], (x1 + x2) // 2, (y1 + y2) // 2)
 
@@ -887,8 +879,6 @@ class Chess(tk.Toplevel):
             elif msg[1] == "DENY":
                 self.draw_frame.destroy()
                 del self.poll["DRAW"]
-        else:
-            pass
 
     def opp_move(self, msg):
         start, end, pawn = msg
@@ -1015,7 +1005,7 @@ class Chess(tk.Toplevel):
             command=lambda: self.quit_game("ENDED"),
         ).place(relx=0.5, rely=0.8, anchor="center")
 
-        if self.me == winner or (winner == None and self.side == "WHITE"):
+        if self.me == winner or (winner is None and self.side == "WHITE"):
             Chess.http.addgame(
                 "CHESS",
                 self.players[winner]["NAME"] if winner else "none",
@@ -1202,15 +1192,15 @@ class Piece:
             sign = 1 if color == "BLACK" else -1
 
             # Normal move
-            if k + sign in board.keys() and board[k + sign] == None:
+            if k + sign in board.keys() and board[k + sign] is None:
                 moves.append(k + sign)
 
             # 2 Step move from start
-            if k % 10 == 1 and board[k + 1] == None and board[k + 2] == None:
+            if k % 10 == 1 and board[k + 1] is None and board[k + 2] is None:
                 if self.color == "BLACK":
                     moves.append(k + 2)
 
-            elif k % 10 == 6 and board[k - 1] == None and board[k - 2] == None:
+            elif k % 10 == 6 and board[k - 1] is None and board[k - 2] is None:
                 if self.color == "WHITE":
                     moves.append(k - 2)
 
@@ -1223,10 +1213,10 @@ class Piece:
 
             # Enpassant
             ep = Chess.square_to_grid(board.fen["EP"])
-            if board[k + sign - 10] == None and k + sign - 10 == ep and self.hasMoved:
+            if board[k + sign - 10] is None and k + sign - 10 == ep and self.hasMoved:
                 moves.append(k + sign - 10)
 
-            if board[k + sign + 10] == None and k + sign + 10 == ep and self.hasMoved:
+            if board[k + sign + 10] is None and k + sign + 10 == ep and self.hasMoved:
                 moves.append(k + sign + 10)
 
         elif piece == "QUEEN":
@@ -1327,7 +1317,7 @@ class Piece:
 
         move = []
         for i in moves:
-            if i in board.keys() and (board[i] == None or board[i].color != color):
+            if i in board.keys() and (board[i] is None or board[i].color != color):
                 move.append(i)
                 continue
 
@@ -1451,7 +1441,7 @@ class FEN:
                     for j in range(len(i)):
                         if i[j].isdigit():
                             s = "-" * int(i[j])
-                            l.extend([p for p in s])
+                            l.extend(list(s))
                         else:
                             l.append(i[j])
                     li.append(l)
@@ -1532,7 +1522,7 @@ class FEN:
         l = []
 
         for i in board.values():
-            if i == None:
+            if i is None:
                 l.append("-")
             else:
                 p = FEN.pieces2[i.piece]

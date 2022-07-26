@@ -391,7 +391,7 @@ class Arcade(tk.Toplevel):
                     self.acc_frame.destroy()
                     self.unbind("<Button-1>")
 
-            self.bind("<Button-1>", lambda e: clicked(e))
+            self.bind("<Button-1>", clicked)
             self.acc_frame = ttk.Frame(self, style="Card.TFrame", padding=4)
             self.acc_frame.place(relx=0.99, rely=0.1, anchor="ne")
 
@@ -1103,7 +1103,7 @@ class Arcade(tk.Toplevel):
             border=0,
         ).place(relx=0.5, rely=0, anchor="n")
         k = 1
-        d = sorted(list(room["members"].values()), key=lambda x: x["name"])
+        d = sorted(room["members"].values(), key=lambda x: x["name"])
         for i in d:
             if not os.path.isfile(
                 os.path.join(ASSET, "cached_pfp", i["name"] + ".png")
@@ -1295,7 +1295,7 @@ class Arcade(tk.Toplevel):
                     for j, k in i[1][self.name]["PLACES"].items():
                         places[j] += k
                 self.stats_details[game]["Favourite Property"] = max(
-                    properties, key=lambda i: properties.count(i)
+                    properties, key=properties.count
                 )
                 self.stats_details[game]["Favourite Spot"] = max(
                     places, key=lambda i: places[i]
@@ -1389,7 +1389,7 @@ class Login(tk.Frame):
             textvariable=self.uname,
             validate="key",
             validatecommand=(
-                self.register(lambda e: no_special(e)),
+                self.register(no_special),
                 "%P",
             ),
         )
@@ -1423,7 +1423,7 @@ class Login(tk.Frame):
             fg="#15a8cd",
             highlightthickness=0,
             border=0,
-            command=lambda: register(),
+            command=register,
         ).place(relx=0.5, rely=0.6, anchor="center")
 
         self.show_password = ImageTk.PhotoImage(
@@ -1443,7 +1443,7 @@ class Login(tk.Frame):
             image=self.show_password,
             highlightthickness=0,
             border=0,
-            command=lambda: toggle_hide_password(),
+            command=toggle_hide_password,
         )
         self.show_hide_pass.place(relx=0.66, rely=0.4, anchor="w")
         self.remember_me = tk.BooleanVar()
@@ -1574,7 +1574,7 @@ class Register(tk.Frame):
             textvariable=self.uname,
             validate="key",
             validatecommand=(
-                self.register(lambda e: no_special(e)),
+                self.register(no_special),
                 "%P",
             ),
         )

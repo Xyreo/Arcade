@@ -347,7 +347,7 @@ class Monopoly(tk.Toplevel):
         self.protocol(
             "WM_DELETE_WINDOW", lambda: self.player_leave(self.me, quitting=True)
         )
-        self.bind("<Configure>", lambda e: self.win_resized(e))
+        self.bind("<Configure>", self.win_resized)
 
     def win_resized(self, e):
         if e.widget == self:
@@ -628,7 +628,7 @@ class Monopoly(tk.Toplevel):
                     self.acc_frame.place_forget()
                     self.unbind("<Button-1>")
 
-            self.bind("<Button-1>", lambda e: clicked(e))
+            self.bind("<Button-1>", clicked)
             self.acc_frame = ttk.Frame(self, style="Card.TFrame", padding=4)
             self.acc_frame.place(relx=0.01, rely=0.06, anchor="nw")
 
@@ -2096,9 +2096,7 @@ class Monopoly(tk.Toplevel):
                 pass
 
         self.player_tree.place(relx=0, rely=0.5, anchor="w", relheight=1, relwidth=0.94)
-        self.player_tree.bind(
-            "<<TreeviewSelect>>", lambda event: self.treeview_click(event)
-        )
+        self.player_tree.bind("<<TreeviewSelect>>", self.treeview_click)
 
     def treeview_click(self, event):
         try:
@@ -2200,7 +2198,7 @@ class Monopoly(tk.Toplevel):
                     self.action_frame,
                     text="END TURN",
                     style="16.TButton",
-                    command=lambda: self.end_turn(),
+                    command=self.end_turn,
                 )
                 self.end_button.place(relx=0.5, rely=0.3, anchor="center")
 
@@ -3978,7 +3976,7 @@ if __name__ == "__main__":
         "QWERTY",
         print,
         hobj,
-        order=[[i for i in range(20)], [i for i in range(20)]],
+        order=[list(range(20)), list(range(20))],
         theme=theme,
     )
     root.mainloop()

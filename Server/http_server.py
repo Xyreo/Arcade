@@ -234,7 +234,7 @@ def change_pfp():
 @monopoly.route("/details")
 def list_details():
     details = db.execute("SELECT * FROM monopoly_board_values")
-    l = [i for i in details]
+    l = list(details)
     return jsonify(l), 200
 
 
@@ -406,6 +406,7 @@ def load_img(user):
 
 
 # endregion
+
 req_authorisation.register_blueprint(monopoly, url_prefix="/monopoly")
 req_authorisation.register_blueprint(chess, url_prefix="/chess")
 app.register_blueprint(req_authorisation)

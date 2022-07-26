@@ -160,7 +160,7 @@ class Room(Channels):
     def mnply_start(self):
         p = {}
         color = ["red", "green", "blue", "gold"]
-        order = [[i for i in range(20)], [i for i in range(20)]]
+        order = [list(range(20)), list(range(20))]
         random.shuffle(order[0])
         random.shuffle(order[1])
         i = 0
