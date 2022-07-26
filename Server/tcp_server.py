@@ -63,7 +63,10 @@ class Lobby(Channels):
         self.broadcast_to_members(("ROOM", "ADD", room.details()), exclude=host.uuid)
 
     def join_room(self, player, id):
-        rooms[id].join(player)
+        if id in rooms:
+            rooms[id].join(player)
+        else:
+            player.send_instruction(self.game, "JOIN_ERR", id)
 
     def join(self, player):
         super().join(player)

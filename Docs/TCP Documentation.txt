@@ -21,6 +21,7 @@ Join Lobby:
 
     Response: To only you
     (<Lobby>, INIT, [{id:,host:,members:,settings:},......])
+    (<LOBBY>, JOIN_ERR, id)
 
 Leave Lobby:
     (0, LEAVE, <Lobby>) - Leaves Lobby
