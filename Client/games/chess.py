@@ -715,16 +715,20 @@ class Chess(tk.Toplevel):
             (y + 1) * Chess.size // 8,
         )
 
-    def start_move(self, start, end, multi=False, snap=False):
+    def start_move(self, start, end, multi=False, snap=False, times={}):
         t = threading.Thread(
-            target=self.move, args=(start, end, multi, snap), daemon=True
+            target=self.move, args=(start, end, multi, snap, times), daemon=True
         )
         t.start()
 
-    def move(self, start, end, multi, snap):
+    def move(self, start, end, multi, snap, times={}):
         self.timers[
             self.opponent if self.players[self.me]["SIDE"] == self.turn else self.me
         ].pause()
+        self.timers[
+            self.opponent if self.players[self.me]["SIDE"] == self.turn else self.me
+        ].add_time(self.add_time)
+
         if "DRAW" in self.poll:
             if self.poll["DRAW"] == "ACK":
                 self.draw_frame.destroy()
@@ -772,11 +776,23 @@ class Chess(tk.Toplevel):
             )
 
         # endregion
+
         sent = (start, end, self.pawn_promotion)
         if not multi or self.debug:
-            self.send(("MOVE", sent))
+            self.send(
+                (
+                    "MOVE",
+                    sent,
+                    {
+                        self.me: self.timers[self.me].time_left(),
+                        self.opponent: self.timers[self.opponent].time_left(),
+                    },
+                )
+            )
             self.display_moves(False)
         else:
+            self.timers[self.me].set_time(times[self.me])
+            self.timers[self.opponent].set_time(times[self.opponent])
             self.possible_moves = []
         self.pawn_promotion = None
 
@@ -870,7 +886,7 @@ class Chess(tk.Toplevel):
                     self.final_frame("RESIGN", winner=self.me)
 
         elif msg[0] == "MOVE":
-            self.opp_move(msg[1])
+            self.opp_move(msg[1], msg[2])
         elif msg[0] == "DRAW":
             if msg[1] == "REQ":
                 self.draw_reply()
@@ -880,7 +896,7 @@ class Chess(tk.Toplevel):
                 self.draw_frame.destroy()
                 del self.poll["DRAW"]
 
-    def opp_move(self, msg):
+    def opp_move(self, msg, times):
         start, end, pawn = msg
         self.chess_notifier(
             "Opponent",
@@ -890,7 +906,7 @@ class Chess(tk.Toplevel):
         )
         if pawn:
             self.pawn_promotion = pawn
-        self.start_move(start, end, multi=True)
+        self.start_move(start, end, multi=True, times=times)
 
     def get_active_window(self):
         if os.name == "nt":

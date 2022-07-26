@@ -79,12 +79,11 @@ class Http:
             return False
 
     def addgame(self, game, winner, result, players):
-        res = {str(i): str(result[i]) for i in result}
         r = self.game_send(
             "post",
             game,
             "add_game",
-            {"winner": winner, "result": res, "players": players},
+            {"winner": winner, "result": result, "players": players},
         )
         return r.json()
 
@@ -135,7 +134,18 @@ class Response:
         return self.body
 
 
-# print(app.leaderboard("chess"))
-# print(app.addgame("chess", "none", {1: 2}, ["user1", "user2"]))
-# print(app.stats("monopoly", 1))
-# print(app.del_user())
+if __name__ == "__main__":
+    app = Http("http://localhost:5000")
+    app.login("user3", "pass3")
+    # app.addgame(
+    #     "MONOPOLY",
+    #     ["ProAltro", "okaybro"],
+    #     {
+    #         "ProAltro": {"NETWORTH": 1600, "PROPERTIES": [], "PLACES": {"Go": 1}},
+    #         "okaybro": {"NETWORTH": 1500, "PROPERTIES": [], "PLACES": {"Go": 1}},
+    #     },
+    #     ["ProAltro"],
+    # )
+    print(app.stats("MONOPOLY", "proaltro"))
+    # print(app.leaderboard("MONOPOLY"))
+    app.logout()

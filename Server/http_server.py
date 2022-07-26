@@ -127,7 +127,6 @@ def login():
     password = data["password"].encode("utf-8")
 
     storedpw = db.execute(f"SELECT password FROM user where name='{username}'")
-    print(storedpw)
     if len(storedpw):
         if bcrypt.checkpw(password, storedpw[0][0].encode("utf-8")):
             session = auth.add(username)
@@ -234,7 +233,7 @@ def change_pfp():
 @monopoly.route("/details")
 def list_details():
     details = db.execute("SELECT * FROM monopoly_board_values")
-    l = list(details)
+    l = [i for i in details]
     return jsonify(l), 200
 
 
@@ -252,17 +251,17 @@ def monopoly_game_add():
         data = json.loads(request.data)
         winner = data["winner"]
         result = data["result"]
-
         players = data["players"]
-        result = str(result).replace("'", '"')
         s = "insert into game_user(user,game) values "
+        result = str(result).replace("'", "!@#$").replace('"', "!@#$")
+        winner = str(winner).replace("'", "!@#$").replace('"', "!@#$")
         for i in players:
             s += f"('{i}',@v1),"
         s = s[:-1] + ";"
-
         q = f"""SET @v1 := (SELECT IFNULL(srno,0) FROM game ORDER BY srno DESC LIMIT 1)+1;
         insert into game(srno,type,result,winner) values (@v1,'MNPLY','{result}','{winner}');
         {s}"""
+
         db.data_change(q, multi=True)
         return jsonify("Success"), 200
     except Exception as e:
@@ -272,16 +271,19 @@ def monopoly_game_add():
 
 @monopoly.route("/stats/<string:name>")
 def monopoly_stats(name):
-    q = f'select user.srno,user.name,game.srno,game.result,game.winner from user inner join game_user on game_user.user=user.name inner join game on game_user.game = game.srno where user.name="{name}" and game.type="MNPLY";'
+    q = f'select user.srno,user.name,game.srno,game.result,game.winner from user inner join game_user on game_user.user=user.name inner join game on game_user.game = game.srno where user.name="{name.lower()}" and game.type="MNPLY";'
     details = db.execute(q)
     try:
         if not (details or len(details)):
             return jsonify("Bad Request"), 400
         res = []
         for i in details:
-            res.append((i[2], eval(i[3]), i[4]))
+            result = eval(i[3].replace("!@#$", '"'))
+            winner = eval(i[4].replace("!@#$", '"'))
+            res.append((i[2], result, winner))
         return jsonify(res), 200
     except Exception as e:
+        print(e)
         return jsonify(e), 400
 
 
@@ -294,13 +296,24 @@ def monopoly_leaderboard():
     try:
         res = {}
         for i in det:
-            if i[0] in res:
-                res[i[0]]["games"].append((i[2], eval(i[3]), i[4]))
+            result = eval(i[3].replace("!@#$", '"'))
+            winner = eval(i[4].replace("!@#$", '"'))
+            if i[1] in res:
+                res[i[1]]["games"].append(
+                    (
+                        i[2],
+                        result,
+                        winner,
+                    )
+                )
             else:
-                res[i[0]] = {"name": i[1], "games": [(i[2], eval(i[3]), i[4])]}
+                res[i[1]] = {
+                    "name": i[1],
+                    "games": [(i[2], result, winner)],
+                }
         send = {}
         for i, j in res.items():
-            g = [nw[1][str(i)] for nw in j["games"]]
+            g = [nw[1][str(i)]["NETWORTH"] for nw in j["games"]]
             send[j["name"]] = max(g)
 
         return jsonify(send), 200
@@ -318,9 +331,9 @@ def chess_game_add():
         data = json.loads(request.data)
         winner = data["winner"]
         result = data["result"]
-
         players = data["players"]
-        result = str(result).replace("'", '"')
+        result = str(result).replace("'", "!@#$").replace('"', "!@#$")
+        winner = str(winner).replace("'", "!@#$").replace('"', "!@#$")
         s = "insert into game_user(user,game) values "
         for i in players:
             s += f"('{i}',@v1),"
@@ -331,6 +344,7 @@ def chess_game_add():
         {s}"""
         db.data_change(q, multi=True)
         return jsonify("Succes"), 200
+
     except Exception as e:
         print(e)
         return jsonify("Bad Req"), 400
@@ -345,8 +359,11 @@ def chess_stats(name):
             return jsonify("Bad Request"), 400
         res = []
         for i in details:
-            res.append((i[2], eval(i[3]), i[4]))
+            result = eval(i[3].replace("!@#$", '"'))
+            winner = eval(i[4].replace("!@#$", '"'))
+            res.append((i[2], result, winner))
         return jsonify(res), 200
+
     except Exception as e:
         return jsonify(e), 400
 
@@ -357,13 +374,16 @@ def chess_leaderboard():
         "select user.srno, user.name, game.srno, game.result, game.winner from user inner join game_user on game_user.user=user.name inner join game on game_user.game = game.srno where game.type='CHESS';"
     )
     # cursor.execute('drop table monopoly_board_values')
+
     try:
         res = {}
         for i in det:
+            result = eval(i[3].replace("!@#$", '"'))
+            winner = eval(i[4].replace("!@#$", '"'))
             if i[0] in res:
-                res[i[0]]["games"].append((i[2], eval(i[3]), i[4]))
+                res[i[0]]["games"].append((i[2], result, winner))
             else:
-                res[i[0]] = {"name": i[1], "games": [(i[2], eval(i[3]), i[4])]}
+                res[i[0]] = {"name": i[1], "games": [(i[2], winner)]}
         send = {}
         for i, j in res.items():
             pt = 0
@@ -406,7 +426,6 @@ def load_img(user):
 
 
 # endregion
-
 req_authorisation.register_blueprint(monopoly, url_prefix="/monopoly")
 req_authorisation.register_blueprint(chess, url_prefix="/chess")
 app.register_blueprint(req_authorisation)
