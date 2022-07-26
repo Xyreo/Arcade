@@ -1126,7 +1126,7 @@ class Arcade(tk.Toplevel):
         )
         self.room_settings[game] = tk.Frame(frame)
         self.room_settings[game].place(
-            relx=0.5, rely=0.7, anchor="center", relwidth=0.95, relheight=0.4
+            relx=0.5, rely=0.7, anchor="center", relwidth=0.95, relheight=0.5
         )
 
         self.update_room(room, game)
@@ -1139,7 +1139,7 @@ class Arcade(tk.Toplevel):
         tk.Label(
             self.room_members[game], text=f"Members", font=("times 13 underline")
         ).place(relx=0.5, rely=0, anchor="n")
-        k = 1.1
+        k = 1
         d = sorted(room["members"].values(), key=lambda x: x["name"])
         for i in d:
             if not os.path.isfile(
@@ -1147,13 +1147,6 @@ class Arcade(tk.Toplevel):
             ):
                 Arcade.store_pfp(i["name"])
             i.update({"pfp": Arcade.get_cached_pfp(i["name"], (32, 32))})
-        try:
-            if len(d) > 1:
-                self.room_start_button.configure(state="normal")
-            else:
-                self.room_start_button.configure(state="disabled")
-        except:
-            pass
         for i in d:
             tk.Label(
                 self.room_members[game],
@@ -1185,7 +1178,7 @@ class Arcade(tk.Toplevel):
             tk.Label(frame, text=display_dict[i], font="arial 13").place(
                 relx=0.2, rely=0.15 + k / 10, anchor="w"
             )
-            k += 2
+            k += 1.75
 
         k = 1
         new_settings = copy.deepcopy(settings_dict)
@@ -1206,6 +1199,13 @@ class Arcade(tk.Toplevel):
                 state="disabled",
             )
             self.room_start_button.place(relx=0.5, rely=1, anchor="s")
+            try:
+                if len(d) > 1:
+                    self.room_start_button.configure(state="normal")
+                else:
+                    self.room_start_button.configure(state="disabled")
+            except:
+                pass
         else:
             tk.Label(
                 frame,
@@ -1405,7 +1405,7 @@ class Arcade(tk.Toplevel):
                 tk.Label(frame, text=txt, font="arial 13").place(
                     relx=0.6, rely=0.15 + k / 10, anchor="w"
                 )
-            k += 2
+            k += 1.75
 
     def leave_room(self, room, game=None, delete=False, confirm=True):
         if room in self.rooms:

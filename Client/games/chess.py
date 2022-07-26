@@ -391,7 +391,7 @@ class Chess(tk.Toplevel):
         self.user_pfp_display: dict[str, tk.Label] = {}
 
         self.timer_labels[self.me] = tk.Label(self.main_frame, font="consolas 45")
-        self.timer_labels[self.me].place(relx=0.5, rely=0.125, anchor="center")
+        self.timer_labels[self.me].place(relx=0.5, rely=0.875, anchor="center")
         self.timer_threads[self.me] = threading.Thread(
             target=self.timer_init,
             args=(self.me,),
@@ -406,10 +406,10 @@ class Chess(tk.Toplevel):
             font=("arial 16"),
             compound="left",
         )
-        self.user_pfp_display[self.me].place(relx=0.5, rely=0.2, anchor="center")
+        self.user_pfp_display[self.me].place(relx=0.5, rely=0.8, anchor="center")
 
         self.timer_labels[self.opponent] = tk.Label(self.main_frame, font="consolas 45")
-        self.timer_labels[self.opponent].place(relx=0.5, rely=0.875, anchor="center")
+        self.timer_labels[self.opponent].place(relx=0.5, rely=0.125, anchor="center")
         self.timer_threads[self.opponent] = threading.Thread(
             target=self.timer_init,
             args=(self.opponent,),
@@ -424,7 +424,7 @@ class Chess(tk.Toplevel):
             font=("arial 16"),
             compound="left",
         )
-        self.user_pfp_display[self.opponent].place(relx=0.5, rely=0.8, anchor="center")
+        self.user_pfp_display[self.opponent].place(relx=0.5, rely=0.2, anchor="center")
 
         for i in self.players:
             self.timer_threads[i].start()
