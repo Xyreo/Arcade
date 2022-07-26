@@ -1,4 +1,5 @@
 import base64
+import copy
 import os
 import pickle
 import random
@@ -11,6 +12,7 @@ from io import BytesIO
 from tkinter import filedialog as fd
 from tkinter import messagebox as msgb
 
+import pyperclip as clipboard
 import requests
 from PIL import Image, ImageChops, ImageDraw, ImageTk
 from plyer import notification as noti
@@ -131,15 +133,22 @@ class Arcade(tk.Toplevel):
         self.lobby_trees = {"CHESS": None, "MNPLY": None}
         self.room_frames = {"CHESS": None, "MNPLY": None}
         self.room_members = {"CHESS": None, "MNPLY": None}
+        self.room_settings = {"CHESS": None, "MNPLY": None}
         self.leaderboard_details = {"chess": None, "monopoly": None}
         self.stats_details = {"chess": {}, "monopoly": {}}
         self.pfps: dict[str, ImageTk.PhotoImage] = {}
+        self.updated_host_side = None
 
         self.current_room = None
         self.sent_time = time.perf_counter()
         self.refresh = ImageTk.PhotoImage(
             Image.open(os.path.join(ASSET, "refresh.png")).resize(
                 (16, 16), Image.Resampling.LANCZOS
+            )
+        )
+        self.copy_icon = ImageTk.PhotoImage(
+            Image.open(os.path.join(ASSET, "copy.png")).resize(
+                (20, 20), Image.Resampling.LANCZOS
             )
         )
 
@@ -172,8 +181,18 @@ class Arcade(tk.Toplevel):
 
         self.current_room = None
 
-        self.cobj = Client((CLIENT_ADDRESS, 6969), self.event_handler, token)
-        self.cobj.send((self.name,))
+        try:
+            self.cobj = Client((CLIENT_ADDRESS, 6969), self.event_handler, token)
+            self.cobj.send((self.name,))
+        except ConnectionRefusedError:
+            HTTP.logout()
+            self.destroy()
+            msgb.showerror(
+                "Try Again Later",
+                "Unable to connect to the Server at the moment, please try again later!\nThings you can do:\n1. Check your network connection\n2. Restart your system\n3. If this issue persists, wait for sometime. The server might be down, We are working on it!",
+                master=root,
+            )
+            quit()
 
         self.main_notebook = ttk.Notebook(self)
         self.main_notebook.place(relx=0, rely=0, anchor="nw", relheight=1, relwidth=1)
@@ -316,6 +335,7 @@ class Arcade(tk.Toplevel):
                 self.room_frames[game] = None
                 if msg[2] == "REMOVE":
                     self.rooms.remove_room(game, dest)
+                    self.current_room = None
                 elif msg[2] == "START":
                     self.withdraw()
                     if game == "CHESS":
@@ -881,7 +901,7 @@ class Arcade(tk.Toplevel):
         self.bind("<Escape>", lambda a: self.leave_lobby(game))
 
         scroll = ttk.Scrollbar(frame, orient="vertical")
-        scroll.place(relx=0.9975, rely=0.5, anchor="e", relheight=0.85)
+        scroll.place(relx=0.9975, rely=0.075, anchor="ne", relheight=0.75)
         tk.Label(frame, text="Select A Room", font="times 13 underline").place(
             relx=0.5, rely=0.025, anchor="center"
         )
@@ -892,13 +912,19 @@ class Arcade(tk.Toplevel):
             yscrollcommand=scroll.set,
         )
         tree = self.lobby_trees[game]
-        tree.place(relx=0.49, rely=0.5, anchor="center", relheight=0.85, relwidth=0.96)
+        tree.place(relx=0.49, rely=0.075, anchor="n", relheight=0.75, relwidth=0.96)
+
+        def join_some_room():
+            if self.join_pvt_entry.get():
+                self.join_selected_room([self.join_pvt_entry.get()], game)
+            elif tree.selection():
+                self.join_selected_room(tree.selection(), game)
 
         self.join_select_room_button = ttk.Button(
             frame,
             text="Join",
             style="13.TButton",
-            command=lambda: self.join_selected_room(tree.selection(), game),
+            command=join_some_room,
         )
         self.join_select_room_button.place(relx=0.51, rely=0.99, anchor="s")
 
@@ -907,7 +933,7 @@ class Arcade(tk.Toplevel):
             "#0",
             width=10,
         )
-        tree.bind("<Return>", lambda a: self.join_selected_room(tree.selection(), game))
+        tree.bind("<Return>", lambda e: join_some_room())
 
         tree.column(
             "Room",
@@ -933,13 +959,41 @@ class Arcade(tk.Toplevel):
         tree.heading("Host", text="Host", anchor="center")
         tree.heading("Players", text="No. of Players", anchor="center")
 
+        def no_special(e):
+            if e.isalnum() and len(e) <= 6 or not e:
+                return True
+            else:
+                return False
+
+        def clear():
+            e = self.join_pvt_entry.get()
+            if not (e.isalnum() and len(e) == 6):
+                self.join_pvt_entry.delete(0, "end")
+
+        self.pvt_id = tk.StringVar()
+        self.join_pvt_entry = ttk.Entry(
+            frame,
+            textvariable=self.pvt_id,
+            validate="key",
+            validatecommand=(
+                self.register(no_special),
+                "%P",
+            ),
+        )
+        tk.Label(frame, text="Enter Private Room ID:", font="times 13").place(
+            relx=0.59, rely=0.85, anchor="e"
+        )
+        self.join_pvt_entry.place(relx=0.61, rely=0.85, relwidth=0.2, anchor="w")
+        self.join_pvt_entry.focus_set()
+        self.join_pvt_entry.bind("<Return>", lambda e: join_some_room())
+        self.join_pvt_entry.bind("<FocusOut>", lambda e: clear())
+
         self.send(("0", "JOIN", game.upper()))
 
     def update_lobby(self, game):
         for item in self.lobby_trees[game].get_children():
             self.lobby_trees[game].delete(item)
         if self.rooms[game]:
-            self.join_select_room_button.configure(state="normal")
             for id, room in self.rooms[game].items():
                 if len(room["members"]) >= room["settings"]["MAX_PLAYERS"]:
                     continue
@@ -951,8 +1005,6 @@ class Arcade(tk.Toplevel):
                     text="",
                     values=(id, hostname, len(room["members"])),
                 )
-        else:
-            self.join_select_room_button.configure(state="disabled")
 
     def leave_lobby(self, game, frame_preserve=False):
         if not frame_preserve:
@@ -965,9 +1017,7 @@ class Arcade(tk.Toplevel):
 
     # region # Room
 
-    def join_selected_room(self, room, game=None):
-        if room in self.rooms:
-            game = "CHESS" if room in self.rooms["CHESS"] else "MNPLY"
+    def join_selected_room(self, room, game):
         if len(room) != 1:
             return
         if self.current_room:
@@ -996,17 +1046,17 @@ class Arcade(tk.Toplevel):
                 return
         if game == "CHESS":
             settings = {
-                "STATUS": "PUBLIC",
+                "STATUS": "PRIVATE",
                 "MAX_PLAYERS": 2,
                 "TIME": 600,
-                "HOST_SIDE": random.choice(("BLACK", "WHITE")),
                 "ADD_TIME": 5,
+                "HOST_SIDE": random.choice(("BLACK", "WHITE")),
             }
         if game == "MNPLY":
             settings = {
-                "STATUS": "PUBLIC",
+                "STATUS": "PRIVATE",
                 "MAX_PLAYERS": 4,
-            }  # ? Colour, Speed Game, Auctions
+            }
         self.send((game, "CREATE", settings))
 
     def join_room(self, room, game=None):
@@ -1025,8 +1075,8 @@ class Arcade(tk.Toplevel):
         )
 
         self.room_frames[game] = ttk.Frame(parent, style="Card.TFrame")
-        frame = self.room_frames[game]
-        frame.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.33, relheight=0.9)
+        frame: ttk.Frame = self.room_frames[game]
+        frame.place(relx=0.5, rely=0.525, anchor="center", relwidth=0.33, relheight=0.9)
 
         tk.Button(
             frame,
@@ -1034,59 +1084,50 @@ class Arcade(tk.Toplevel):
             font=("times", 10),
             highlightthickness=0,
             border=0,
-            command=lambda: self.leave_room(room["id"], game, delete=hostname == "You"),
+            command=lambda: self.leave_room(
+                self.current_room, game, delete=hostname == "You"
+            ),
         ).place(relx=0.01, rely=0.01, anchor="nw")
 
         self.bind(
             "<Escape>",
-            lambda a: self.leave_room(room["id"], game, delete=hostname == "You"),
+            lambda a: self.leave_room(
+                self.current_room, game, delete=hostname == "You"
+            ),
         )
 
         tk.Label(
             frame,
-            text=f"Room ID: {room['id']}",
+            text=f"Room ID: {self.current_room}",
             font=("times", 13),
-            highlightthickness=0,
-            border=0,
         ).place(relx=0.5, rely=0.05, anchor="center")
 
-        tk.Label(
+        def clip_copy():
+            clipboard.copy(self.current_room)
+            copied = tk.Label(frame, text="Copied!", font=("times", 12), fg="green")
+            copied.place(relx=0.7, rely=0.05, anchor="w")
+            self.after(2500, copied.destroy)
+
+        tk.Button(
             frame,
-            text=f"Host: {hostname}",
-            font=("times", 13),
+            image=self.copy_icon,
             highlightthickness=0,
             border=0,
-        ).place(relx=0.5, rely=0.1, anchor="center")
+            command=clip_copy,
+        ).place(relx=0.675, rely=0.05, anchor="center")
+
+        tk.Label(frame, text=f"Host: {hostname}", font=("times", 13)).place(
+            relx=0.5, rely=0.1, anchor="center"
+        )
 
         self.room_members[game] = tk.Frame(frame)
         self.room_members[game].place(
             relx=0.5, rely=0.3, anchor="center", relwidth=0.95, relheight=0.25
         )
-
-        tk.Label(
-            frame,
-            text=f"Settings",
-            font=("times 13 underline"),
-            highlightthickness=0,
-            border=0,
-        ).place(relx=0.5, rely=0.6, anchor="center")
-
-        # TODO: Show/Select Settings
-        if hostname == "You":
-            self.room_start_button = ttk.Button(
-                frame,
-                text="START",
-                style="13.TButton",
-                command=lambda: self.start_room(game, room["id"]),
-                state="disabled",
-            )
-            self.room_start_button.place(relx=0.5, rely=0.9, anchor="center")
-        else:
-            tk.Label(
-                frame,
-                text="Waiting for Host to start the game",
-                font=("times", 13),
-            ).place(relx=0.5, rely=0.9, anchor="center")
+        self.room_settings[game] = tk.Frame(frame)
+        self.room_settings[game].place(
+            relx=0.5, rely=0.7, anchor="center", relwidth=0.95, relheight=0.4
+        )
 
         self.update_room(room, game)
 
@@ -1096,13 +1137,9 @@ class Arcade(tk.Toplevel):
         for child in self.room_members[game].winfo_children():
             child.destroy()
         tk.Label(
-            self.room_members[game],
-            text=f"Members",
-            font=("times 13 underline"),
-            highlightthickness=0,
-            border=0,
+            self.room_members[game], text=f"Members", font=("times 13 underline")
         ).place(relx=0.5, rely=0, anchor="n")
-        k = 1
+        k = 1.1
         d = sorted(room["members"].values(), key=lambda x: x["name"])
         for i in d:
             if not os.path.isfile(
@@ -1123,11 +1160,252 @@ class Arcade(tk.Toplevel):
                 image=i["pfp"],
                 text="  " + i["name"],
                 font=("times", 13),
-                highlightthickness=0,
-                border=0,
                 compound="left",
             ).place(relx=0.4, rely=(k / 4), anchor="w")
             k += 1
+
+        settings_dict = self.rooms[game][room["id"]]["settings"]
+        display_dict = {
+            "STATUS": "Room Type:",
+            "TIME": "Minutes per side:",
+            "MAX_PLAYERS": "Players Allowed:",
+            "HOST_SIDE": "Your Side:",
+            "ADD_TIME": "Increment per turn:",
+        }
+        frame = self.room_settings[game]
+        tk.Label(frame, text="Settings", font=("times 13 underline")).place(
+            relx=0.5, rely=0, anchor="n"
+        )
+        k = 1
+        for i in settings_dict:
+            if (game == "CHESS" and i == "MAX_PLAYERS") or (
+                room["host"] != self.me and i == "HOST_SIDE"
+            ):
+                continue
+            tk.Label(frame, text=display_dict[i], font="arial 13").place(
+                relx=0.2, rely=0.15 + k / 10, anchor="w"
+            )
+            k += 2
+
+        k = 1
+        new_settings = copy.deepcopy(settings_dict)
+        if room["host"] == self.me:
+            self.apply_button = ttk.Button(
+                frame,
+                text="Apply Changes",
+                style="12.TButton",
+                command=lambda: self.send((room["id"], "SETTINGS", new_settings)),
+                state="disabled",
+            )
+            self.apply_button.place(relx=0.8, rely=1, anchor="s")
+            self.room_start_button = ttk.Button(
+                frame,
+                text="START",
+                style="13.TButton",
+                command=lambda: self.start_room(game, self.current_room),
+                state="disabled",
+            )
+            self.room_start_button.place(relx=0.5, rely=1, anchor="s")
+        else:
+            tk.Label(
+                frame,
+                text="Waiting for Host to start the game",
+                font=("times", 13),
+            ).place(relx=0.5, rely=1, anchor="s")
+        for i, j in settings_dict.items():
+            if room["host"] == self.me:
+
+                def check(e, l):
+                    try:
+                        a = int(e)
+                    except:
+                        a = 0
+                    if (e.isdigit() and a in l) or not e:
+                        return True
+                    else:
+                        return False
+
+                if game == "CHESS" and i == "MAX_PLAYERS":
+                    continue
+
+                if i == "STATUS":
+                    status_var = tk.StringVar(value=j)
+
+                    def status_change():
+                        new_settings["STATUS"] = status_var.get()
+                        if new_settings == settings_dict:
+                            self.apply_button.configure(state="disabled")
+                        else:
+                            self.apply_button.configure(state="normal")
+
+                    ttk.Radiobutton(
+                        frame,
+                        text="Public",
+                        variable=status_var,
+                        value="PUBLIC",
+                        command=status_change,
+                    ).place(relx=0.6, rely=0.15 + k / 10, anchor="w")
+                    ttk.Radiobutton(
+                        frame,
+                        text="Private",
+                        variable=status_var,
+                        value="PRIVATE",
+                        command=status_change,
+                    ).place(relx=0.8, rely=0.15 + k / 10, anchor="w")
+
+                elif i == "TIME":
+
+                    def tot_time():
+                        if not self.time_spin.get():
+                            return
+                        new_settings["TIME"] = int(self.time_spin.get()) * 60
+                        if new_settings == settings_dict:
+                            self.apply_button.configure(state="disabled")
+                        else:
+                            self.apply_button.configure(state="normal")
+
+                    self.time_spin = ttk.Spinbox(
+                        frame,
+                        validate="key",
+                        validatecommand=(
+                            self.register(lambda e: check(e, list(range(1, 31)))),
+                            "%P",
+                        ),
+                        from_=1,
+                        to=30,
+                        increment=1,
+                        command=tot_time,
+                        wrap=True,
+                    )
+                    self.time_spin.delete(0, "end")
+                    self.time_spin.insert(0, str(j // 60))
+                    self.time_spin.place(relx=0.6, rely=0.15 + k / 10, anchor="w")
+                    self.time_spin.bind("<KeyRelease>", lambda e: tot_time())
+                elif i == "ADD_TIME":
+
+                    def add_time():
+                        if not self.add_spin.get():
+                            return
+                        new_settings["ADD_TIME"] = int(self.add_spin.get())
+                        if new_settings == settings_dict:
+                            self.apply_button.configure(state="disabled")
+                        else:
+                            self.apply_button.configure(state="normal")
+
+                    self.add_spin = ttk.Spinbox(
+                        frame,
+                        validate="key",
+                        validatecommand=(
+                            self.register(lambda e: check(e, list(range(11)))),
+                            "%P",
+                        ),
+                        from_=0,
+                        to=10,
+                        increment=1,
+                        command=add_time,
+                        wrap=True,
+                    )
+                    self.add_spin.insert(0, str(j))
+                    self.add_spin.place(relx=0.6, rely=0.15 + k / 10, anchor="w")
+                    self.add_spin.bind("<KeyRelease>", lambda e: add_time())
+
+                elif i == "HOST_SIDE":
+                    side_var = tk.StringVar()
+                    rand = tk.BooleanVar()
+                    if self.updated_host_side == "RANDOM":
+                        rand = tk.BooleanVar(value=True)
+                    elif self.updated_host_side in ["BLACK", "WHITE"]:
+                        side_var.set(self.updated_host_side)
+                    else:
+                        rand.set(True)
+
+                    def side_change(ch=False):
+                        if ch:
+                            self.updated_host_side = side_var.get()
+                            rand.set(False)
+                        else:
+                            self.updated_host_side = "RANDOM"
+                            side_var.set("")
+                        if rand.get():
+                            new_settings["HOST_SIDE"] = random.choice(
+                                ("BLACK", "WHITE")
+                            )
+                        else:
+                            if not side_var.get():
+                                side_var.set("WHITE")
+                            new_settings["HOST_SIDE"] = side_var.get()
+
+                        if self.updated_host_side in [
+                            new_settings["HOST_SIDE"],
+                            "RANDOM",
+                        ]:
+                            self.apply_button.configure(state="normal")
+                        else:
+                            self.apply_button.configure(state="normal")
+
+                    ttk.Radiobutton(
+                        frame,
+                        text="Black",
+                        variable=side_var,
+                        value="BLACK",
+                        command=lambda: side_change(True),
+                    ).place(relx=0.4, rely=0.15 + k / 10, anchor="w")
+                    ttk.Radiobutton(
+                        frame,
+                        text="White",
+                        variable=side_var,
+                        value="WHITE",
+                        command=lambda: side_change(True),
+                    ).place(relx=0.6, rely=0.15 + k / 10, anchor="w")
+                    ttk.Checkbutton(
+                        frame,
+                        text="Random",
+                        variable=rand,
+                        offvalue=False,
+                        onvalue=True,
+                        command=side_change,
+                    ).place(relx=0.8, rely=0.15 + k / 10, anchor="w")
+                elif i == "MAX_PLAYERS":
+
+                    def max_play():
+                        if not self.max_spin.get():
+                            return
+                        new_settings["MAX_PLAYERS"] = int(self.max_spin.get())
+                        if new_settings == settings_dict:
+                            self.apply_button.configure(state="disabled")
+                        else:
+                            self.apply_button.configure(state="normal")
+
+                    self.max_spin = ttk.Spinbox(
+                        frame,
+                        validate="key",
+                        validatecommand=(
+                            self.register(lambda e: check(e, list(range(2, 5)))),
+                            "%P",
+                        ),
+                        from_=2,
+                        to=4,
+                        increment=1,
+                        command=max_play,
+                        wrap=True,
+                    )
+                    self.max_spin.insert(0, str(j))
+                    self.max_spin.place(relx=0.6, rely=0.15 + k / 10, anchor="w")
+                    self.max_spin.bind("<KeyRelease>", lambda e: max_play())
+            else:
+                if (game == "CHESS" and i == "MAX_PLAYERS") or i == "HOST_SIDE":
+                    continue
+                txt = j
+                if i == "STATUS":
+                    txt = j.title()
+                elif i == "TIME":
+                    txt = str(j // 60)
+                elif i == "ADD_TIME":
+                    txt = str(j) + " sec"
+                tk.Label(frame, text=txt, font="arial 13").place(
+                    relx=0.6, rely=0.15 + k / 10, anchor="w"
+                )
+            k += 2
 
     def leave_room(self, room, game=None, delete=False, confirm=True):
         if room in self.rooms:
@@ -1147,6 +1425,7 @@ class Arcade(tk.Toplevel):
             self.join_lobby(game)
 
     def start_room(self, game, room):
+        self.updated_host_side = None
         self.send((room, "START"))
 
     # endregion
@@ -1293,10 +1572,14 @@ class Arcade(tk.Toplevel):
                 for i in stats:
                     properties.extend(i[1][self.name]["PROPERTIES"])
                     for j, k in i[1][self.name]["PLACES"].items():
-                        places[j] += k
-                self.stats_details[game]["Favourite Property"] = max(
-                    properties, key=properties.count
-                )
+                        places[j] = places.setdefault(j, 0) + k
+                try:
+                    self.stats_details[game]["Favourite Property"] = max(
+                        properties, key=properties.count
+                    )
+                except ValueError:
+                    pass
+
                 self.stats_details[game]["Favourite Spot"] = max(
                     places, key=lambda i: places[i]
                 )
@@ -1416,6 +1699,16 @@ class Login(tk.Frame):
             self.reg = Register(self, forget_reg)
             self.reg.place(relx=0.5, rely=0.5, relheight=1, relwidth=1, anchor="center")
 
+        def toggle_hide_password():
+            if self.pass_hidden:
+                self.pwdentry.config(show="")
+                self.show_hide_pass.config(image=self.hide_password)
+            else:
+                self.pwdentry.config(show="*")
+                self.show_hide_pass.config(image=self.show_password)
+
+            self.pass_hidden = not self.pass_hidden
+
         tk.Button(
             self,
             text="New User? Click Here To Sign Up",
@@ -1456,16 +1749,6 @@ class Login(tk.Frame):
         )
         remember_me_button.place(relx=0.45, rely=0.5, anchor="w")
 
-        def toggle_hide_password():
-            if self.pass_hidden:
-                self.pwdentry.config(show="")
-                self.show_hide_pass.config(image=self.hide_password)
-            else:
-                self.pwdentry.config(show="*")
-                self.show_hide_pass.config(image=self.show_password)
-
-            self.pass_hidden = not self.pass_hidden
-
         self.pwdentry.bind("<Return>", lambda a: self.login())
 
     def login(self):
@@ -1486,6 +1769,7 @@ class Login(tk.Frame):
                     uname.strip(), pwd.strip(), remember_me=self.remember_me.get()
                 )
             except requests.exceptions.ConnectionError:
+                self.destroy()
                 msgb.showerror(
                     "Connection Error",
                     "Unable to connect to the Server at the moment, please try again later!\nThings you can do:\n1. Check your network connection\n2. Restart your system\n3. If this issue persists, wait for sometime. The server might be down, We are working on it!",
@@ -1771,6 +2055,7 @@ class Register(tk.Frame):
                     msg = "User Already Registered"
                     self.prompt(msg)
             except requests.exceptions.ConnectionError:
+                self.destroy()
                 msgb.showerror(
                     "Try Again Later",
                     "Unable to connect to the Server at the moment, please try again later!\nThings you can do:\n1. Check your network connection\n2. Restart your system\n3. If this issue persists, wait for sometime. The server might be down, We are working on it!",

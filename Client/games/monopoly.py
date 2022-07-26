@@ -1187,13 +1187,11 @@ class Monopoly(tk.Toplevel):
             if self.end_button.winfo_exists():
                 self.end_button.configure(state="disabled")
 
-        self.player_details[player]["PLACES"].update(
-            {
-                self.properties[pos]
-                .name: self.player_details[player]["PLACES"]
-                .get(self.properties[pos].name, 0)
-                + 1
-            }
+        self.player_details[player]["PLACES"][self.properties[pos].name] = (
+            self.player_details[player]["PLACES"].setdefault(
+                self.properties[pos].name, 0
+            )
+            + 1
         )
         if pos == 30:
             self.go_to_jail(self.turn)
