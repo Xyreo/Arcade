@@ -1,20 +1,19 @@
+(A) Session Expiry just after Login @ProAltro
 (A) Leaderboard, Stats @arcade @ProAltro
-(A) Session Expiry just after Login / Profile Picture Error @ProAltro @Chaitanya-Keyal
 (A) Timer @chess @ProAltro
-(B) Remove Random Stuff from all Code @Chaitanya-Keyal
-(B) LOGO @Chaitanya-Keyal
-(B) Trace Server Line by Line @ProAltro
-(B) Info, Rules @arcade @chess @monopoly @Chaitanya-Keyal
+(A) Info, Rules @arcade @chess @monopoly @Chaitanya-Keyal
+(B) Add Timers Animation (Loading Bar) @chess @monopoly @Chaitanya-Keyal
+(B) Notifier @arcade @chess @monopoly @Chaitanya-Keyal
 (C) Game Settings + Private Room @arcade @Chaitanya-Keyal
-(D) Notifier @arcade @chess @monopoly
-(D) Images Resizer @arcade @chess @monopoly
+(C) Images Resizer @arcade @chess @monopoly @Chaitanya-Keyal
+(D) LOGO @Chaitanya-Keyal
+(D) Trace Server Line by Line @ProAltro
 (E) Add Hilarious Trade Meme @monopoly
-(X) TakeBack @chess @ProAltro
+(E) TakeBack @chess @ProAltro
 (X) Music, Sounds @arcade @chess @monopoly
 (Y) Change Chess Pieces @chess
-(Y) Choose Color when joining room @monopoly
-(Y) Select First Player by diceroll @monopoly
-(Z) PGN Moves @chess
+(Y) PGN Moves @chess
+(Y) Select Turn Order by diceroll @monopoly
+(Z) Choose Color when joining room @monopoly
 (Z) Auction @monopoly
 (Z) Speed Game @monopoly
-(Z) Add Timers Animation (Loading - Circular/Bar) @chess @monopoly

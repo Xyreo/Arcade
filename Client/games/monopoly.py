@@ -713,7 +713,7 @@ class Monopoly(tk.Toplevel):
                 yesno = msgb.askyesno(title, message, master=self.mbwin)
                 return yesno
         except:
-            print("Error")
+            print("Messagebox Error")
 
     def count_colour(self, propertypos):
         owner = self.properties[propertypos].owner
@@ -3711,7 +3711,7 @@ class Monopoly(tk.Toplevel):
                     except:
                         pass
                 else:
-                    print("die")
+                    print("Invalid")
             else:
                 print("Closed CLI Thread")
                 break

@@ -20,7 +20,7 @@ End Turn:
     (END)
 
 Leave Game:
-    (LEAVE)
+    (LEAVE, Reason)
 
 Jail:
     (JAIL, method - (GOJF or PAY))
