@@ -136,16 +136,3 @@ class Response:
 
 if __name__ == "__main__":
     app = Http("http://localhost:5000")
-    app.login("user3", "pass3")
-    # app.addgame(
-    #     "MONOPOLY",
-    #     ["ProAltro", "okaybro"],
-    #     {
-    #         "ProAltro": {"NETWORTH": 1600, "PROPERTIES": [], "PLACES": {"Go": 1}},
-    #         "okaybro": {"NETWORTH": 1500, "PROPERTIES": [], "PLACES": {"Go": 1}},
-    #     },
-    #     ["ProAltro"],
-    # )
-    print(app.stats("MONOPOLY", "proaltro"))
-    # print(app.leaderboard("MONOPOLY"))
-    app.logout()

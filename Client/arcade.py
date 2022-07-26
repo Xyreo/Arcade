@@ -12,22 +12,38 @@ from io import BytesIO
 from tkinter import filedialog as fd
 from tkinter import messagebox as msgb
 
-import pyperclip as clipboard
-import requests
-from PIL import Image, ImageChops, ImageDraw, ImageTk
-from plyer import notification as noti
+try:
+    import pyperclip as clipboard
+    import requests
+    from PIL import Image, ImageChops, ImageDraw, ImageTk
+    from plyer import notification as noti
 
-sys.path.append(
-    os.path.join(
-        os.path.abspath("."), "Client" if "Client" not in os.path.abspath(".") else ""
+    sys.path.append(
+        os.path.join(
+            os.path.abspath("."),
+            "Client" if "Client" not in os.path.abspath(".") else "",
+        )
     )
-)
 
-from games.chess import Chess
-from games.monopoly import Monopoly
-from utilities.client_framework import Client
-from utilities.http_wrapper import Http
-from utilities.theme import Theme
+    from games.chess import Chess
+    from games.monopoly import Monopoly
+    from utilities.client_framework import Client
+    from utilities.http_wrapper import Http
+    from utilities.theme import Theme
+
+except ImportError:
+
+    def load():
+        cur = os.path.abspath(os.curdir)
+        os.chdir(os.path.abspath(cur.replace("Client", "")))
+        os.system(f"pip install -r requirements.txt")
+        os.chdir(cur)
+        loading.destroy()
+
+    loading = tk.Tk()
+    tk.Label(loading, text="Installing Required Modules...").pack()
+    loading.after(100, load)
+    loading.mainloop()
 
 
 def resource_path(relative_path):
