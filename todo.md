@@ -1,14 +1,13 @@
 (A) Update GUI @Chaitanya-Keyal
 (A) Session Expiry Stuff @ProAltro
 (A) Info, Rules @arcade @chess @monopoly @Chaitanya-Keyal
-(B) Add Timers Animation (Loading Bar) @chess @monopoly @Chaitanya-Keyal
+(B) Add Timers Loading Bar @chess @monopoly @Chaitanya-Keyal
 (B) Notifier @arcade @chess @monopoly @Chaitanya-Keyal
 (C) Timer Glitch happens if CLI Thread is used
+(C) TakeBack @chess @ProAltro
 (C) Images Resizer @arcade @chess @monopoly @Chaitanya-Keyal
 (D) LOGO @Chaitanya-Keyal
-(D) Trace Server Line by Line @ProAltro
 (E) Add Hilarious Trade Meme @monopoly
-(E) TakeBack @chess @ProAltro
 (X) Music, Sounds @arcade @chess @monopoly
 (Y) Change Chess Pieces @chess
 (Y) PGN Moves @chess
