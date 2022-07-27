@@ -1,4 +1,5 @@
 (A) Session Expiry just after Login @ProAltro
+(A) Fix Private Room
 (A) Info, Rules @arcade @chess @monopoly @Chaitanya-Keyal
 (B) Add Timers Animation (Loading Bar) @chess @monopoly @Chaitanya-Keyal
 (B) Notifier @arcade @chess @monopoly @Chaitanya-Keyal

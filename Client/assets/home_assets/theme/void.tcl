@@ -1,7 +1,7 @@
 # Credits to @rdbende
 
 for {set x 1} { $x < 26 } { incr x } {
-    font create $x.buttonFont -size $x -family Times
+    font create $x.buttonFont -size $x -family Arial
 }
 
 proc load_images {imgdir} {
@@ -547,6 +547,10 @@ proc init {mode path} {
         ttk::style map Treeview \
             -background [list selected $colors(-fg)] \
             -foreground [list selected $colors(-bg)]
+
+        for {set x 1} { $x < 26 } { incr x } {
+            ttk::style configure $x.Treeview -font $x.buttonFont
+        }
 
         # Hack to remove clam's ugly sash
         ttk::style configure Sash -gripcount 0

@@ -305,6 +305,13 @@ class Arcade(tk.Toplevel):
         elif dest in ["CHESS", "MNPLY"]:
             if msg[1] == "INIT":
                 self.rooms.initialize(dest, msg[2])
+            elif msg[1] == "JOIN_ERR":
+                self.show_message(
+                    "Invalid ID",
+                    "The Room you're trying to join is invalid! Please Enter the Correct Room ID.",
+                    "warning",
+                    4000,
+                )
             elif msg[1] == "ROOM":
                 room = msg[3]
                 if msg[2] == "ADD":
@@ -923,16 +930,15 @@ class Arcade(tk.Toplevel):
         )
 
         self.lobby_trees[game] = ttk.Treeview(
-            frame,
-            columns=("Room", "Host", "Players"),
-            yscrollcommand=scroll.set,
+            frame, columns=("Room", "Host", "Players"), yscrollcommand=scroll.set
         )
         tree = self.lobby_trees[game]
         tree.place(relx=0.49, rely=0.075, anchor="n", relheight=0.75, relwidth=0.96)
 
         def join_some_room():
+            clear()
             if self.join_pvt_entry.get():
-                self.join_selected_room([self.join_pvt_entry.get()], game)
+                self.join_selected_room([self.join_pvt_entry.get().upper()], game)
             elif tree.selection():
                 self.join_selected_room(tree.selection(), game)
 
@@ -986,6 +992,11 @@ class Arcade(tk.Toplevel):
             if not (e.isalnum() and len(e) == 6):
                 self.join_pvt_entry.delete(0, "end")
 
+        def caps():
+            a = self.join_pvt_entry.get().upper()
+            self.join_pvt_entry.delete(0, "end")
+            self.join_pvt_entry.insert(0, a)
+
         self.pvt_id = tk.StringVar()
         self.join_pvt_entry = ttk.Entry(
             frame,
@@ -1002,6 +1013,7 @@ class Arcade(tk.Toplevel):
         self.join_pvt_entry.place(relx=0.61, rely=0.85, relwidth=0.2, anchor="w")
         self.join_pvt_entry.focus_set()
         self.join_pvt_entry.bind("<Return>", lambda e: join_some_room())
+        self.join_pvt_entry.bind("<KeyRelease>", lambda e: caps())
         self.join_pvt_entry.bind("<FocusOut>", lambda e: clear())
 
         self.send(("0", "JOIN", game.upper()))
@@ -1483,7 +1495,7 @@ class Arcade(tk.Toplevel):
                     iid=i,
                     text="",
                     image=self.pfps[i],
-                    values=(i, j),
+                    values=(i, j, self.leaderboard_details[game].index((i, j)) + 1),
                     tag=i,
                 )
             tree.tag_configure(self.name, background="#15a8cd")
@@ -1498,8 +1510,9 @@ class Arcade(tk.Toplevel):
 
         tree = ttk.Treeview(
             frame,
-            columns=("Players", "Score"),
+            columns=("Players", "Score", "Rank"),
             yscrollcommand=scroll.set,
+            style="14.Treeview",
         )
         tree.place(relx=0.49, rely=0.5, anchor="center", relheight=0.9, relwidth=0.96)
 
@@ -1510,7 +1523,12 @@ class Arcade(tk.Toplevel):
             anchor="center",
             minwidth=self.screen_width // 50,
         )
-
+        tree.column(
+            "Rank",
+            width=self.screen_width // 50,
+            anchor="center",
+            minwidth=self.screen_width // 50,
+        )
         tree.column(
             "Players",
             width=self.screen_width // 10,
@@ -1525,6 +1543,7 @@ class Arcade(tk.Toplevel):
         )
 
         tree.heading("#0", text="")
+        tree.heading("Rank", text="Rank", anchor="center")
         tree.heading("Players", text="Players", anchor="center")
         tree.heading(
             "Score",
@@ -1539,7 +1558,7 @@ class Arcade(tk.Toplevel):
                 iid=i,
                 text="",
                 image=self.pfps[i],
-                values=(i, j),
+                values=(i, j, self.leaderboard_details[game].index((i, j)) + 1),
                 tag=i,
             )
         tree.tag_configure(self.name, background="#15a8cd")

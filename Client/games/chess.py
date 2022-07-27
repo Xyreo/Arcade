@@ -725,9 +725,10 @@ class Chess(tk.Toplevel):
         self.timers[
             self.opponent if self.players[self.me]["SIDE"] == self.turn else self.me
         ].pause()
-        self.timers[
-            self.opponent if self.players[self.me]["SIDE"] == self.turn else self.me
-        ].add_time(self.add_time)
+        if self.board.fen["HM"]:
+            self.timers[
+                self.opponent if self.players[self.me]["SIDE"] == self.turn else self.me
+            ].add_time(self.add_time)
 
         if "DRAW" in self.poll:
             if self.poll["DRAW"] == "ACK":
