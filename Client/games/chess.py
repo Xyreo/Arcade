@@ -190,7 +190,7 @@ class Chess(tk.Toplevel):
             text=f" {self.players[self.me]['NAME']} ▾",
             highlightthickness=0,
             border=0,
-            font=("times 14 bold"),
+            font=("arial black", 14),
             compound="left",
             command=self.account_tab,
         )
@@ -269,7 +269,7 @@ class Chess(tk.Toplevel):
 
             self.bind("<Button-1>", clicked)
             self.acc_frame = ttk.Frame(self, style="Card.TFrame", padding=4)
-            self.acc_frame.place(relx=0.01, rely=0.06, anchor="nw")
+            self.acc_frame.place(relx=0.008, rely=0.06, anchor="nw")
 
             self.quit_button = ttk.Button(
                 self.acc_frame, text="QUIT", style="12.TButton", command=self.resign
@@ -280,7 +280,7 @@ class Chess(tk.Toplevel):
 
             theme_var = tk.StringVar(value=self.theme.curr_theme())
 
-            tk.Label(self.acc_frame, text="Dark Mode", font=("times", 12)).grid(
+            tk.Label(self.acc_frame, text="Dark Mode", font=("rockwell", 12)).grid(
                 row=1, column=0, sticky="e", pady=2, padx=6
             )
             self.theme_button = ttk.Checkbutton(
@@ -342,7 +342,7 @@ class Chess(tk.Toplevel):
                 x2, y2, a, b = self.grid_to_coords(i * 10)
 
             x2, y2 = x2 + Chess.size // 8, y2 + Chess.size // 8
-            font = "Helvetica 14 bold"
+            font = ("Microsoft Sans Serif", 14, "bold")
             self.canvas.create_text(
                 x1 + adj,
                 y1 + adj,
@@ -390,7 +390,7 @@ class Chess(tk.Toplevel):
         self.timer_threads: dict[str, threading.Thread] = {}
         self.user_pfp_display: dict[str, tk.Label] = {}
 
-        self.timer_labels[self.me] = tk.Label(self.main_frame, font="consolas 45")
+        self.timer_labels[self.me] = tk.Label(self.main_frame, font=("consolas", 45))
         self.timer_labels[self.me].place(relx=0.5, rely=0.875, anchor="center")
         self.timer_threads[self.me] = threading.Thread(
             target=self.timer_init,
@@ -403,12 +403,14 @@ class Chess(tk.Toplevel):
             text=f" {self.players[self.me]['NAME']}",
             highlightthickness=0,
             border=0,
-            font=("arial 16"),
+            font=("rockwell", 16),
             compound="left",
         )
         self.user_pfp_display[self.me].place(relx=0.5, rely=0.8, anchor="center")
 
-        self.timer_labels[self.opponent] = tk.Label(self.main_frame, font="consolas 45")
+        self.timer_labels[self.opponent] = tk.Label(
+            self.main_frame, font=("consolas", 45)
+        )
         self.timer_labels[self.opponent].place(relx=0.5, rely=0.125, anchor="center")
         self.timer_threads[self.opponent] = threading.Thread(
             target=self.timer_init,
@@ -421,7 +423,7 @@ class Chess(tk.Toplevel):
             text=f" {self.players[self.opponent]['NAME']}",
             highlightthickness=0,
             border=0,
-            font=("arial 16"),
+            font=("rockwell", 16),
             compound="left",
         )
         self.user_pfp_display[self.opponent].place(relx=0.5, rely=0.2, anchor="center")
@@ -980,7 +982,7 @@ class Chess(tk.Toplevel):
         tk.Label(
             self.draw_frame,
             text="Waiting for opponent to respond",
-            font=20,
+            font=("rockwell", 20),
         ).place(relx=0.5, rely=0.5, anchor="center")
 
     def final_frame(self, type, winner=None):
@@ -1012,7 +1014,7 @@ class Chess(tk.Toplevel):
         tk.Label(
             self.end_game_frame,
             text=txt,
-            font=20,
+            font=("rockwell", 20),
         ).place(relx=0.5, rely=0.4, anchor="center")
 
         ttk.Button(
@@ -1053,7 +1055,7 @@ class Chess(tk.Toplevel):
         tk.Label(
             self.draw_frame,
             text="Opponent wants to draw the match!",
-            font=20,
+            font=("rockwell", 20),
         ).place(relx=0.5, rely=0.25, anchor="center")
 
         def rep(accept):

@@ -383,14 +383,14 @@ class Monopoly(tk.Toplevel):
             highlightthickness=0,
             activebackground=self.cget("bg"),
             border=0,
-            font=("times 14 bold"),
+            font=("arial black", 14),
             compound="left",
             command=self.account_tab,
         )
         self.acc_button.place(relx=0.01, rely=0.03, anchor="w")
         self.acc_frame = tk.Frame()
 
-        self.timer_label = tk.Label(self, font="consolas 12")
+        self.timer_label = tk.Label(self, font=("consolas", 12))
         self.timer_label.place(relx=0.15, rely=0.03, anchor="w")
 
     def create_image_obj(self):
@@ -677,7 +677,7 @@ class Monopoly(tk.Toplevel):
 
             theme_var = tk.StringVar(value=self.theme.curr_theme())
 
-            tk.Label(self.acc_frame, text="Dark Mode", font=("times", 12)).grid(
+            tk.Label(self.acc_frame, text="Dark Mode", font=("rockwell", 12)).grid(
                 row=2, column=0, sticky="e", pady=2, padx=6
             )
             self.theme_button = ttk.Checkbutton(
@@ -3545,20 +3545,20 @@ class Monopoly(tk.Toplevel):
             tk.Label(
                 self.waiting_frame,
                 text="Waiting for others to vote!",
-                font=20,
+                font=("rockwell", 20),
             ).place(relx=0.5, rely=0.5, anchor="center")
         else:
             if bankrupt:
                 tk.Label(
                     self.endgame_frame,
                     text=f"{ender} is Bankrupt! Do you want to end the game now?",
-                    font=20,
+                    font=("rockwell", 20),
                 ).place(relx=0.5, rely=0.5, anchor="center")
             else:
                 tk.Label(
                     self.endgame_frame,
                     text=f"{ender} wants to end the game! Do you want to end the game too?",
-                    font=20,
+                    font=("rockwell", 20),
                 ).place(relx=0.5, rely=0.5, anchor="center")
 
             def ans(bool):
@@ -3569,7 +3569,7 @@ class Monopoly(tk.Toplevel):
                 tk.Label(
                     self.waiting_frame,
                     text="Waiting for others to vote!",
-                    font=20,
+                    font=("rockwell", 20),
                 ).place(relx=0.5, rely=0.5, anchor="center")
 
                 self.poll(self.me, ("UPDATE", "ENDGAME", bool))
@@ -3656,9 +3656,9 @@ class Monopoly(tk.Toplevel):
             key=lambda a: self.player_details[a]["NETWORTH"],
         ):
             txt += f"\n{self.player_details[i]['Name']} : {self.player_details[i]['NETWORTH']}"
-        tk.Label(self.final_frame, text=txt, font=20, justify="center").place(
-            relx=0.5, rely=0.05, anchor="n"
-        )
+        tk.Label(
+            self.final_frame, text=txt, font=("rockwell", 20), justify="center"
+        ).place(relx=0.5, rely=0.05, anchor="n")
 
         ttk.Button(
             self.final_frame,

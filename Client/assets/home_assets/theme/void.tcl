@@ -1,7 +1,10 @@
 # Credits to @rdbende
 
 for {set x 1} { $x < 26 } { incr x } {
-    font create $x.buttonFont -size $x -family Arial
+    font create $x.comicFont -size $x -family "Segoe UI Semibold"
+}
+for {set x 1} { $x < 26 } { incr x } {
+    font create $x.rockwellFont -size $x -family "Rockwell"
 }
 
 proc load_images {imgdir} {
@@ -223,7 +226,7 @@ proc init {mode path} {
                 ]
         
         for {set x 1} { $x < 26 } { incr x } {
-            ttk::style configure $x.TButton -font $x.buttonFont
+            ttk::style configure $x.TButton -font $x.comicFont
         }
 
         # Toolbutton
@@ -549,7 +552,7 @@ proc init {mode path} {
             -foreground [list selected $colors(-bg)]
 
         for {set x 1} { $x < 26 } { incr x } {
-            ttk::style configure $x.Treeview -font $x.buttonFont
+            ttk::style configure $x.Treeview -font $x.rockwellFont
         }
 
         # Hack to remove clam's ugly sash
@@ -578,7 +581,7 @@ proc set_theme {mode} {
         -insertcolor $colors(-fg) \
         -insertwidth 1 \
         -fieldbackground $colors(-bg) \
-        -font {"Segoe Ui" 10} \
+        -font {"Rockwell" 10} \
         -borderwidth 1 \
         -relief flat
 
