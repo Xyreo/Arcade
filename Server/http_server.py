@@ -8,10 +8,9 @@ from datetime import date
 import bcrypt
 import mysql.connector as msc
 import redis
+from authenticator import Auth
 from dotenv import find_dotenv, load_dotenv
 from flask import Blueprint, Flask, jsonify, request
-
-from authenticator import Auth
 
 app = Flask(__name__)
 load_dotenv(find_dotenv())

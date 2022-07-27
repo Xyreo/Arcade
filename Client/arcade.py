@@ -352,7 +352,7 @@ class Arcade(tk.Toplevel):
 
             elif msg[1] == "SETTINGS":
                 self.rooms.change_settings(dest, msg[2])
-                self.update_room(self.rooms[game][dest])  # TODO Settings GUI in Room
+                self.update_room(self.rooms[game][dest])
 
             elif msg[1] == "ROOM":
                 self.room_frames[game].destroy()
@@ -756,7 +756,6 @@ class Arcade(tk.Toplevel):
 
             if self.current_room:
                 self.update_room(self.rooms.get_rooms()[self.current_room])
-            # TODO Update Leaderboard/ All the other places pfp is seen
 
         self.confirm_button = ttk.Button(
             self.change_frame,

@@ -204,11 +204,12 @@ class Room(Channels):
         self.settings.update(settings)
         new_status = self.settings["STATUS"]
         self.broadcast_to_members(("SETTINGS", settings))
+
         if old_status == "PUBLIC" and new_status == "PRIVATE":
             lobbies[self.game].broadcast_to_members(("ROOM", "REMOVE", self.uuid))
         elif new_status == "PUBLIC" and old_status == "PRIVATE":
             lobbies[self.game].broadcast_to_members(("ROOM", "ADD", self.details()))
-        else:
+        elif new_status == "PUBLIC":
             lobbies[self.game].broadcast_to_members(("SETTINGS", settings, self.uuid))
 
     def msg(self, m, ex):
@@ -297,7 +298,7 @@ class Client(threading.Thread):
         elif channel in rooms:
             self.room_handler(channel, instruction[1:])
         else:
-            pass  # TODO Wrong Channel Stuff
+            pass
 
     def main_handler(self, msg):
         action = msg[0]
@@ -306,7 +307,7 @@ class Client(threading.Thread):
         elif action == "LEAVE":
             lobbies[msg[1]].leave(self)
         else:
-            pass  # TODO Wrong Action
+            pass
 
     def lobby_handler(self, lobby, msg):
         action = msg[0]
@@ -315,7 +316,7 @@ class Client(threading.Thread):
         elif action == "CREATE":
             lobbies[lobby].create_room(self, msg[1])
         else:
-            pass  # TODO Wrong Action
+            pass
 
     def room_handler(self, room, msg):
         action = msg[0]
@@ -332,7 +333,7 @@ class Client(threading.Thread):
         try:
             self.conn.send(pickle.dumps(instruction))
             log("Sent\t", instruction)
-        except socket.error:
+        except OSError:
             log("Couldnt send the message-", instruction)
         except (ConnectionResetError, EOFError, BrokenPipeError):
             log("Couldnt send the message-", instruction)
