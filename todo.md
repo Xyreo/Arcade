@@ -1,9 +1,9 @@
-(A) Update Stats GUI @Chaitanya-Keyal
-(A) Session Expiry just after Login @ProAltro
+(A) Update GUI @Chaitanya-Keyal
+(A) Session Expiry Stuff @ProAltro
 (A) Info, Rules @arcade @chess @monopoly @Chaitanya-Keyal
 (B) Add Timers Animation (Loading Bar) @chess @monopoly @Chaitanya-Keyal
 (B) Notifier @arcade @chess @monopoly @Chaitanya-Keyal
-(C) If CLI Thread is used, Timer glitch happens again
+(C) Timer Glitch happens if CLI Thread is used
 (C) Images Resizer @arcade @chess @monopoly @Chaitanya-Keyal
 (D) LOGO @Chaitanya-Keyal
 (D) Trace Server Line by Line @ProAltro

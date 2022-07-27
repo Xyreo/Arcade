@@ -472,7 +472,7 @@ class Arcade(tk.Toplevel):
 
             theme_var = tk.StringVar(value=theme.curr_theme())
 
-            tk.Label(self.acc_frame, text="Dark Mode",font=('rockwell',15)).grid(
+            tk.Label(self.acc_frame, text="Dark Mode", font=("rockwell", 15)).grid(
                 row=3, column=0, sticky="e", pady=2, padx=6
             )
             self.theme_button = ttk.Checkbutton(
@@ -489,9 +489,9 @@ class Arcade(tk.Toplevel):
                 row=4, column=0, columnspan=2, sticky="nsew", pady=2
             )
 
-            tk.Label(self.acc_frame, text="Default Game", font=("rockwell",12, "underline")).grid(
-                row=5, column=0, columnspan=2, sticky="nsew"
-            )
+            tk.Label(
+                self.acc_frame, text="Default Game", font=("rockwell", 12, "underline")
+            ).grid(row=5, column=0, columnspan=2, sticky="nsew")
 
             default = tk.IntVar()
 
@@ -921,7 +921,7 @@ class Arcade(tk.Toplevel):
 
         scroll = ttk.Scrollbar(frame, orient="vertical")
         scroll.place(relx=0.9975, rely=0.075, anchor="ne", relheight=0.75)
-        tk.Label(frame, text="Select A Room", font=('rockwell', 13, "underline")).place(
+        tk.Label(frame, text="Select A Room", font=("rockwell", 13, "underline")).place(
             relx=0.5, rely=0.025, anchor="center"
         )
 
@@ -1003,7 +1003,7 @@ class Arcade(tk.Toplevel):
                 "%P",
             ),
         )
-        tk.Label(frame, text="Enter Private Room ID:", font=('rockwell',13)).place(
+        tk.Label(frame, text="Enter Private Room ID:", font=("rockwell", 13)).place(
             relx=0.59, rely=0.85, anchor="e"
         )
         self.join_pvt_entry.place(relx=0.61, rely=0.85, relwidth=0.2, anchor="w")
@@ -1122,12 +1122,12 @@ class Arcade(tk.Toplevel):
         tk.Label(
             frame,
             text=f"Room ID: {self.current_room}",
-            font=('rockwell',13),
+            font=("rockwell", 13),
         ).place(relx=0.5, rely=0.05, anchor="center")
 
         def clip_copy():
             clipboard.copy(self.current_room)
-            copied = tk.Label(frame, text="Copied!", font=('rockwell',12), fg="green")
+            copied = tk.Label(frame, text="Copied!", font=("rockwell", 12), fg="green")
             copied.place(relx=0.7, rely=0.05, anchor="w")
             self.after(2500, copied.destroy)
 
@@ -1139,7 +1139,7 @@ class Arcade(tk.Toplevel):
             command=clip_copy,
         ).place(relx=0.675, rely=0.05, anchor="center")
 
-        tk.Label(frame, text=f"Host: {hostname}", font=('rockwell',13)).place(
+        tk.Label(frame, text=f"Host: {hostname}", font=("rockwell", 13)).place(
             relx=0.5, rely=0.1, anchor="center"
         )
 
@@ -1160,7 +1160,7 @@ class Arcade(tk.Toplevel):
         for child in self.room_members[game].winfo_children():
             child.destroy()
         tk.Label(
-            self.room_members[game], text=f"Members", font=('rockwell', 13, "underline")
+            self.room_members[game], text=f"Members", font=("rockwell", 13, "underline")
         ).place(relx=0.5, rely=0, anchor="n")
         k = 1
         d = sorted(room["members"].values(), key=lambda x: x["name"])
@@ -1175,7 +1175,7 @@ class Arcade(tk.Toplevel):
                 self.room_members[game],
                 image=i["pfp"],
                 text="  " + i["name"],
-                font=('rockwell',13),
+                font=("rockwell", 13),
                 compound="left",
             ).place(relx=0.4, rely=(k / 4), anchor="w")
             k += 1
@@ -1189,7 +1189,7 @@ class Arcade(tk.Toplevel):
             "ADD_TIME": "Increment per turn:",
         }
         frame = self.room_settings[game]
-        tk.Label(frame, text="Settings", font=('rockwell', 13, "underline")).place(
+        tk.Label(frame, text="Settings", font=("rockwell", 13, "underline")).place(
             relx=0.5, rely=0, anchor="n"
         )
         k = 1
@@ -1198,7 +1198,7 @@ class Arcade(tk.Toplevel):
                 room["host"] != self.me and i == "HOST_SIDE"
             ):
                 continue
-            tk.Label(frame, text=display_dict[i], font=('rockwell',13)).place(
+            tk.Label(frame, text=display_dict[i], font=("rockwell", 13)).place(
                 relx=0.2, rely=0.15 + k / 10, anchor="w"
             )
             k += 1.75
@@ -1233,7 +1233,7 @@ class Arcade(tk.Toplevel):
             tk.Label(
                 frame,
                 text="Waiting for Host to start the game",
-                font=('rockwell',13),
+                font=("rockwell", 13),
             ).place(relx=0.5, rely=1, anchor="s")
         for i, j in settings_dict.items():
             if room["host"] == self.me:
@@ -1425,7 +1425,7 @@ class Arcade(tk.Toplevel):
                     txt = str(j // 60)
                 elif i == "ADD_TIME":
                     txt = str(j) + " sec"
-                tk.Label(frame, text=txt, font=('rockwell',13)).place(
+                tk.Label(frame, text=txt, font=("rockwell", 13)).place(
                     relx=0.6, rely=0.15 + k / 10, anchor="w"
                 )
             k += 1.75
@@ -1571,9 +1571,9 @@ class Arcade(tk.Toplevel):
                 if i != refresh_but:
                     i.destroy()
             if stats == "Bad Request":
-                tk.Label(frame, text="No Stats Available!", font=('rockwell',20)).place(
-                    relx=0.5, rely=0.5, anchor="center"
-                )
+                tk.Label(
+                    frame, text="No Stats Available!", font=("rockwell", 20)
+                ).place(relx=0.5, rely=0.5, anchor="center")
                 return
             if game == "chess":
                 self.stats_details[game]["Total Games Played"] = len(stats)
@@ -1623,7 +1623,7 @@ class Arcade(tk.Toplevel):
                 tk.Label(
                     frame,
                     text=f"{i} : {j}",
-                    font=('rockwell',15),
+                    font=("rockwell", 15),
                     fg="spring green" if k % 2 else "lime green",
                 ).place(relx=0.5, rely=0.2 + k / 10, anchor="center")
                 k += 1
@@ -1846,7 +1846,7 @@ class Login(tk.Frame):
                 tk.Label(self, text=msg, fg=color),
                 self.notifc,
             )
-            self.notif[0].place(relx=0.5, rely=0.69, anchor="center")
+            self.notif[0].place(relx=0.5, rely=0.675, anchor="center")
             self.after(3000, self.destroyprompt)
         except:
             pass

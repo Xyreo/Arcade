@@ -1,7 +1,7 @@
 # Credits to @rdbende
 
 for {set x 1} { $x < 26 } { incr x } {
-    font create $x.comicFont -size $x -family "Segoe UI Semibold"
+    font create $x.segoeFont -size $x -family "Segoe UI Semibold"
 }
 for {set x 1} { $x < 26 } { incr x } {
     font create $x.rockwellFont -size $x -family "Rockwell"
@@ -226,7 +226,7 @@ proc init {mode path} {
                 ]
         
         for {set x 1} { $x < 26 } { incr x } {
-            ttk::style configure $x.TButton -font $x.comicFont
+            ttk::style configure $x.TButton -font $x.segoeFont
         }
 
         # Toolbutton
