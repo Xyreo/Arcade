@@ -359,8 +359,9 @@ def chess_stats(name):
             return jsonify("Bad Request"), 400
         res = []
         for i in details:
+            print(i[4].replace("!@#$", '"'))
             result = eval(i[3].replace("!@#$", '"'))
-            winner = eval(i[4].replace("!@#$", '"'))
+            winner = i[4].replace("!@#$", '"')
             res.append((i[2], result, winner))
         return jsonify(res), 200
 
@@ -379,15 +380,16 @@ def chess_leaderboard():
         res = {}
         for i in det:
             result = eval(i[3].replace("!@#$", '"'))
-            winner = eval(i[4].replace("!@#$", '"'))
-            if i[0] in res:
-                res[i[0]]["games"].append((i[2], result, winner))
+            winner = i[4].replace("!@#$", '"')
+            if i[1] in res:
+                res[i[1]]["games"].append((i[2], result, winner))
             else:
-                res[i[0]] = {"name": i[1], "games": [(i[2], winner)]}
+                res[i[1]] = {"name": i[1], "games": [(i[2], result, winner)]}
         send = {}
         for i, j in res.items():
             pt = 0
             for game in j["games"]:
+                print(game)
                 if j["name"] == game[2]:
                     pt += 1
                 elif game[2] == "none":
