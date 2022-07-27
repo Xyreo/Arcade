@@ -150,7 +150,7 @@ class Arcade(tk.Toplevel):
         self.room_frames = {"CHESS": None, "MNPLY": None}
         self.room_members = {"CHESS": None, "MNPLY": None}
         self.room_settings = {"CHESS": None, "MNPLY": None}
-        self.leaderboard_details = {"chess": None, "monopoly": None}
+        self.leaderboard_details = {"chess": [], "monopoly": []}
         self.stats_details = {"chess": {}, "monopoly": {}}
         self.pfps: dict[str, ImageTk.PhotoImage] = {}
         self.updated_host_side = None
@@ -217,15 +217,15 @@ class Arcade(tk.Toplevel):
         self.chess_frame = tk.Frame(self.main_notebook)
         self.chess_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
         self.main_notebook.add(self.chess_frame, text="Chess")
-        self.after(300, lambda: self.leaderboard("chess"))
-        self.after(300, lambda: self.stats("chess"))
+        self.leaderboard("chess")
+        self.stats("chess")
         self.join_create("CHESS")
 
         self.monopoly_frame = tk.Frame(self.main_notebook)
         self.monopoly_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
         self.main_notebook.add(self.monopoly_frame, text="Monopoly")
-        self.after(300, lambda: self.leaderboard("monopoly"))
-        self.after(300, lambda: self.stats("monopoly"))
+        self.leaderboard("monopoly")
+        self.stats("monopoly")
         self.join_create("MNPLY")
 
         with open(SETTINGS_FILE, "rb") as f:
@@ -1456,14 +1456,21 @@ class Arcade(tk.Toplevel):
 
     def leaderboard(self, game):
         parent = self.chess_frame if game == "chess" else self.monopoly_frame
-        self.leaderboard_details[game] = sorted(
-            HTTP.leaderboard(game).items(), key=lambda i: i[1], reverse=True
-        )
-        for i, j in self.leaderboard_details[game]:
-            if not os.path.isfile(os.path.join(ASSET, "cached_pfp", i + ".png")):
-                Arcade.store_pfp(i)
-            if i not in self.pfps:
-                self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
+
+        def do():
+            self.leaderboard_details[game] = sorted(
+                HTTP.leaderboard(game).items(), key=lambda i: i[1], reverse=True
+            )
+            for i, j in self.leaderboard_details[game]:
+                if not os.path.isfile(os.path.join(ASSET, "cached_pfp", i + ".png")):
+                    Arcade.store_pfp(i)
+                if i not in self.pfps:
+                    self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
+
+            refresh()
+
+        t = threading.Thread(target=do)
+        t.start()
 
         frame = ttk.Frame(parent, style="Card.TFrame")
         frame.place(relx=0, rely=0.525, anchor="w", relwidth=0.3, relheight=0.9)
@@ -1636,7 +1643,8 @@ class Arcade(tk.Toplevel):
         )
         refresh_but.place(relx=0.975, rely=0.025, anchor="e")
 
-        refresh()
+        t = threading.Thread(target=refresh)
+        t.start()
 
     # endregion
 
@@ -1671,19 +1679,28 @@ class Login(tk.Frame):
         self.complete = complete
 
         if remember_login:
+            log_win = tk.Toplevel(self)
+            log_win.geometry(
+                f"{300}x{40}+{self.winfo_screenwidth()//2-150}+{self.winfo_screenheight()//2-20}"
+            )
             master.withdraw()
+            lbl = tk.Label(log_win, text="Logging in...", fg="green")
+            lbl.pack()
             with open(REMEMBER_ME_FILE) as f:
                 uname, pwd = eval(f.readlines()[-1])
                 self.check_login = HTTP.login(uname, pwd, remember_login=True)
                 if self.check_login == 1:
                     master.deiconify()
+                    log_win.destroy()
                     self.complete(uname, HTTP.TOKEN)
+                    return
                 elif self.check_login == -1:
-                    pass
+                    lbl.configure(text="Already Logged in on another device!", fg="red")
                 else:
-                    print("File has been corrupted")
+                    lbl.configure(text="File has been corrupted!", fg="red")
+                self.after(2500, log_win.destroy)
+                self.after(2500, master.deiconify)
 
-        master.deiconify()
         tk.Label(
             self, text="Welcome to the Arcade!\nPlease Enter your Credentials to Login:"
         ).place(relx=0.5, rely=0.1, anchor="center")
