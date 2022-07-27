@@ -60,7 +60,6 @@ class Lobby(Channels):
     def create_room(self, host, settings):
         room = Room(host, settings, self.uuid)
         self.rooms.append(room)
-        self.broadcast_to_members(("ROOM", "ADD", room.details()), exclude=host.uuid)
 
     def join_room(self, player, id):
         if id in rooms:
@@ -92,6 +91,11 @@ class Room(Channels):
         host.send_instruction(("ROOM", "ADD", self.game, self.details()))
         host.channels.append(self.uuid)
 
+        if self.status == "OPEN":
+            lobbies[self.game].broadcast_to_members(
+                ("ROOM", "ADD", self.details()), exclude=host.uuid
+            )
+
     def delete(self):
         self.broadcast(("ROOM", "REMOVE"))
         for i in self.members:
@@ -109,7 +113,9 @@ class Room(Channels):
             self.chess_start()
         elif self.game == "MNPLY":
             self.mnply_start()
-        lobbies[self.game].broadcast_to_members(("ROOM", "REMOVE", self.uuid))
+
+        if self.status == "OPEN":
+            lobbies[self.game].broadcast_to_members(("ROOM", "REMOVE", self.uuid))
 
     def join(self, player):
         if len(self.members) >= self.settings["MAX_PLAYERS"]:
@@ -177,7 +183,8 @@ class Room(Channels):
 
     def broadcast(self, msg, exclude=None):
         self.broadcast_to_members(msg, exclude)
-        lobbies[self.game].broadcast_to_members(msg + (self.uuid,))
+        if self.status != "PRIVATE":
+            lobbies[self.game].broadcast_to_members(msg + (self.uuid,))
 
     def broadcast_to_members(self, msg, exclude=None):
         super().broadcast_to_members((self.uuid,) + msg, exclude)
