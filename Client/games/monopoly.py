@@ -3567,20 +3567,20 @@ class Monopoly(tk.Toplevel):
             tk.Label(
                 self.waiting_frame,
                 text="Waiting for others to vote!",
-                font=("rockwell", 20),
+                font=("rockwell", 14),
             ).place(relx=0.5, rely=0.5, anchor="center")
         else:
             if bankrupt:
                 tk.Label(
                     self.endgame_frame,
                     text=f"{ender} is Bankrupt! Do you want to end the game now?",
-                    font=("rockwell", 20),
+                    font=("rockwell", 14),
                 ).place(relx=0.5, rely=0.5, anchor="center")
             else:
                 tk.Label(
                     self.endgame_frame,
                     text=f"{ender} wants to end the game! Do you want to end the game too?",
-                    font=("rockwell", 20),
+                    font=("rockwell", 14),
                 ).place(relx=0.5, rely=0.5, anchor="center")
 
             def ans(bool):
@@ -3591,7 +3591,7 @@ class Monopoly(tk.Toplevel):
                 tk.Label(
                     self.waiting_frame,
                     text="Waiting for others to vote!",
-                    font=("rockwell", 20),
+                    font=("rockwell", 14),
                 ).place(relx=0.5, rely=0.5, anchor="center")
 
                 self.poll(self.me, ("UPDATE", "ENDGAME", bool))
@@ -3679,7 +3679,7 @@ class Monopoly(tk.Toplevel):
         ):
             txt += f"\n{self.player_details[i]['Name']} : {self.player_details[i]['NETWORTH']}"
         tk.Label(
-            self.final_frame, text=txt, font=("rockwell", 20), justify="center"
+            self.final_frame, text=txt, font=("rockwell", 14), justify="center"
         ).place(relx=0.5, rely=0.05, anchor="n")
 
         ttk.Button(

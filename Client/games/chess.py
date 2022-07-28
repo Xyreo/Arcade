@@ -998,7 +998,7 @@ class Chess(tk.Toplevel):
         tk.Label(
             self.draw_frame,
             text="Waiting for opponent to respond",
-            font=("rockwell", 20),
+            font=("rockwell", 14),
         ).place(relx=0.5, rely=0.5, anchor="center")
 
     def final_frame(self, type, winner=None):
@@ -1030,7 +1030,7 @@ class Chess(tk.Toplevel):
         tk.Label(
             self.end_game_frame,
             text=txt,
-            font=("rockwell", 15),
+            font=("rockwell", 14),
         ).place(relx=0.5, rely=0.4, anchor="center")
 
         ttk.Button(
@@ -1071,7 +1071,7 @@ class Chess(tk.Toplevel):
         tk.Label(
             self.draw_frame,
             text="Opponent wants to draw the match!",
-            font=("rockwell", 20),
+            font=("rockwell", 14),
         ).place(relx=0.5, rely=0.25, anchor="center")
 
         def rep(accept):

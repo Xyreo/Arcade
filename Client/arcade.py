@@ -516,7 +516,7 @@ class Arcade(tk.Toplevel):
 
             theme_var = tk.StringVar(value=theme.curr_theme())
 
-            tk.Label(self.acc_frame, text="Dark Mode", font=("rockwell", 15)).grid(
+            tk.Label(self.acc_frame, text="Dark Mode", font=("rockwell", 14)).grid(
                 row=3, column=0, sticky="e", pady=2, padx=6
             )
             self.theme_button = ttk.Checkbutton(
@@ -1532,7 +1532,7 @@ class Arcade(tk.Toplevel):
                     os.path.join(HOME_ASSETS, "cached_pfp", i + ".png")
                 ):
                     Arcade.store_pfp(i)
-                    self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
+                self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
             for i in tree.get_children():
                 tree.delete(i)
             for i, j in self.leaderboard_details[game]:
@@ -1622,7 +1622,7 @@ class Arcade(tk.Toplevel):
                     i.destroy()
             if stats == "Bad Request":
                 tk.Label(
-                    frame, text="No Stats Available!", font=("rockwell", 20)
+                    frame, text="No Stats Available!", font=("rockwell", 14)
                 ).place(relx=0.5, rely=0.5, anchor="center")
                 return
             if game == "chess":
@@ -1673,7 +1673,7 @@ class Arcade(tk.Toplevel):
                 tk.Label(
                     frame,
                     text=f"{i} : {j}",
-                    font=("rockwell", 15),
+                    font=("rockwell", 14),
                     fg="royalblue" if k % 2 else "aqua",
                 ).place(relx=0.5, rely=0.2 + k / 10, anchor="center")
                 k += 1
