@@ -1030,7 +1030,7 @@ class Chess(tk.Toplevel):
         tk.Label(
             self.end_game_frame,
             text=txt,
-            font=("rockwell", 20),
+            font=("rockwell", 15),
         ).place(relx=0.5, rely=0.4, anchor="center")
 
         ttk.Button(
