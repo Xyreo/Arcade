@@ -12,38 +12,41 @@ from io import BytesIO
 from tkinter import filedialog as fd
 from tkinter import messagebox as msgb
 
-try:
-    import pyperclip as clipboard
-    import requests
-    from PIL import Image, ImageChops, ImageDraw, ImageTk
-    from plyer import notification as noti
+while True:
+    try:
+        import pyperclip as clipboard
+        import requests
+        from PIL import Image, ImageChops, ImageDraw, ImageTk
+        from plyer import notification as noti
 
-    sys.path.append(
-        os.path.join(
-            os.path.abspath("."),
-            "Client" if "Client" not in os.path.abspath(".") else "",
+        sys.path.append(
+            os.path.join(
+                os.path.abspath("."),
+                "Client" if "Client" not in os.path.abspath(".") else "",
+            )
         )
-    )
 
-    from games.chess import Chess
-    from games.monopoly import Monopoly
-    from utilities.client_framework import Client
-    from utilities.http_wrapper import Http
-    from utilities.theme import Theme
+        from games.chess import Chess
+        from games.monopoly import Monopoly
+        from utilities.client_framework import Client
+        from utilities.http_wrapper import Http
+        from utilities.theme import Theme
 
-except ImportError:
+        break
 
-    def load():
-        cur = os.path.abspath(os.curdir)
-        os.chdir(os.path.abspath(cur.replace("Client", "")))
-        os.system(f"pip install -r requirements.txt")
-        os.chdir(cur)
-        loading.destroy()
+    except ImportError:
 
-    loading = tk.Tk()
-    tk.Label(loading, text="Installing Required Modules...").pack()
-    loading.after(100, load)
-    loading.mainloop()
+        def load():
+            cur = os.path.abspath(os.curdir)
+            os.chdir(os.path.abspath(cur.replace("Client", "")))
+            os.system(f"pip install -r requirements.txt")
+            os.chdir(cur)
+            loading.destroy()
+
+        loading = tk.Tk()
+        tk.Label(loading, text="Installing Required Modules...").pack()
+        loading.after(100, load)
+        loading.mainloop()
 
 
 def resource_path(relative_path):
@@ -1457,20 +1460,14 @@ class Arcade(tk.Toplevel):
     def leaderboard(self, game):
         parent = self.chess_frame if game == "chess" else self.monopoly_frame
 
-        def do():
-            self.leaderboard_details[game] = sorted(
-                HTTP.leaderboard(game).items(), key=lambda i: i[1], reverse=True
-            )
-            for i, j in self.leaderboard_details[game]:
-                if not os.path.isfile(os.path.join(ASSET, "cached_pfp", i + ".png")):
-                    Arcade.store_pfp(i)
-                if i not in self.pfps:
-                    self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
-
-            refresh()
-
-        t = threading.Thread(target=do)
-        t.start()
+        self.leaderboard_details[game] = sorted(
+            HTTP.leaderboard(game).items(), key=lambda i: i[1], reverse=True
+        )
+        for i, j in self.leaderboard_details[game]:
+            if not os.path.isfile(os.path.join(ASSET, "cached_pfp", i + ".png")):
+                Arcade.store_pfp(i)
+            if i not in self.pfps:
+                self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
 
         frame = ttk.Frame(parent, style="Card.TFrame")
         frame.place(relx=0, rely=0.525, anchor="w", relwidth=0.3, relheight=0.9)
@@ -1643,8 +1640,7 @@ class Arcade(tk.Toplevel):
         )
         refresh_but.place(relx=0.975, rely=0.025, anchor="e")
 
-        t = threading.Thread(target=refresh)
-        t.start()
+        refresh()
 
     # endregion
 
@@ -1684,22 +1680,26 @@ class Login(tk.Frame):
                 f"{300}x{40}+{self.winfo_screenwidth()//2-150}+{self.winfo_screenheight()//2-20}"
             )
             master.withdraw()
-            lbl = tk.Label(log_win, text="Logging in...", fg="green")
+            lbl = tk.Label(
+                log_win, text="Logging in...", font=("rockwell", 13), fg="green"
+            )
             lbl.pack()
             with open(REMEMBER_ME_FILE) as f:
                 uname, pwd = eval(f.readlines()[-1])
                 self.check_login = HTTP.login(uname, pwd, remember_login=True)
                 if self.check_login == 1:
-                    master.deiconify()
-                    log_win.destroy()
+                    lbl.configure(text="Loading...")
                     self.complete(uname, HTTP.TOKEN)
-                    return
                 elif self.check_login == -1:
                     lbl.configure(text="Already Logged in on another device!", fg="red")
                 else:
                     lbl.configure(text="File has been corrupted!", fg="red")
-                self.after(2500, log_win.destroy)
-                self.after(2500, master.deiconify)
+
+                def thing():
+                    log_win.destroy()
+                    master.deiconify()
+
+                self.after(1500, thing)
 
         tk.Label(
             self, text="Welcome to the Arcade!\nPlease Enter your Credentials to Login:"
@@ -1831,7 +1831,7 @@ class Login(tk.Frame):
                         self.store_password(uname.strip(), self.check_login)
                     else:
                         self.delete_stored_login()
-                    self.after(1000, lambda: self.complete(uname, HTTP.TOKEN))
+                    self.after(1500, lambda: self.complete(uname, HTTP.TOKEN))
                 else:
                     msg = "User logged in on another device!"
                     self.prompt(msg)
@@ -1862,7 +1862,7 @@ class Login(tk.Frame):
                 tk.Label(self, text=msg, fg=color),
                 self.notifc,
             )
-            self.notif[0].place(relx=0.5, rely=0.675, anchor="center")
+            self.notif[0].place(relx=0.5, rely=0.67, anchor="center")
             self.after(3000, self.destroyprompt)
         except:
             pass
