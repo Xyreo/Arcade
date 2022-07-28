@@ -3,7 +3,7 @@ from datetime import timedelta
 
 import redis
 
-time = 20
+time = 60
 
 
 class Auth:
