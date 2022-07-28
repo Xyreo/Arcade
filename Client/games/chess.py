@@ -407,7 +407,7 @@ class Chess(tk.Toplevel):
         self.user_pfp_display: dict[str, tk.Label] = {}
 
         self.timer_labels[self.me] = tk.Label(self.main_frame, font=("consolas", 45))
-        self.timer_labels[self.me].place(relx=0.5, rely=0.875, anchor="center")
+        self.timer_labels[self.me].place(relx=0.5, rely=0.125, anchor="center")
         self.timer_threads[self.me] = threading.Thread(
             target=self.timer_init,
             args=(self.me,),
@@ -427,7 +427,7 @@ class Chess(tk.Toplevel):
         self.timer_labels[self.opponent] = tk.Label(
             self.main_frame, font=("consolas", 45)
         )
-        self.timer_labels[self.opponent].place(relx=0.5, rely=0.125, anchor="center")
+        self.timer_labels[self.opponent].place(relx=0.5, rely=0.875, anchor="center")
         self.timer_threads[self.opponent] = threading.Thread(
             target=self.timer_init,
             args=(self.opponent,),
