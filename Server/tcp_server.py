@@ -240,6 +240,7 @@ class Client(threading.Thread):
         p = list(players.values())
         for player in p:
             if player.name.lower() == self.name.lower():
+                player.isExpired = True
                 player.close()
 
         log(f"Connected to {self.addr} as {self.name}")
@@ -249,6 +250,8 @@ class Client(threading.Thread):
 
         self.connected = True
         self.channels = []
+
+        self.isExpired = False
         self.send_instruction(("NAME", self.uuid))
 
     def run(self):
@@ -282,6 +285,7 @@ class Client(threading.Thread):
                 self.instruction_handler(message[1:])
             else:
                 self.send_instruction(("GAME", "SESSION_EXP"))
+                self.isExpired = True
                 self.close()
         else:
             self.instruction_handler(message[1:])
@@ -355,7 +359,8 @@ class Client(threading.Thread):
         if self.uuid in players:
             del players[self.uuid]
         self.conn.close()
-        Driver.auth.end_session_by_name(self.name)
+        if not self.isExpired:
+            Driver.auth.end_session_by_name(self.name)
         log(
             f"Connection to {self.addr} closed. {threading.active_count() - 2} players connected"
         )
