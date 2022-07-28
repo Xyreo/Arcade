@@ -2,7 +2,7 @@ import requests
 from tabulate import tabulate as tab
 
 a = requests.get(
-    "https://api.codetabs.com/v1/loc?github=Chaitanya-Keyal/Arcade&ignored=.github,LICENSE,.gitignore"
+    "https://api.codetabs.com/v1/loc?github=Chaitanya-Keyal/Arcade&ignored=.github,LICENSE,.gitignore,.md"
 ).json()
 print(
     tab(
