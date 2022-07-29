@@ -1086,14 +1086,14 @@ class Chess(tk.Toplevel):
         ttk.Button(
             self.draw_frame,
             text="Accept",
-            style="15.TButton",
+            style="13.TButton",
             command=lambda: rep(True),
         ).place(relx=0.25, rely=0.75, anchor="center")
 
         ttk.Button(
             self.draw_frame,
             text="Decline",
-            style="15.TButton",
+            style="13.TButton",
             command=lambda: rep(False),
         ).place(relx=0.75, rely=0.75, anchor="center")
 

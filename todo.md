@@ -1,4 +1,4 @@
-(A) Timer Glitch happens if CLI Thread is used @Chaitanya-Keyal
+(A) Connection Reset Errors @ProAltro
 (A) Notifier @Chaitanya-Keyal
 (B) TakeBack @ProAltro
 (B) GUI: Timers Loading Bar, Game Settings in Lobby @Chaitanya-Keyal

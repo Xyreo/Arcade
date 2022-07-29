@@ -668,7 +668,7 @@ class Arcade(tk.Toplevel):
         self.change_button = ttk.Button(
             self.change_frame,
             text="CHANGE",
-            style="15.TButton",
+            style="12.TButton",
             command=chng_pass,
         )
         self.change_button.place(relx=0.5, rely=0.7, anchor="center")
@@ -781,12 +781,12 @@ class Arcade(tk.Toplevel):
         if self.pfp_path == os.path.join(HOME_ASSETS, "default_pfp.png"):
             self.remove_button.destroy()
         else:
-            self.remove_button.place(relx=0.7, rely=0.45, anchor="center")
+            self.remove_button.place(relx=0.8, rely=0.45, anchor="center")
 
         self.choose_button = ttk.Button(
             self.change_frame,
             text="Upload Picture",
-            style="15.TButton",
+            style="12.TButton",
             command=choose,
         )
         self.choose_button.place(relx=0.5, rely=0.625, anchor="center")
@@ -804,7 +804,7 @@ class Arcade(tk.Toplevel):
         self.confirm_button = ttk.Button(
             self.change_frame,
             text="Confirm",
-            style="15.TButton",
+            style="12.TButton",
             command=confirm_change,
         )
 
@@ -978,8 +978,6 @@ class Arcade(tk.Toplevel):
             clear()
             if self.join_pvt_entry.get():
                 self.join_selected_room([self.join_pvt_entry.get().upper()], game)
-            elif tree.selection():
-                self.join_selected_room(tree.selection(), game)
 
         self.join_select_room_button = ttk.Button(
             frame,
@@ -1046,9 +1044,15 @@ class Arcade(tk.Toplevel):
                 "%P",
             ),
         )
-        tk.Label(frame, text="or Enter Private Room ID:", font=("rockwell", 13)).place(
+        tk.Label(frame, text="or Enter Room ID:", font=("rockwell", 13)).place(
             relx=0.55, rely=0.85, anchor="e"
         )
+
+        def treeview_click(e):
+            self.join_pvt_entry.delete(0, "end")
+            self.join_pvt_entry.insert(0, tree.focus())
+
+        tree.bind("<<TreeviewSelect>>", treeview_click)
         self.join_pvt_entry.place(relx=0.57, rely=0.85, relwidth=0.2, anchor="w")
         self.join_pvt_entry.focus_set()
         self.join_pvt_entry.bind("<Return>", lambda e: join_some_room())
@@ -1532,7 +1536,8 @@ class Arcade(tk.Toplevel):
                     os.path.join(HOME_ASSETS, "cached_pfp", i + ".png")
                 ):
                     Arcade.store_pfp(i)
-                self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
+                if i not in self.pfps:
+                    self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
             for i in tree.get_children():
                 tree.delete(i)
             for i, j in self.leaderboard_details[game]:

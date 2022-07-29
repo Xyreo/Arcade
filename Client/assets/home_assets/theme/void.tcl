@@ -18,11 +18,15 @@ proc load_images {imgdir} {
 array set darkcolors {
     -fg             "#ffffff"
     -bg             "#333333"
+    -selectfg       "#ffffff"
+    -selectbg       "#007fff"
     -disabledtxt    "#bebebe"
 }
 array set lightcolors {
     -fg             "#000000"
     -bg             "#ffffff"
+    -selectfg       "#ffffff"
+    -selectbg       "#007fff"
     -disabledtxt    "#bebebe"
 }
 
@@ -437,15 +441,15 @@ proc init {mode path} {
 
         # Combobox
         ttk::style map TCombobox -selectbackground [list \
-            {!focus} $colors(-bg) \
-            {readonly hover} $colors(-bg) \
-            {readonly focus} $colors(-bg) \
+            {!focus} $colors(-selectbg) \
+            {readonly hover} $colors(-selectbg) \
+            {readonly focus} $colors(-selectbg) \
         ]
             
         ttk::style map TCombobox -selectforeground [list \
-            {!focus} $colors(-fg) \
-            {readonly hover} $colors(-fg) \
-            {readonly focus} $colors(-fg) \
+            {!focus} $colors(-selectfg) \
+            {readonly hover} $colors(-selectfg) \
+            {readonly focus} $colors(-selectfg) \
         ]
 
         ttk::style element create Combobox.field \

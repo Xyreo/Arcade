@@ -37,7 +37,6 @@ class Timer(threading.Thread):
         self.counter = self.total
 
     def stop(self):
-        self.pause()
         self.isStopped = True
 
     def set_time(self, time):

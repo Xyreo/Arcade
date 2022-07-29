@@ -190,6 +190,7 @@ class Monopoly(tk.Toplevel):
                     "Money": 1500,
                     "Injail": [False, 0],
                     "Position": 0,
+                    "Old_Position": 0,
                     "Properties": [],
                     "GOJF": 0,
                     "PLACES": {},
@@ -229,13 +230,13 @@ class Monopoly(tk.Toplevel):
             self.out_of_jail(msg[2], True)
         elif msg[1] == "TRADE":
             if msg[2] == "ANSWER":
+                if "TRADE" in self.collective:
+                    del self.collective["TRADE"]
                 if msg[3]:
                     self.exec_trade(msg[4], msg[0], *msg[5:8])
                 else:
                     if msg[4] == self.me:
                         self.update_game("Your Trade Offer was declined!")
-                if "TRADE" in self.collective:
-                    del self.collective["TRADE"]
             elif msg[2] == "REQUEST":
                 if msg[3] == self.me:
                     self.recv_trade(msg[0], *msg[4:7])
@@ -839,6 +840,8 @@ class Monopoly(tk.Toplevel):
                             ].price,
                             self.turn,
                         )
+                        or self.player_details[self.turn]["Position"] % 40
+                        == self.player_details[self.turn]["Old_Position"]
                     ):
                         d[i].configure(state="disabled")
                 elif i == "sell":
@@ -867,6 +870,9 @@ class Monopoly(tk.Toplevel):
                 self.update_game()
                 self.toggle_action_buttons(True)
                 return
+        self.player_details[self.turn]["Old_Position"] = self.player_details[self.turn][
+            "Position"
+        ]
         try:
             self.turn = self.uuids[self.uuids.index(self.turn) + 1]
         except:
@@ -875,7 +881,7 @@ class Monopoly(tk.Toplevel):
         if not (received or force):
             self.send_msg(("END",))
 
-        if self.turn == self.me and self.timer:
+        if self.timer:
             self.timer.stop()
         self.timer_label.place_forget()
         if self.turn == self.me:
@@ -989,12 +995,25 @@ class Monopoly(tk.Toplevel):
         if self.player_details[self.turn]["Injail"][0]:
             if dice_roll[0] == dice_roll[1]:
                 self.player_details[self.turn]["Injail"][0] = False
-                self.move(self.turn, 0)
+                self.move(self.turn, 0, start_timer=False)
                 self.player_details[self.turn]["Injail"][1] = 0
                 self.move(self.turn, self.current_move, endturn=True)
             else:
                 if self.player_details[self.turn]["Injail"][1] < 2:
                     self.update_game("Try again next turn!")
+                    if self.turn == self.me and self.timer:
+                        self.timer.stop()
+                    self.timer_thr = threading.Thread(
+                        target=self.timer_init,
+                        args=(
+                            60,
+                            lambda: self.end_turn(auto=True),
+                            "Time Left for Turn to End",
+                            "sec",
+                        ),
+                        daemon=True,
+                    )
+                    self.after(900, self.timer_thr.start)
                     try:
                         self.end_button.configure(state="normal")
                     except:
@@ -1142,7 +1161,7 @@ class Monopoly(tk.Toplevel):
         elif self.player_details[player]["Colour"] == "gold":
             return int(x + self.token_width / 2 + 1), int(y + self.token_width / 2 + 2)
 
-    def move(self, player, move, endturn=False, showmove=True):
+    def move(self, player, move, endturn=False, showmove=True, start_timer=True):
         self.roll_button_state("disabled")
         if self.turn == player == self.me:
             self.end_button.configure(state="disabled")
@@ -1178,7 +1197,7 @@ class Monopoly(tk.Toplevel):
             self.roll_button_state("disabled")
             if self.end_button.winfo_exists():
                 self.end_button.configure(state="normal")
-            if self.me == player and pos not in [2, 17, 33, 7, 22, 36]:
+            if self.me == player and pos not in [2, 17, 33, 7, 22, 36] and start_timer:
                 if self.turn == self.me and self.timer:
                     self.timer.stop()
                 self.timer_thr = threading.Thread(
@@ -1255,7 +1274,7 @@ class Monopoly(tk.Toplevel):
     def go_to_jail(self, player):
         self.player_details[player]["Injail"][0] = True
         move = (10 - self.player_details[player]["Position"] % 40) % 40
-        self.move(player, move, showmove=False, endturn=True)
+        self.move(player, move, showmove=False, endturn=True, start_timer=False)
         text = "You are in jail! Roll Doubles in the next 3 turns"
         if self.player_details[player]["GOJF"]:
             text += ",\nPay 50 or Use your Get out of Jail Free Card"
@@ -1290,7 +1309,7 @@ class Monopoly(tk.Toplevel):
             self.pay(self.turn, 50)
 
         self.player_details[self.turn]["Injail"][0] = False
-        self.move(self.turn, 0)
+        self.move(self.turn, 0, start_timer=False)
         self.player_details[self.turn]["Injail"][1] = 0
         self.update_game("You're out of jail now! Click on Roll Dice")
 
@@ -3599,14 +3618,14 @@ class Monopoly(tk.Toplevel):
             ttk.Button(
                 self.endgame_frame,
                 text="YES",
-                style="16.TButton",
+                style="14.TButton",
                 command=lambda: ans(True),
             ).place(relx=0.4, rely=0.75, anchor="center")
 
             ttk.Button(
                 self.endgame_frame,
                 text="NO",
-                style="16.TButton",
+                style="14.TButton",
                 command=lambda: ans(False),
             ).place(relx=0.6, rely=0.75, anchor="center")
 
