@@ -134,7 +134,7 @@ class Room(Channels):
 
         elif self.status == "INGAME":
             self.msg(("MSG", ("LEAVE", reason)), player.uuid)
-            if len(self.members) == 0:
+            if len(self.members) == 1:
                 del rooms[self.uuid]
         super().leave(player)
 
