@@ -1575,7 +1575,7 @@ class Arcade(tk.Toplevel):
             image=self.refresh,
             highlightthickness=0,
             border=0,
-            command=refresh,
+            command=lambda: self.after(200,refresh),
         ).place(relx=0.98, rely=0.025, anchor="e")
 
         tree = ttk.Treeview(

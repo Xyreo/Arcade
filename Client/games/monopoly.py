@@ -2975,6 +2975,8 @@ class Monopoly(tk.Toplevel):
                 self.player_details[offeror]["Properties"].remove(j)
         self.pay(offeree, cash, offeror)
         self.update_game()
+        if self.timer:
+            self.timer.resume()
 
     def recv_trade(self, offeror, propertyrecv, propertygive, cash):
         self.collective["TRADE"] = ("RECV", offeror)
@@ -3276,6 +3278,9 @@ class Monopoly(tk.Toplevel):
                     font=("times", (self.board_side - 2) // 30),
                 ).place(relx=0.5, rely=0.5, anchor="center")
 
+                if self.timer:
+                    self.timer.pause()
+
         def final_trade(offeree):
             self.p = self.select_prop[offeree].get()
             q = self.select_cash[offeree].get()
@@ -3567,6 +3572,9 @@ class Monopoly(tk.Toplevel):
                     self.isEnding = False
                 del self.collective[thing]
 
+                if self.timer:
+                    self.timer.resume()
+
             if not received:
                 self.send_msg(("POLL", ("UPDATE", "ENDGAME", res)))
 
@@ -3645,6 +3653,9 @@ class Monopoly(tk.Toplevel):
                 style="14.TButton",
                 command=lambda: ans(False),
             ).place(relx=0.6, rely=0.75, anchor="center")
+        
+        if self.timer:
+            self.timer.pause()
 
     def end_game(self, winner=None):
         self.isEnded = True
