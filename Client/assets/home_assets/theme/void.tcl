@@ -580,8 +580,8 @@ proc set_theme {mode} {
         -foreground $colors(-fg) \
         -troughcolor $colors(-bg) \
         -focuscolor $colors(-bg) \
-        -selectbackground $colors(-bg) \
-        -selectforeground $colors(-fg) \
+        -selectbackground $colors(-selectbg) \
+        -selectforeground $colors(-selectfg) \
         -insertcolor $colors(-fg) \
         -insertwidth 1 \
         -fieldbackground $colors(-bg) \
@@ -594,8 +594,8 @@ proc set_theme {mode} {
         highlightColor [ttk::style lookup . -focuscolor] \
         selectBackground [ttk::style lookup . -selectbackground] \
         selectForeground [ttk::style lookup . -selectforeground] \
-        activeBackground [ttk::style lookup . -selectbackground] \
-        activeForeground [ttk::style lookup . -selectforeground]
+        activeBackground [ttk::style lookup . -background] \
+        activeForeground [ttk::style lookup . -foreground]
 
     ttk::style map . -foreground [list disabled $colors(-fg)]
 

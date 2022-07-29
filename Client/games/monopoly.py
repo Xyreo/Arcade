@@ -383,7 +383,6 @@ class Monopoly(tk.Toplevel):
             image=self.player_details[self.me]["PFP"],
             text=f" {self.player_details[self.me]['Name']} ▾",
             highlightthickness=0,
-            activebackground=self.cget("bg"),
             border=0,
             font=("arial black", 14),
             compound="left",
@@ -2266,7 +2265,6 @@ class Monopoly(tk.Toplevel):
             text="← BACK",
             font=("times", (self.board_side - 2) // 60),
             highlightthickness=0,
-            activebackground=self.mortgage_frame.cget("bg"),
             border=0,
             command=self.mortgage_frame.destroy,
         ).place(relx=0.1, rely=0.05, anchor="ne")
@@ -2451,7 +2449,6 @@ class Monopoly(tk.Toplevel):
             font=("times", (self.board_side - 2) // 60),
             highlightthickness=0,
             border=0,
-            activebackground=self.build_frame.cget("bg"),
             command=self.build_frame.destroy,
         ).place(relx=0.1, rely=0.05, anchor="ne")
 
@@ -3049,7 +3046,6 @@ class Monopoly(tk.Toplevel):
             font=("times", (self.board_side - 2) // 60),
             highlightthickness=0,
             border=0,
-            activebackground=self.trade_frame.cget("bg"),
             command=self.trade_frame.destroy,
         ).place(relx=0.1, rely=0.05, anchor="ne")
 
