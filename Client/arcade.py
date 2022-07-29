@@ -326,6 +326,19 @@ class Arcade(tk.Toplevel):
         )
         create_button.place(relx=0.5, rely=0.6, anchor="center")
 
+    @staticmethod
+    def get_active_window():
+        if os.name == "nt":
+            from ctypes import create_unicode_buffer, windll
+
+            hWnd = windll.user32.GetForegroundWindow()
+            length = windll.user32.GetWindowTextLengthW(hWnd)
+            buf = create_unicode_buffer(length + 1)
+            windll.user32.GetWindowTextW(hWnd, buf, length + 1)
+            return buf.value if buf.value else None
+        else:
+            return None
+
     # endregion
 
     # region # Event Handling

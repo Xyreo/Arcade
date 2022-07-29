@@ -1,6 +1,6 @@
-import tkinter as tk
-import sys
 import os
+import sys
+import tkinter as tk
 import typing
 
 

@@ -1,6 +1,6 @@
 (A) Connection Reset Errors @ProAltro
 (B) TakeBack @ProAltro
-(B) GUI: Timers Loading Bar, Game Settings in Lobby @Chaitanya-Keyal
+(B) GUI: Game Settings in Lobby, Timers Loading Bar @Chaitanya-Keyal
 (C) Images Resizer @Chaitanya-Keyal
 (C) Hilarious Trade Meme @Chaitanya-Keyal
 (D) Improve Rules @Chaitanya-Keyal

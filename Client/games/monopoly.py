@@ -245,9 +245,9 @@ class Monopoly(tk.Toplevel):
     @staticmethod
     def get_pfp(name, resize=(32, 32)):
         if not os.path.isfile(os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")):
-            Monopoly.circle_PIL_Image(Monopoly.pfp_make(Monopoly.http.fetch_pfp(name))).save(
-                os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")
-            )
+            Monopoly.circle_PIL_Image(
+                Monopoly.pfp_make(Monopoly.http.fetch_pfp(name))
+            ).save(os.path.join(HOME_ASSETS, "cached_pfp", name + ".png"))
         return ImageTk.PhotoImage(
             Image.open(os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")).resize(
                 resize, Image.Resampling.LANCZOS

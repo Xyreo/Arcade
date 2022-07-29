@@ -19,9 +19,9 @@ sys.path.append(
 )
 
 from utilities.http_wrapper import Http
+from utilities.rules import Rules
 from utilities.theme import Theme
 from utilities.timer import Timer
-from utilities.rules import Rules
 
 SETTINGS_FILE = (
     os.path.join(
