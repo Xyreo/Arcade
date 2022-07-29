@@ -228,6 +228,8 @@ class Monopoly(tk.Toplevel):
                 else:
                     if msg[4] == self.me:
                         self.update_game("Your Trade Offer was declined!")
+                if self.timer:
+                    self.timer.resume()
             elif msg[2] == "REQUEST":
                 if msg[3] == self.me:
                     self.recv_trade(msg[0], *msg[4:7])
@@ -2975,8 +2977,6 @@ class Monopoly(tk.Toplevel):
                 self.player_details[offeror]["Properties"].remove(j)
         self.pay(offeree, cash, offeror)
         self.update_game()
-        if self.timer:
-            self.timer.resume()
 
     def recv_trade(self, offeror, propertyrecv, propertygive, cash):
         self.collective["TRADE"] = ("RECV", offeror)
