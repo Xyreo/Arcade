@@ -157,7 +157,7 @@ class Arcade(tk.Toplevel):
         self.room_settings = {"CHESS": None, "MNPLY": None}
         self.leaderboard_details = {"chess": [], "monopoly": []}
         self.stats_details = {"chess": {}, "monopoly": {}}
-        self.pfps: dict[str, ImageTk.PhotoImage] = {}
+        self.pfps = {"chess": {}, "monopoly": {}}
         self.updated_host_side = None
 
         self.current_room = None
@@ -276,8 +276,7 @@ class Arcade(tk.Toplevel):
             d = pickle.load(f)
             self.main_notebook.select(d["DEFAULT_GAME"])
 
-        Arcade.store_pfp(self.name)
-        self.my_pfp = Arcade.get_cached_pfp(self.name, (40, 40))
+        self.my_pfp = Arcade.get_pfp(self.name, (40, 40))
 
         self.acc_button = tk.Button(
             self,
@@ -390,7 +389,19 @@ class Arcade(tk.Toplevel):
             if msg[1] == "PLAYER":
                 if msg[2] == "ADD":
                     self.rooms.add_player(dest, msg[3])
+                    if self.get_active_window() != "Arcade":
+                        noti.notify(
+                            message=f"{msg[3]['name']} has joined the room!",
+                            app_name="Arcade",
+                            timeout=5,
+                        )
                 elif msg[2] == "REMOVE":
+                    if self.get_active_window() != "Arcade":
+                        noti.notify(
+                            message=f"{msg[3]['name']} has left the room!",
+                            app_name="Arcade",
+                            timeout=5,
+                        )
                     self.rooms.remove_player(dest, msg[3])
                 self.update_room(self.rooms[game][dest])
 
@@ -402,6 +413,12 @@ class Arcade(tk.Toplevel):
                 self.room_frames[game].destroy()
                 self.room_frames[game] = None
                 if msg[2] == "REMOVE":
+                    if self.get_active_window() != "Arcade":
+                        noti.notify(
+                            message=f"The Host Left the Room!",
+                            app_name="Arcade",
+                            timeout=5,
+                        )
                     self.rooms.remove_room(game, dest)
                     self.current_room = None
                 elif msg[2] == "START":
@@ -794,8 +811,7 @@ class Arcade(tk.Toplevel):
         def confirm_change():
             HTTP.change_pfp(Arcade.pfp_send(self.pfp_path))
             self.change_frame.destroy()
-            Arcade.store_pfp(self.name)
-            self.my_pfp = Arcade.get_cached_pfp(self.name)
+            self.my_pfp = Arcade.get_pfp(self.name, force=True)
             self.acc_button.configure(image=self.my_pfp)
 
             if self.current_room:
@@ -877,13 +893,14 @@ class Arcade(tk.Toplevel):
             return Image.open(os.path.join(HOME_ASSETS, "default_pfp.png"))
 
     @staticmethod
-    def store_pfp(name):
-        Arcade.circle_PIL_Image(Arcade.pfp_make(HTTP.fetch_pfp(name))).save(
-            os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")
-        )
-
-    @staticmethod
-    def get_cached_pfp(name, resize=(32, 32)):
+    def get_pfp(name, resize=(32, 32), force=False):
+        if (
+            not os.path.isfile(os.path.join(HOME_ASSETS, "cached_pfp", name + ".png"))
+            or force
+        ):
+            Arcade.circle_PIL_Image(Arcade.pfp_make(HTTP.fetch_pfp(name))).save(
+                os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")
+            )
         return ImageTk.PhotoImage(
             Image.open(os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")).resize(
                 resize, Image.Resampling.LANCZOS
@@ -1214,11 +1231,7 @@ class Arcade(tk.Toplevel):
         k = 1.1
         d = sorted(room["members"].values(), key=lambda x: x["name"])
         for i in d:
-            if not os.path.isfile(
-                os.path.join(HOME_ASSETS, "cached_pfp", i["name"] + ".png")
-            ):
-                Arcade.store_pfp(i["name"])
-            i.update({"pfp": Arcade.get_cached_pfp(i["name"], (32, 32))})
+            i.update({"pfp": Arcade.get_pfp(i["name"], (32, 32))})
         for i in d:
             tk.Label(
                 self.room_members[game],
@@ -1513,10 +1526,7 @@ class Arcade(tk.Toplevel):
             HTTP.leaderboard(game).items(), key=lambda i: i[1], reverse=True
         )
         for i, j in self.leaderboard_details[game]:
-            if not os.path.isfile(os.path.join(HOME_ASSETS, "cached_pfp", i + ".png")):
-                Arcade.store_pfp(i)
-            if i not in self.pfps:
-                self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
+            self.pfps[game][i] = Arcade.get_pfp(i, (18, 18))
 
         frame = ttk.Frame(parent, style="Card.TFrame")
         frame.place(relx=0, rely=0.525, anchor="w", relwidth=0.3, relheight=0.9)
@@ -1532,12 +1542,7 @@ class Arcade(tk.Toplevel):
                 HTTP.leaderboard(game).items(), key=lambda i: i[1], reverse=True
             )
             for i, j in self.leaderboard_details[game]:
-                if not os.path.isfile(
-                    os.path.join(HOME_ASSETS, "cached_pfp", i + ".png")
-                ):
-                    Arcade.store_pfp(i)
-                if i not in self.pfps:
-                    self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
+                self.pfps[game][i] = Arcade.get_pfp(i, (18, 18), True)
             for i in tree.get_children():
                 tree.delete(i)
             for i, j in self.leaderboard_details[game]:
@@ -1546,7 +1551,7 @@ class Arcade(tk.Toplevel):
                     index="end",
                     iid=i,
                     text="",
-                    image=self.pfps[i],
+                    image=self.pfps[game][i],
                     values=(self.leaderboard_details[game].index((i, j)) + 1, i, j),
                     tag=i,
                 )
@@ -1609,7 +1614,7 @@ class Arcade(tk.Toplevel):
                 index="end",
                 iid=i,
                 text="",
-                image=self.pfps[i],
+                image=self.pfps[game][i],
                 values=(self.leaderboard_details[game].index((i, j)) + 1, i, j),
                 tag=i,
             )

@@ -178,13 +178,6 @@ class Monopoly(tk.Toplevel):
         Property.game = self
 
         for i in self.player_details:
-            if not os.path.isfile(
-                os.path.join(
-                    HOME_ASSETS, "cached_pfp", self.player_details[i]["Name"] + ".png"
-                )
-            ):
-                Monopoly.store_pfp(self.player_details[i]["Name"])
-
             self.player_details[i].update(
                 {
                     "Money": 1500,
@@ -194,9 +187,7 @@ class Monopoly(tk.Toplevel):
                     "Properties": [],
                     "GOJF": 0,
                     "PLACES": {},
-                    "PFP": Monopoly.get_cached_pfp(
-                        self.player_details[i]["Name"], (32, 32)
-                    ),
+                    "PFP": Monopoly.get_pfp(self.player_details[i]["Name"], (32, 32)),
                 }
             )  # Properties will store obj from properties dict
 
@@ -252,13 +243,11 @@ class Monopoly(tk.Toplevel):
         return c
 
     @staticmethod
-    def store_pfp(name):
-        Monopoly.circle_PIL_Image(
-            Monopoly.pfp_make(Monopoly.http.fetch_pfp(name))
-        ).save(os.path.join(HOME_ASSETS, "cached_pfp", name + ".png"))
-
-    @staticmethod
-    def get_cached_pfp(name, resize=(32, 32)):
+    def get_pfp(name, resize=(32, 32)):
+        if not os.path.isfile(os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")):
+            Monopoly.circle_PIL_Image(Monopoly.pfp_make(Monopoly.http.fetch_pfp(name))).save(
+                os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")
+            )
         return ImageTk.PhotoImage(
             Image.open(os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")).resize(
                 resize, Image.Resampling.LANCZOS
@@ -752,6 +741,19 @@ class Monopoly(tk.Toplevel):
         else:
             return True
 
+    @staticmethod
+    def get_active_window():
+        if os.name == "nt":
+            from ctypes import create_unicode_buffer, windll
+
+            hWnd = windll.user32.GetForegroundWindow()
+            length = windll.user32.GetWindowTextLengthW(hWnd)
+            buf = create_unicode_buffer(length + 1)
+            windll.user32.GetWindowTextW(hWnd, buf, length + 1)
+            return buf.value if buf.value else None
+        else:
+            return None
+
     # endregion
 
     # region # Update Game
@@ -884,6 +886,12 @@ class Monopoly(tk.Toplevel):
             self.timer.stop()
         self.timer_label.place_forget()
         if self.turn == self.me:
+            if self.get_active_window() != "Monopoly":
+                noti.notify(
+                    app_name="Arcade",
+                    message="Your Turn has Started, Roll the Dice!",
+                    timeout=5,
+                )
             self.timer_label.place(relx=0.15, rely=0.03, anchor="w")
             self.roll_button_state("normal")
             self.timer_thr = threading.Thread(
@@ -2970,6 +2978,12 @@ class Monopoly(tk.Toplevel):
 
     def recv_trade(self, offeror, propertyrecv, propertygive, cash):
         self.collective["TRADE"] = ("RECV", offeror)
+        if self.get_active_window() != "Monopoly":
+            noti.notify(
+                message=f"{offeror} has a Trade Offer!",
+                app_name="Arcade",
+                timeout=5,
+            )
         self.recv_trade_frame = tk.Frame(self.action_frame)
         self.recv_trade_frame.place(
             relx=0, rely=0, relwidth=1, relheight=1, anchor="nw"
@@ -3570,6 +3584,13 @@ class Monopoly(tk.Toplevel):
     def get_input(self, bankrupt, ender):
         self.isEnding = True
         self.roll_button_state("disabled")
+        if self.get_active_window() != "Monopoly":
+            noti.notify(
+                title=f"{ender} wants to End the Game!",
+                app_name="Arcade",
+                message="Cast your vote!",
+                timeout=5,
+            )
         self.endgame_frame = tk.Frame(self.action_frame)
         self.endgame_frame.place(
             relx=0.5, rely=0.5, relwidth=1, relheight=1, anchor="center"

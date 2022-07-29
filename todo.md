@@ -1,5 +1,4 @@
 (A) Connection Reset Errors @ProAltro
-(A) Notifier @Chaitanya-Keyal
 (B) TakeBack @ProAltro
 (B) GUI: Timers Loading Bar, Game Settings in Lobby @Chaitanya-Keyal
 (C) Images Resizer @Chaitanya-Keyal

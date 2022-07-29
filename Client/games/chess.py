@@ -93,16 +93,9 @@ class Chess(tk.Toplevel):
         Chess.http = http
 
         for i in self.players:
-            if not os.path.isfile(
-                os.path.join(
-                    HOME_ASSETS, "cached_pfp", self.players[i]["NAME"] + ".png"
-                )
-            ):
-                Chess.store_pfp(self.players[i]["NAME"])
-
             self.players[i].update(
                 {
-                    "PFP": Chess.get_cached_pfp(self.players[i]["NAME"], (32, 32)),
+                    "PFP": Chess.get_pfp(self.players[i]["NAME"], (32, 32)),
                 }
             )
 
@@ -223,13 +216,11 @@ class Chess(tk.Toplevel):
         return c
 
     @staticmethod
-    def store_pfp(name):
-        Chess.circle_PIL_Image(Chess.pfp_make(Chess.http.fetch_pfp(name))).save(
-            os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")
-        )
-
-    @staticmethod
-    def get_cached_pfp(name, resize=(32, 32)):
+    def get_pfp(name, resize=(32, 32)):
+        if not os.path.isfile(os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")):
+            Chess.circle_PIL_Image(Chess.pfp_make(Chess.http.fetch_pfp(name))).save(
+                os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")
+            )
         return ImageTk.PhotoImage(
             Image.open(os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")).resize(
                 resize, Image.Resampling.LANCZOS
@@ -927,7 +918,8 @@ class Chess(tk.Toplevel):
             self.pawn_promotion = pawn
         self.start_move(start, end, multi=True, times=times)
 
-    def get_active_window(self):
+    @staticmethod
+    def get_active_window():
         if os.name == "nt":
             from ctypes import create_unicode_buffer, windll
 
