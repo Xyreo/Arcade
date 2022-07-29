@@ -21,6 +21,7 @@ sys.path.append(
 )
 
 from utilities.http_wrapper import Http
+from utilities.rules import Rules
 from utilities.theme import Theme
 from utilities.timer import Timer
 
@@ -390,6 +391,21 @@ class Monopoly(tk.Toplevel):
         self.acc_button.place(relx=0.01, rely=0.03, anchor="w")
         self.acc_frame = tk.Frame()
 
+        self.help_img = ImageTk.PhotoImage(
+            Image.open(os.path.join(HOME_ASSETS, "help.png")).resize(
+                (int(self.property_width / 2), int(self.property_width / 2)),
+                Image.Resampling.LANCZOS,
+            )
+        )
+
+        tk.Button(
+            self,
+            image=self.help_img,
+            highlightthickness=0,
+            border=0,
+            command=lambda: Rules("Monopoly"),
+        ).place(relx=0.999, rely=0.001, anchor="ne")
+
         self.timer_label = tk.Label(self, font=("consolas", 12))
         self.timer_label.place(relx=0.15, rely=0.03, anchor="w")
 
@@ -400,13 +416,6 @@ class Monopoly(tk.Toplevel):
             )
         )
         self.board_canvas.create_image(2, 2, image=self.board_image, anchor="nw")
-
-        self.info_tag = ImageTk.PhotoImage(
-            Image.open(os.path.join(MONOPOLY_ASSETS, "info.png")).resize(
-                (int(self.property_width / 2), int(self.property_width / 2)),
-                Image.Resampling.LANCZOS,
-            )
-        )
 
         self.station_image = ImageTk.PhotoImage(
             Image.open(
@@ -1033,7 +1042,11 @@ class Monopoly(tk.Toplevel):
                     pos = i
                     break
         if pos in [10, 30]:
-            self.show_message("Jail Rules", "Jail Rules", timeout=2000)
+            self.show_message(
+                "Jail Rules",
+                '1.	When you are sent to jail, you must move directly into jail, and you cannot collect $200 salary if you need to pass to Go. Also, your turn ends when you are sent to jail.\n2.	If you are not "sent to jail" but in the ordinary course of play lands on that space, you are "Just Visiting" and you move ahead in the usual manner on your next turn.\n3.	Even though you are in jail, you may buy and sell property, houses and hotels and collect rents.\n4.	Get out of jail by rolling doubles in the next three turns, or by paying 50 before your first turn, or by using a get out of jail free card if available',
+                timeout=4000,
+            )
         elif pos == 20:
             self.show_message("Free Parking", "Do Nothing!", timeout=2000)
         elif pos == 0:
@@ -1336,12 +1349,15 @@ class Monopoly(tk.Toplevel):
 
         tk.Button(
             self.property_frame,
-            image=self.info_tag,
+            image=self.help_img,
             border=0,
             highlightthickness=0,
-            activebackground=self.property_frame.cget("bg"),
+            activebackground=canvas.cget("bg"),
+            bg=canvas.cget("bg"),
             command=lambda: self.show_message(
-                "Station Rules", "Station Rules", timeout=2000
+                "Station Rules",
+                "Rent on stations increases with every station YOU own.",
+                timeout=2000,
             ),
         ).place(x=35, rely=0.925, anchor="center")
 
@@ -1505,12 +1521,15 @@ class Monopoly(tk.Toplevel):
 
         tk.Button(
             self.property_frame,
-            image=self.info_tag,
+            image=self.help_img,
             border=0,
             highlightthickness=0,
-            activebackground=self.property_frame.cget("bg"),
+            activebackground=canvas.cget("bg"),
+            bg=canvas.cget("bg"),
             command=lambda: self.show_message(
-                "Utility Rules", "Utility Rules", timeout=2000
+                "Utility Rules",
+                "Rent on utility is based on the number of utilities owned and the last rolled dice amount",
+                timeout=2000,
             ),
         ).place(x=35, rely=0.925, anchor="center")
 
@@ -1703,12 +1722,15 @@ class Monopoly(tk.Toplevel):
 
         tk.Button(
             self.property_frame,
-            image=self.info_tag,
+            image=self.help_img,
             border=0,
             highlightthickness=0,
-            activebackground=self.property_frame.cget("bg"),
+            activebackground=canvas.cget("bg"),
+            bg=canvas.cget("bg"),
             command=lambda: self.show_message(
-                "Hotel Rules", "Hotel Rules", timeout=2000
+                "Hotel Rules",
+                "Refer to section XI of Rules",
+                timeout=2000,  # TODO: Proper Rules
             ),
         ).place(x=35, rely=0.9, anchor="center")
 
@@ -2127,7 +2149,7 @@ class Monopoly(tk.Toplevel):
             tk.Label(
                 self.action_frame,
                 text=f"You are bankrupt!\n\n{self.player_details[self.turn]['Name']} is playing!",
-                font=50,
+                font=("rockwell", 30),
             ).place(relx=0.5, rely=0.5, anchor="center")
 
         else:
@@ -2137,7 +2159,7 @@ class Monopoly(tk.Toplevel):
                 not_your_turn = tk.Label(
                     self.action_frame,
                     text=f'{self.player_details[self.turn]["Name"]} is playing!',
-                    font=50,
+                    font=("rockwell", 30),
                 )
                 not_your_turn.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -2202,7 +2224,7 @@ class Monopoly(tk.Toplevel):
 
                 self.current_txt = txt
                 action_label = tk.Label(
-                    self.action_frame, text=self.current_txt, font=30
+                    self.action_frame, text=self.current_txt, font=("rockwell", 16)
                 )
                 action_label.place(relx=0.5, rely=0.75, anchor="center")
 
@@ -3545,20 +3567,20 @@ class Monopoly(tk.Toplevel):
             tk.Label(
                 self.waiting_frame,
                 text="Waiting for others to vote!",
-                font=("rockwell", 20),
+                font=("rockwell", 14),
             ).place(relx=0.5, rely=0.5, anchor="center")
         else:
             if bankrupt:
                 tk.Label(
                     self.endgame_frame,
                     text=f"{ender} is Bankrupt! Do you want to end the game now?",
-                    font=("rockwell", 20),
+                    font=("rockwell", 14),
                 ).place(relx=0.5, rely=0.5, anchor="center")
             else:
                 tk.Label(
                     self.endgame_frame,
                     text=f"{ender} wants to end the game! Do you want to end the game too?",
-                    font=("rockwell", 20),
+                    font=("rockwell", 14),
                 ).place(relx=0.5, rely=0.5, anchor="center")
 
             def ans(bool):
@@ -3569,7 +3591,7 @@ class Monopoly(tk.Toplevel):
                 tk.Label(
                     self.waiting_frame,
                     text="Waiting for others to vote!",
-                    font=("rockwell", 20),
+                    font=("rockwell", 14),
                 ).place(relx=0.5, rely=0.5, anchor="center")
 
                 self.poll(self.me, ("UPDATE", "ENDGAME", bool))
@@ -3657,7 +3679,7 @@ class Monopoly(tk.Toplevel):
         ):
             txt += f"\n{self.player_details[i]['Name']} : {self.player_details[i]['NETWORTH']}"
         tk.Label(
-            self.final_frame, text=txt, font=("rockwell", 20), justify="center"
+            self.final_frame, text=txt, font=("rockwell", 14), justify="center"
         ).place(relx=0.5, rely=0.05, anchor="n")
 
         ttk.Button(

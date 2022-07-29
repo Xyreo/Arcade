@@ -21,6 +21,7 @@ sys.path.append(
 from utilities.http_wrapper import Http
 from utilities.theme import Theme
 from utilities.timer import Timer
+from utilities.rules import Rules
 
 SETTINGS_FILE = (
     os.path.join(
@@ -147,6 +148,21 @@ class Chess(tk.Toplevel):
         self.main_frame.place(
             relx=0.95, rely=0.5, relheight=0.95, relwidth=0.25, anchor="e"
         )
+
+        self.help_img = ImageTk.PhotoImage(
+            Image.open(os.path.join(HOME_ASSETS, "help.png")).resize(
+                (20, 20),
+                Image.Resampling.LANCZOS,
+            )
+        )
+
+        tk.Button(
+            self,
+            image=self.help_img,
+            highlightthickness=0,
+            border=0,
+            command=lambda: Rules("Chess"),
+        ).place(relx=0.999, rely=0.001, anchor="ne")
 
         self.disimg = ImageTk.PhotoImage(
             Image.new(
@@ -391,7 +407,7 @@ class Chess(tk.Toplevel):
         self.user_pfp_display: dict[str, tk.Label] = {}
 
         self.timer_labels[self.me] = tk.Label(self.main_frame, font=("consolas", 45))
-        self.timer_labels[self.me].place(relx=0.5, rely=0.875, anchor="center")
+        self.timer_labels[self.me].place(relx=0.5, rely=0.125, anchor="center")
         self.timer_threads[self.me] = threading.Thread(
             target=self.timer_init,
             args=(self.me,),
@@ -411,7 +427,7 @@ class Chess(tk.Toplevel):
         self.timer_labels[self.opponent] = tk.Label(
             self.main_frame, font=("consolas", 45)
         )
-        self.timer_labels[self.opponent].place(relx=0.5, rely=0.125, anchor="center")
+        self.timer_labels[self.opponent].place(relx=0.5, rely=0.875, anchor="center")
         self.timer_threads[self.opponent] = threading.Thread(
             target=self.timer_init,
             args=(self.opponent,),
@@ -982,7 +998,7 @@ class Chess(tk.Toplevel):
         tk.Label(
             self.draw_frame,
             text="Waiting for opponent to respond",
-            font=("rockwell", 20),
+            font=("rockwell", 14),
         ).place(relx=0.5, rely=0.5, anchor="center")
 
     def final_frame(self, type, winner=None):
@@ -1014,7 +1030,7 @@ class Chess(tk.Toplevel):
         tk.Label(
             self.end_game_frame,
             text=txt,
-            font=("rockwell", 20),
+            font=("rockwell", 14),
         ).place(relx=0.5, rely=0.4, anchor="center")
 
         ttk.Button(
@@ -1055,7 +1071,7 @@ class Chess(tk.Toplevel):
         tk.Label(
             self.draw_frame,
             text="Opponent wants to draw the match!",
-            font=("rockwell", 20),
+            font=("rockwell", 14),
         ).place(relx=0.5, rely=0.25, anchor="center")
 
         def rep(accept):

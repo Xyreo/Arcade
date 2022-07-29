@@ -1,14 +1,10 @@
-(A) SESSIONS STUFF @ProAltro
-(A) User logged in, another client tries login with same credentials, sends session exp to first user @ProAltro
-(A) Leaderboard giving bad request randomly @ProAltro
-(B) Info, Rules @Chaitanya-Keyal
-(C) Update GUI + Add Timers Loading Bar @Chaitanya-Keyal
-(C) Notifier @Chaitanya-Keyal
-(D) Timer Glitch happens if CLI Thread is used
-(D) LOGO @Chaitanya-Keyal
-(D) TakeBack @chess @ProAltro
-(E) Images Resizer @Chaitanya-Keyal
-(E) Add Hilarious Trade Meme @monopoly
+(A) Timer Glitch happens if CLI Thread is used @Chaitanya-Keyal
+(A) Notifier @Chaitanya-Keyal
+(B) TakeBack @ProAltro
+(B) GUI: Timers Loading Bar, Game Settings in Lobby @Chaitanya-Keyal
+(C) Images Resizer @Chaitanya-Keyal
+(C) Hilarious Trade Meme @Chaitanya-Keyal
+(D) Improve Rules @Chaitanya-Keyal
 (X) Music, Sounds +Arcade
 (Y) PGN Moves @chess
 (Y) Select Turn Order by diceroll @monopoly

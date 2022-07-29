@@ -30,6 +30,7 @@ while True:
         from games.monopoly import Monopoly
         from utilities.client_framework import Client
         from utilities.http_wrapper import Http
+        from utilities.rules import Rules
         from utilities.theme import Theme
 
         break
@@ -58,10 +59,11 @@ def resource_path(relative_path):
 
 
 ASSET = resource_path(
-    os.path.join("assets", "home_assets")
-    if os.path.exists(os.path.join("assets", "home_assets"))
-    else os.path.join("Client", os.path.join("assets", "home_assets"))
+    "assets" if os.path.exists("assets") else os.path.join("Client", "assets")
 )
+HOME_ASSETS = os.path.join(ASSET, "home_assets")
+MONOPOLY_ASSETS = os.path.join(ASSET, "mnply_assets")
+CHESS_ASSETS = os.path.join(ASSET, "chess_assets")
 
 HTTP = Http("http://167.71.231.52:5000")
 CLIENT_ADDRESS = "167.71.231.52"
@@ -161,16 +163,21 @@ class Arcade(tk.Toplevel):
         self.current_room = None
         self.sent_time = time.perf_counter()
         self.refresh = ImageTk.PhotoImage(
-            Image.open(os.path.join(ASSET, "refresh.png")).resize(
+            Image.open(os.path.join(HOME_ASSETS, "refresh.png")).resize(
                 (16, 16), Image.Resampling.LANCZOS
             )
         )
         self.copy_icon = ImageTk.PhotoImage(
-            Image.open(os.path.join(ASSET, "copy.png")).resize(
+            Image.open(os.path.join(HOME_ASSETS, "copy.png")).resize(
                 (20, 20), Image.Resampling.LANCZOS
             )
         )
 
+        self.help_img = ImageTk.PhotoImage(
+            Image.open(os.path.join(HOME_ASSETS, "help.png")).resize(
+                (20, 20), Image.Resampling.LANCZOS
+            )
+        )
         # GUI Initializing
         self.screen_width = int(0.9 * self.winfo_screenwidth())
         self.screen_height = int(self.screen_width / 1.9)
@@ -182,7 +189,7 @@ class Arcade(tk.Toplevel):
             f"{self.screen_width//2}x{self.screen_height}+{self.x_coord+self.screen_width//4}+{self.y_coord}"
         )
         self.protocol("WM_DELETE_WINDOW", self.exit)
-        self.iconbitmap(os.path.join(ASSET, "icon.ico"))
+        self.iconbitmap(os.path.join(HOME_ASSETS, "icon.ico"))
         self.minsize(self.screen_width // 2, self.screen_height)
 
         self.current_room = None
@@ -220,6 +227,19 @@ class Arcade(tk.Toplevel):
         self.chess_frame = tk.Frame(self.main_notebook)
         self.chess_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
         self.main_notebook.add(self.chess_frame, text="Chess")
+        self.chess_icon = ImageTk.PhotoImage(
+            Image.open(os.path.join(CHESS_ASSETS, "icon.ico")).resize(
+                (40, 40), Image.Resampling.LANCZOS
+            )
+        )
+        tk.Label(
+            self.chess_frame,
+            image=self.chess_icon,
+            text=" CHESS",
+            font=("stencil", 40),
+            fg="#4656b4",
+            compound="left",
+        ).place(relx=0.5, rely=0.0375, anchor="center")
         self.leaderboard("chess")
         self.stats("chess")
         self.join_create("CHESS")
@@ -227,9 +247,30 @@ class Arcade(tk.Toplevel):
         self.monopoly_frame = tk.Frame(self.main_notebook)
         self.monopoly_frame.place(relx=0, rely=0, relheight=1, relwidth=1, anchor="nw")
         self.main_notebook.add(self.monopoly_frame, text="Monopoly")
+        self.mono_icon = ImageTk.PhotoImage(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "icon.ico")).resize(
+                (45, 45), Image.Resampling.LANCZOS
+            )
+        )
+        tk.Label(
+            self.monopoly_frame,
+            image=self.mono_icon,
+            text=" MONOPOLY",
+            font=("stencil", 30),
+            fg="#4656b4",
+            compound="left",
+        ).place(relx=0.5, rely=0.0375, anchor="center")
         self.leaderboard("monopoly")
         self.stats("monopoly")
         self.join_create("MNPLY")
+
+        tk.Button(
+            self,
+            image=self.help_img,
+            highlightthickness=0,
+            border=0,
+            command=lambda: Rules("Arcade"),
+        ).place(relx=0.999, rely=0.001, anchor="ne")
 
         with open(SETTINGS_FILE, "rb") as f:
             d = pickle.load(f)
@@ -255,13 +296,13 @@ class Arcade(tk.Toplevel):
     def start_arcade(self):
         root.withdraw()
         self.logo = ImageTk.PhotoImage(
-            Image.open(os.path.join(ASSET, "logo.png")).resize(
-                (self.screen_width // 4, self.screen_width // 4),
+            Image.open(os.path.join(HOME_ASSETS, "logo.png")).resize(
+                (self.screen_width // 2, self.screen_width // 4),
                 Image.Resampling.LANCZOS,
             )
         )
         tk.Label(self, image=self.logo, bg=self.cget("bg")).place(
-            relx=0.5, rely=0.3, anchor="center", relheight=0.6, relwidth=1
+            relx=0.5, rely=0.3, anchor="center", relheight=0.8, relwidth=1
         )
         Login(
             self, self.initialize, remember_login=os.path.exists(REMEMBER_ME_FILE)
@@ -475,7 +516,7 @@ class Arcade(tk.Toplevel):
 
             theme_var = tk.StringVar(value=theme.curr_theme())
 
-            tk.Label(self.acc_frame, text="Dark Mode", font=("rockwell", 15)).grid(
+            tk.Label(self.acc_frame, text="Dark Mode", font=("rockwell", 14)).grid(
                 row=3, column=0, sticky="e", pady=2, padx=6
             )
             self.theme_button = ttk.Checkbutton(
@@ -633,13 +674,13 @@ class Arcade(tk.Toplevel):
         self.change_button.place(relx=0.5, rely=0.7, anchor="center")
 
         self.show_password = ImageTk.PhotoImage(
-            Image.open(os.path.join(ASSET, "show_password.png")).resize(
+            Image.open(os.path.join(HOME_ASSETS, "show_password.png")).resize(
                 (20, 15), Image.Resampling.LANCZOS
             )
         )
 
         self.hide_password = ImageTk.PhotoImage(
-            Image.open(os.path.join(ASSET, "hide_password.png")).resize(
+            Image.open(os.path.join(HOME_ASSETS, "hide_password.png")).resize(
                 (20, 15), Image.Resampling.LANCZOS
             )
         )
@@ -689,7 +730,7 @@ class Arcade(tk.Toplevel):
 
     def change_pfp(self):
         self.acc_frame.destroy()
-        self.pfp_path = os.path.join(ASSET, "cached_pfp", self.name + ".png")
+        self.pfp_path = os.path.join(HOME_ASSETS, "cached_pfp", self.name + ".png")
         self.change_frame = ttk.Frame(self, style="Card.TFrame", padding=4)
         self.change_frame.place(
             relx=0.99, rely=0.1, relheight=0.3, relwidth=0.25, anchor="ne"
@@ -711,7 +752,7 @@ class Arcade(tk.Toplevel):
             relx=0.5, rely=0.3, anchor="center"
         )
         self.remove_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(ASSET, "remove.png")).resize(
+            Image.open(os.path.join(HOME_ASSETS, "remove.png")).resize(
                 (32, 32),
                 Image.Resampling.LANCZOS,
             )
@@ -727,7 +768,7 @@ class Arcade(tk.Toplevel):
             self.select_pfp()
 
         def set_default():
-            self.pfp_path = os.path.join(ASSET, "default_pfp.png")
+            self.pfp_path = os.path.join(HOME_ASSETS, "default_pfp.png")
             self.select_pfp()
 
         self.remove_button = tk.Button(
@@ -737,7 +778,7 @@ class Arcade(tk.Toplevel):
             highlightthickness=0,
             command=set_default,
         )
-        if self.pfp_path == os.path.join(ASSET, "default_pfp.png"):
+        if self.pfp_path == os.path.join(HOME_ASSETS, "default_pfp.png"):
             self.remove_button.destroy()
         else:
             self.remove_button.place(relx=0.7, rely=0.45, anchor="center")
@@ -767,7 +808,7 @@ class Arcade(tk.Toplevel):
             command=confirm_change,
         )
 
-        if self.pfp_path == os.path.join(ASSET, "cached_pfp", self.name + ".png"):
+        if self.pfp_path == os.path.join(HOME_ASSETS, "cached_pfp", self.name + ".png"):
             self.confirm_button.destroy()
         else:
             self.confirm_button.place(relx=0.5, rely=0.9, anchor="center")
@@ -819,10 +860,10 @@ class Arcade(tk.Toplevel):
                 (im.size[1] + min(im.size)) // 2,
             )
         ).resize((256, 256), Image.Resampling.LANCZOS)
-        im.save(os.path.join(ASSET, "temp.png"), optimize=True)
-        with open(os.path.join(ASSET, "temp.png"), "rb") as f:
+        im.save(os.path.join(HOME_ASSETS, "temp.png"), optimize=True)
+        with open(os.path.join(HOME_ASSETS, "temp.png"), "rb") as f:
             a = base64.b64encode(f.read()).decode("latin1")
-        os.remove(os.path.join(ASSET, "temp.png"))
+        os.remove(os.path.join(HOME_ASSETS, "temp.png"))
         return a
 
     @staticmethod
@@ -833,18 +874,18 @@ class Arcade(tk.Toplevel):
             return c
         except:
             print("Couldn't Access Profile Picture")
-            return Image.open(os.path.join(ASSET, "default_pfp.png"))
+            return Image.open(os.path.join(HOME_ASSETS, "default_pfp.png"))
 
     @staticmethod
     def store_pfp(name):
         Arcade.circle_PIL_Image(Arcade.pfp_make(HTTP.fetch_pfp(name))).save(
-            os.path.join(ASSET, "cached_pfp", name + ".png")
+            os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")
         )
 
     @staticmethod
     def get_cached_pfp(name, resize=(32, 32)):
         return ImageTk.PhotoImage(
-            Image.open(os.path.join(ASSET, "cached_pfp", name + ".png")).resize(
+            Image.open(os.path.join(HOME_ASSETS, "cached_pfp", name + ".png")).resize(
                 resize, Image.Resampling.LANCZOS
             )
         )
@@ -1005,10 +1046,10 @@ class Arcade(tk.Toplevel):
                 "%P",
             ),
         )
-        tk.Label(frame, text="Enter Private Room ID:", font=("rockwell", 13)).place(
-            relx=0.59, rely=0.85, anchor="e"
+        tk.Label(frame, text="or Enter Private Room ID:", font=("rockwell", 13)).place(
+            relx=0.55, rely=0.85, anchor="e"
         )
-        self.join_pvt_entry.place(relx=0.61, rely=0.85, relwidth=0.2, anchor="w")
+        self.join_pvt_entry.place(relx=0.57, rely=0.85, relwidth=0.2, anchor="w")
         self.join_pvt_entry.focus_set()
         self.join_pvt_entry.bind("<Return>", lambda e: join_some_room())
         self.join_pvt_entry.bind("<KeyRelease>", lambda e: caps())
@@ -1130,7 +1171,7 @@ class Arcade(tk.Toplevel):
         def clip_copy():
             clipboard.copy(self.current_room)
             copied = tk.Label(frame, text="Copied!", font=("rockwell", 12), fg="green")
-            copied.place(relx=0.7, rely=0.05, anchor="w")
+            copied.place(relx=0.71, rely=0.05, anchor="w")
             self.after(2500, copied.destroy)
 
         tk.Button(
@@ -1139,7 +1180,7 @@ class Arcade(tk.Toplevel):
             highlightthickness=0,
             border=0,
             command=clip_copy,
-        ).place(relx=0.675, rely=0.05, anchor="center")
+        ).place(relx=0.69, rely=0.049, anchor="center")
 
         tk.Label(frame, text=f"Host: {hostname}", font=("rockwell", 13)).place(
             relx=0.5, rely=0.1, anchor="center"
@@ -1162,13 +1203,15 @@ class Arcade(tk.Toplevel):
         for child in self.room_members[game].winfo_children():
             child.destroy()
         tk.Label(
-            self.room_members[game], text=f"Members", font=("rockwell", 13, "underline")
+            self.room_members[game],
+            text=f"Members",
+            font=("impact", 15, "underline"),
         ).place(relx=0.5, rely=0, anchor="n")
-        k = 1
+        k = 1.1
         d = sorted(room["members"].values(), key=lambda x: x["name"])
         for i in d:
             if not os.path.isfile(
-                os.path.join(ASSET, "cached_pfp", i["name"] + ".png")
+                os.path.join(HOME_ASSETS, "cached_pfp", i["name"] + ".png")
             ):
                 Arcade.store_pfp(i["name"])
             i.update({"pfp": Arcade.get_cached_pfp(i["name"], (32, 32))})
@@ -1179,7 +1222,7 @@ class Arcade(tk.Toplevel):
                 text="  " + i["name"],
                 font=("rockwell", 13),
                 compound="left",
-            ).place(relx=0.4, rely=(k / 4), anchor="w")
+            ).place(relx=0.4, rely=(k / 5), anchor="w")
             k += 1
 
         settings_dict = self.rooms[game][room["id"]]["settings"]
@@ -1190,8 +1233,10 @@ class Arcade(tk.Toplevel):
             "HOST_SIDE": "Your Side:",
             "ADD_TIME": "Increment per turn:",
         }
+        for child in self.room_settings[game].winfo_children():
+            child.destroy()
         frame = self.room_settings[game]
-        tk.Label(frame, text="Settings", font=("rockwell", 13, "underline")).place(
+        tk.Label(frame, text="Settings", font=("impact", 15, "underline")).place(
             relx=0.5, rely=0, anchor="n"
         )
         k = 1
@@ -1201,7 +1246,7 @@ class Arcade(tk.Toplevel):
             ):
                 continue
             tk.Label(frame, text=display_dict[i], font=("rockwell", 13)).place(
-                relx=0.2, rely=0.15 + k / 10, anchor="w"
+                relx=0.05, rely=0.15 + k / 10, anchor="w"
             )
             k += 1.75
 
@@ -1210,12 +1255,12 @@ class Arcade(tk.Toplevel):
         if room["host"] == self.me:
             self.apply_button = ttk.Button(
                 frame,
-                text="Apply Changes",
+                text="APPLY",
                 style="12.TButton",
                 command=lambda: self.send((room["id"], "SETTINGS", new_settings)),
                 state="disabled",
             )
-            self.apply_button.place(relx=0.8, rely=1, anchor="s")
+            self.apply_button.place(relx=0.85, rely=1, anchor="s")
             self.room_start_button = ttk.Button(
                 frame,
                 text="START",
@@ -1464,7 +1509,7 @@ class Arcade(tk.Toplevel):
             HTTP.leaderboard(game).items(), key=lambda i: i[1], reverse=True
         )
         for i, j in self.leaderboard_details[game]:
-            if not os.path.isfile(os.path.join(ASSET, "cached_pfp", i + ".png")):
+            if not os.path.isfile(os.path.join(HOME_ASSETS, "cached_pfp", i + ".png")):
                 Arcade.store_pfp(i)
             if i not in self.pfps:
                 self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
@@ -1483,9 +1528,11 @@ class Arcade(tk.Toplevel):
                 HTTP.leaderboard(game).items(), key=lambda i: i[1], reverse=True
             )
             for i, j in self.leaderboard_details[game]:
-                if not os.path.isfile(os.path.join(ASSET, "cached_pfp", i + ".png")):
+                if not os.path.isfile(
+                    os.path.join(HOME_ASSETS, "cached_pfp", i + ".png")
+                ):
                     Arcade.store_pfp(i)
-                    self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
+                self.pfps[i] = Arcade.get_cached_pfp(i, (18, 18))
             for i in tree.get_children():
                 tree.delete(i)
             for i, j in self.leaderboard_details[game]:
@@ -1575,7 +1622,7 @@ class Arcade(tk.Toplevel):
                     i.destroy()
             if stats == "Bad Request":
                 tk.Label(
-                    frame, text="No Stats Available!", font=("rockwell", 20)
+                    frame, text="No Stats Available!", font=("rockwell", 14)
                 ).place(relx=0.5, rely=0.5, anchor="center")
                 return
             if game == "chess":
@@ -1626,8 +1673,8 @@ class Arcade(tk.Toplevel):
                 tk.Label(
                     frame,
                     text=f"{i} : {j}",
-                    font=("rockwell", 15),
-                    fg="spring green" if k % 2 else "lime green",
+                    font=("rockwell", 14),
+                    fg="royalblue" if k % 2 else "aqua",
                 ).place(relx=0.5, rely=0.2 + k / 10, anchor="center")
                 k += 1
 
@@ -1663,7 +1710,7 @@ class Arcade(tk.Toplevel):
         except:
             pass
         root.quit()
-        for file in os.scandir(os.path.join(ASSET, "cached_pfp")):
+        for file in os.scandir(os.path.join(HOME_ASSETS, "cached_pfp")):
             os.remove(file.path)
 
 
@@ -1767,13 +1814,13 @@ class Login(tk.Frame):
         ).place(relx=0.5, rely=0.6, anchor="center")
 
         self.show_password = ImageTk.PhotoImage(
-            Image.open(os.path.join(ASSET, "show_password.png")).resize(
+            Image.open(os.path.join(HOME_ASSETS, "show_password.png")).resize(
                 (20, 15), Image.Resampling.LANCZOS
             )
         )
 
         self.hide_password = ImageTk.PhotoImage(
-            Image.open(os.path.join(ASSET, "hide_password.png")).resize(
+            Image.open(os.path.join(HOME_ASSETS, "hide_password.png")).resize(
                 (20, 15), Image.Resampling.LANCZOS
             )
         )
@@ -1794,7 +1841,7 @@ class Login(tk.Frame):
             offvalue=False,
             onvalue=True,
         )
-        remember_me_button.place(relx=0.45, rely=0.5, anchor="w")
+        remember_me_button.place(relx=0.445, rely=0.5, anchor="w")
 
         self.pwdentry.bind("<Return>", lambda a: self.login())
 
@@ -1931,13 +1978,13 @@ class Register(tk.Frame):
         self.reg_button.place(relx=0.5, rely=0.8, anchor="center")
 
         self.show_password = ImageTk.PhotoImage(
-            Image.open(os.path.join(ASSET, "show_password.png")).resize(
+            Image.open(os.path.join(HOME_ASSETS, "show_password.png")).resize(
                 (20, 15), Image.Resampling.LANCZOS
             )
         )
 
         self.hide_password = ImageTk.PhotoImage(
-            Image.open(os.path.join(ASSET, "hide_password.png")).resize(
+            Image.open(os.path.join(HOME_ASSETS, "hide_password.png")).resize(
                 (20, 15), Image.Resampling.LANCZOS
             )
         )
@@ -1985,7 +2032,7 @@ class Register(tk.Frame):
         self.notif = None
         self.notifc = 0
         self.complete = complete
-        self.pfp_path = os.path.join(ASSET, "default_pfp.png")
+        self.pfp_path = os.path.join(HOME_ASSETS, "default_pfp.png")
         self.pfp_select()
 
     def pfp_select(self):
@@ -1994,7 +2041,7 @@ class Register(tk.Frame):
         )
         tk.Label(self, image=self.pfp_image).place(relx=0.8, rely=0.26, anchor="center")
         self.remove_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(ASSET, "remove.png")).resize(
+            Image.open(os.path.join(HOME_ASSETS, "remove.png")).resize(
                 (32, 32),
                 Image.Resampling.LANCZOS,
             )
@@ -2010,7 +2057,7 @@ class Register(tk.Frame):
             self.pfp_select()
 
         def set_default():
-            self.pfp_path = os.path.join(ASSET, "default_pfp.png")
+            self.pfp_path = os.path.join(HOME_ASSETS, "default_pfp.png")
             self.pfp_select()
 
         self.remove_button = tk.Button(
@@ -2020,7 +2067,7 @@ class Register(tk.Frame):
             highlightthickness=0,
             command=set_default,
         )
-        if self.pfp_path == os.path.join(ASSET, "default_pfp.png"):
+        if self.pfp_path == os.path.join(HOME_ASSETS, "default_pfp.png"):
             self.remove_button.destroy()
         else:
             self.remove_button.place(relx=0.9, rely=0.35, anchor="center")
@@ -2134,7 +2181,7 @@ class Register(tk.Frame):
 if __name__ == "__main__":
     root = tk.Tk()
     try:
-        os.mkdir(os.path.join(ASSET, "cached_pfp"))
+        os.mkdir(os.path.join(HOME_ASSETS, "cached_pfp"))
     except:
         pass
     try:
