@@ -100,7 +100,7 @@ class Chess(tk.Toplevel):
                 }
             )
 
-        self.board: dict[int, Piece] = Board()
+        self.board: Board[int, Piece] = Board()
         self.board_ids: dict = {}
         self.imgs: dict = {}
         self.possible_moves: list = []
@@ -735,6 +735,7 @@ class Chess(tk.Toplevel):
         self.timers[
             self.opponent if self.players[self.me]["SIDE"] == self.turn else self.me
         ].pause()
+        print(self.board.fen['HEADER'])
         if self.board.fen["HM"]:
             self.timers[
                 self.opponent if self.players[self.me]["SIDE"] == self.turn else self.me
@@ -787,7 +788,7 @@ class Chess(tk.Toplevel):
             )
 
         # endregion
-
+        self.board.fen.change_turn()
         sent = (start, end, self.pawn_promotion)
         if not multi or self.debug:
             self.send(
@@ -1426,6 +1427,7 @@ class FEN:
 
     def change_turn(self):
         self["T"] = "w" if self["T"] == "b" else "b"
+        self["HM"] += 1
         if self["T"] == "w":
             self["FM"] += 1
 
