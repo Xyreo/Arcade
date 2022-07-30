@@ -40,7 +40,7 @@ while True:
         def load():
             cur = os.path.abspath(os.curdir)
             os.chdir(os.path.abspath(cur.replace("Client", "")))
-            os.system(f"pip install -r requirements.txt")
+            os.system(f"pip3 install -r requirements.txt")
             os.chdir(cur)
             loading.destroy()
 
@@ -402,14 +402,14 @@ class Arcade(tk.Toplevel):
             if msg[1] == "PLAYER":
                 if msg[2] == "ADD":
                     self.rooms.add_player(dest, msg[3])
-                    if self.get_active_window() != "Arcade":
+                    if self.get_active_window() != "Arcade" and os.name == "nt":
                         noti.notify(
                             message=f"{msg[3]['name']} has joined the room!",
                             app_name="Arcade",
                             timeout=5,
                         )
                 elif msg[2] == "REMOVE":
-                    if self.get_active_window() != "Arcade":
+                    if self.get_active_window() != "Arcade" and os.name == "nt":
                         noti.notify(
                             message=f"{msg[3]['name']} has left the room!",
                             app_name="Arcade",
@@ -426,7 +426,7 @@ class Arcade(tk.Toplevel):
                 self.room_frames[game].destroy()
                 self.room_frames[game] = None
                 if msg[2] == "REMOVE":
-                    if self.get_active_window() != "Arcade":
+                    if self.get_active_window() != "Arcade" and self.isWindow and os.name == "nt":
                         noti.notify(
                             message=f"The Host Left the Room!",
                             app_name="Arcade",
@@ -1575,7 +1575,7 @@ class Arcade(tk.Toplevel):
             image=self.refresh,
             highlightthickness=0,
             border=0,
-            command=lambda: self.after(200,refresh),
+            command=lambda: self.after(200, refresh),
         ).place(relx=0.98, rely=0.025, anchor="e")
 
         tree = ttk.Treeview(

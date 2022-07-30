@@ -1045,7 +1045,7 @@ class Chess(tk.Toplevel):
         if ack:
             self.final_frame("DRAW")
         else:
-            if not cancel:
+            if not cancel and os.name=='nt':
                 noti.notify(
                     title="Declined!",
                     app_name="Chess",
