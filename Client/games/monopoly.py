@@ -745,7 +745,7 @@ class Monopoly(tk.Toplevel):
 
     @staticmethod
     def get_active_window():
-        if os.name == "nt":
+        if isWin:
             from ctypes import create_unicode_buffer, windll
 
             hWnd = windll.user32.GetForegroundWindow()
@@ -888,7 +888,7 @@ class Monopoly(tk.Toplevel):
             self.timer.stop()
         self.timer_label.place_forget()
         if self.turn == self.me:
-            if self.get_active_window() != "Monopoly" and os.name == "nt":
+            if self.get_active_window() != "Monopoly" and isWin:
                 noti.notify(
                     app_name="Arcade",
                     message="Your Turn has Started, Roll the Dice!",
@@ -2980,7 +2980,7 @@ class Monopoly(tk.Toplevel):
 
     def recv_trade(self, offeror, propertyrecv, propertygive, cash):
         self.collective["TRADE"] = ("RECV", offeror)
-        if self.get_active_window() != "Monopoly" and os.name=='nt':
+        if self.get_active_window() != "Monopoly" and isWin:
             noti.notify(
                 message=f"{offeror} has a Trade Offer!",
                 app_name="Arcade",
@@ -3498,7 +3498,7 @@ class Monopoly(tk.Toplevel):
                 if inactive:
                     self.send_leave("Inactive")
                     self.quit_game()
-                    if os.name=='nt':
+                    if isWin:
                         noti.notify(
                             title="Inactive!",
                             app_name="Arcade",
@@ -3592,7 +3592,7 @@ class Monopoly(tk.Toplevel):
     def get_input(self, bankrupt, ender):
         self.isEnding = True
         self.roll_button_state("disabled")
-        if self.get_active_window() != "Monopoly" and os.name=='nt':
+        if self.get_active_window() != "Monopoly" and isWin:
             noti.notify(
                 title=f"{ender} wants to End the Game!",
                 app_name="Arcade",
@@ -3653,7 +3653,7 @@ class Monopoly(tk.Toplevel):
                 style="14.TButton",
                 command=lambda: ans(False),
             ).place(relx=0.6, rely=0.75, anchor="center")
-        
+
         if self.timer:
             self.timer.pause()
 

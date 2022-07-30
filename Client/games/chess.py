@@ -23,6 +23,7 @@ from utilities.rules import Rules
 from utilities.theme import Theme
 from utilities.timer import Timer
 
+isWin = os.name == "nt"
 SETTINGS_FILE = (
     os.path.join(
         os.environ["USERPROFILE"],
@@ -31,7 +32,7 @@ SETTINGS_FILE = (
         "Arcade",
         "settings.dat",
     )
-    if os.name == "nt"
+    if isWin
     else os.path.join(
         os.environ["HOME"],
         "Applications",
@@ -446,9 +447,9 @@ class Chess(tk.Toplevel):
         while True:
             if not self.timers[player].is_alive():
                 break
-            if self.turn == self.me and self.timers[player].time_left() <= 0:
+            if self.timers[player].time_left() <= 0:
                 self.timers[player].stop()
-                lambda: self.final_frame(
+                self.final_frame(
                     "TIME",
                     [i for i in self.players if i != player][0],
                 )
@@ -920,7 +921,7 @@ class Chess(tk.Toplevel):
 
     @staticmethod
     def get_active_window():
-        if os.name == "nt":
+        if isWin:
             from ctypes import create_unicode_buffer, windll
 
             hWnd = windll.user32.GetForegroundWindow()
@@ -932,17 +933,16 @@ class Chess(tk.Toplevel):
             return None
 
     def chess_notifier(self, opponent, piece, dest, captured=None):
-        if os.name == "nt":
-            message = f"{opponent} played {piece.title()} to {dest.upper()}"
-            if captured:
-                message += f", capturing your {captured.piece.title()}"
-            if self.get_active_window() != "Chess":
-                noti.notify(
-                    title="Your Turn has started",
-                    app_name="Arcade",
-                    message=message,
-                    timeout=5,
-                )
+        message = f"{opponent} played {piece.title()} to {dest.upper()}"
+        if captured:
+            message += f", capturing your {captured.piece.title()}"
+        if self.get_active_window() != "Chess" and isWin:
+            noti.notify(
+                title="Your Turn has started",
+                app_name="Arcade",
+                message=message,
+                timeout=5,
+            )
 
     @staticmethod
     def grid_to_square(k):
@@ -1045,7 +1045,7 @@ class Chess(tk.Toplevel):
         if ack:
             self.final_frame("DRAW")
         else:
-            if not cancel and os.name=='nt':
+            if not cancel and isWin:
                 noti.notify(
                     title="Declined!",
                     app_name="Chess",

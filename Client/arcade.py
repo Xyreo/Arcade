@@ -328,7 +328,7 @@ class Arcade(tk.Toplevel):
 
     @staticmethod
     def get_active_window():
-        if os.name == "nt":
+        if isWin:
             from ctypes import create_unicode_buffer, windll
 
             hWnd = windll.user32.GetForegroundWindow()
@@ -402,14 +402,14 @@ class Arcade(tk.Toplevel):
             if msg[1] == "PLAYER":
                 if msg[2] == "ADD":
                     self.rooms.add_player(dest, msg[3])
-                    if self.get_active_window() != "Arcade" and os.name == "nt":
+                    if self.get_active_window() != "Arcade" and isWin:
                         noti.notify(
                             message=f"{msg[3]['name']} has joined the room!",
                             app_name="Arcade",
                             timeout=5,
                         )
                 elif msg[2] == "REMOVE":
-                    if self.get_active_window() != "Arcade" and os.name == "nt":
+                    if self.get_active_window() != "Arcade" and isWin:
                         noti.notify(
                             message=f"{msg[3]['name']} has left the room!",
                             app_name="Arcade",
@@ -426,7 +426,7 @@ class Arcade(tk.Toplevel):
                 self.room_frames[game].destroy()
                 self.room_frames[game] = None
                 if msg[2] == "REMOVE":
-                    if self.get_active_window() != "Arcade" and self.isWindow and os.name == "nt":
+                    if self.get_active_window() != "Arcade" and isWin:
                         noti.notify(
                             message=f"The Host Left the Room!",
                             app_name="Arcade",
@@ -2215,7 +2215,7 @@ if __name__ == "__main__":
                 "Local",
                 "Arcade",
             )
-            if os.name == "nt"
+            if isWin
             else os.path.join(
                 os.environ["HOME"],
                 "Applications",
