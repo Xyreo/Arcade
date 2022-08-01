@@ -399,7 +399,7 @@ class Chess(tk.Toplevel):
         self.user_pfp_display: dict[str, tk.Label] = {}
 
         self.timer_labels[self.me] = tk.Label(self.main_frame, font=("consolas", 45))
-        self.timer_labels[self.me].place(relx=0.5, rely=0.125, anchor="center")
+        self.timer_labels[self.me].place(relx=0.5, rely=0.875, anchor="center")
         self.timer_threads[self.me] = threading.Thread(
             target=self.timer_init,
             args=(self.me,),
@@ -414,12 +414,12 @@ class Chess(tk.Toplevel):
             font=("rockwell", 16),
             compound="left",
         )
-        self.user_pfp_display[self.me].place(relx=0.5, rely=0.8, anchor="center")
+        self.user_pfp_display[self.me].place(relx=0.5, rely=0.775, anchor="center")
 
         self.timer_labels[self.opponent] = tk.Label(
             self.main_frame, font=("consolas", 45)
         )
-        self.timer_labels[self.opponent].place(relx=0.5, rely=0.875, anchor="center")
+        self.timer_labels[self.opponent].place(relx=0.5, rely=0.125, anchor="center")
         self.timer_threads[self.opponent] = threading.Thread(
             target=self.timer_init,
             args=(self.opponent,),
@@ -434,7 +434,9 @@ class Chess(tk.Toplevel):
             font=("rockwell", 16),
             compound="left",
         )
-        self.user_pfp_display[self.opponent].place(relx=0.5, rely=0.2, anchor="center")
+        self.user_pfp_display[self.opponent].place(
+            relx=0.5, rely=0.225, anchor="center"
+        )
 
         for i in self.players:
             self.timer_threads[i].start()
@@ -472,7 +474,10 @@ class Chess(tk.Toplevel):
             things = f"{min:02d}:{sec:02d}"
         else:
             things += f"{min:02d}:{sec:02d}:{ms:02d}"
-        lbl.configure(text=things)
+        try:
+            lbl.configure(text=things)
+        except tk.TclError as e:
+            print("tcl:", e)
 
     # endregion
 
@@ -602,7 +607,7 @@ class Chess(tk.Toplevel):
         elif not self.board[k]:
             pass
 
-        elif self.board[k].color != self.turn:
+        elif self.board[k].color != (self.turn if self.debug else self.side):
             if self.debug:
                 # self.state = "PieceSelected"
                 pass
@@ -733,12 +738,12 @@ class Chess(tk.Toplevel):
 
     def move(self, start, end, multi, snap, times={}):
         self.timers[
-            self.opponent if self.players[self.me]["SIDE"] == self.turn else self.me
+            self.me if self.players[self.me]["SIDE"] == self.turn else self.opponent
         ].pause()
-        print(self.board.fen['HEADER'])
+
         if self.board.fen["HM"]:
             self.timers[
-                self.opponent if self.players[self.me]["SIDE"] == self.turn else self.me
+                self.me if self.players[self.me]["SIDE"] == self.turn else self.opponent
             ].add_time(self.add_time)
 
         if "DRAW" in self.poll:
@@ -823,7 +828,7 @@ class Chess(tk.Toplevel):
 
         self.turn = Chess.swap[self.turn]
         self.timers[
-            self.opponent if self.players[self.me]["SIDE"] == self.turn else self.me
+            self.me if self.players[self.me]["SIDE"] == self.turn else self.opponent
         ].resume()
 
         check = self.board.is_in_check(Chess.swap[color])
@@ -1007,11 +1012,11 @@ class Chess(tk.Toplevel):
             winner = None
             txt = f"Stalemate!\n\nPoints:\n\n{self.players[self.me]['NAME']}: ½\n\n{self.players[self.opponent]['NAME']}: ½"
         elif type == "CONN":
-            txt = f"Opponent disconnected!\n\nPoints:\n\n{self.players[self.me]['NAME']}: {1 if self.me==winner else 0}\n\n{self.players[self.opponent]['NAME']}: {1 if self.opponent==winner else 0}"
+            txt = f"{self.players[self.opponent]['NAME']} disconnected!\n\nPoints:\n\n{self.players[self.me]['NAME']}: 1\n\n{self.players[self.opponent]['NAME']}: 0"
         elif type == "RESIGN":
-            txt = f"Opponent resigned!\n\nPoints:\n\n{self.players[self.me]['NAME']}: {1 if self.me==winner else 0}\n\n{self.players[self.opponent]['NAME']}: {1 if self.opponent==winner else 0}"
+            txt = f"{self.players[self.opponent]['NAME']} resigned!\n\nPoints:\n\n{self.players[self.me]['NAME']}: 1\n\n{self.players[self.opponent]['NAME']}: 0"
         elif type == "TIME":
-            txt = f"Opponent ran out of time!\n\nPoints:\n\n{self.players[self.me]['NAME']}: {1 if self.me==winner else 0}\n\n{self.players[self.opponent]['NAME']}: {1 if self.opponent==winner else 0}"
+            txt = f"{self.players[self.opponent]['NAME'] if self.me==winner else 'You'} ran out of time!\n\nPoints:\n\n{self.players[self.me]['NAME']}: {1 if self.me==winner else 0}\n\n{self.players[self.opponent]['NAME']}: {1 if self.opponent==winner else 0}"
         else:
             print(f"ERROR: {type} is invalid!")
         self.end_game_frame = tk.Frame(

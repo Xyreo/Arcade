@@ -1289,6 +1289,12 @@ class Monopoly(tk.Toplevel):
             text += ",\nPay 50 or Use your Get out of Jail Free Card"
         else:
             text += " or Pay 50"
+        if isWin:
+            noti.notify(
+                message=text,
+                app_name="Arcade",
+                timeout=5,
+            )
         self.end_turn(force=True)
         if self.me == player:
             self.update_game(text)

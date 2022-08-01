@@ -426,7 +426,7 @@ class Arcade(tk.Toplevel):
                 self.room_frames[game].destroy()
                 self.room_frames[game] = None
                 if msg[2] == "REMOVE":
-                    if self.get_active_window() != "Arcade" and isWin:
+                    if isWin:
                         noti.notify(
                             message=f"The Host Left the Room!",
                             app_name="Arcade",
@@ -1565,7 +1565,11 @@ class Arcade(tk.Toplevel):
                     iid=i,
                     text="",
                     image=self.pfps[game][i],
-                    values=(self.leaderboard_details[game].index((i, j)) + 1, i, j),
+                    values=(
+                        self.leaderboard_details[game].index((i, j)) + 1,
+                        i,
+                        int(j) if float(j).is_integer() else j,
+                    ),
                     tag=i,
                 )
             tree.tag_configure(self.name, background="#15a8cd")
@@ -1628,7 +1632,11 @@ class Arcade(tk.Toplevel):
                 iid=i,
                 text="",
                 image=self.pfps[game][i],
-                values=(self.leaderboard_details[game].index((i, j)) + 1, i, j),
+                values=(
+                    self.leaderboard_details[game].index((i, j)) + 1,
+                    i,
+                    int(j) if float(j).is_integer() else j,
+                ),
                 tag=i,
             )
         tree.tag_configure(self.name, background="#15a8cd")
@@ -1660,6 +1668,10 @@ class Arcade(tk.Toplevel):
                     len([i for i in stats if i[-1] == self.name])
                     + len([i for i in stats if i[-1] == "none"]) * 0.5
                 )
+                if self.stats_details[game]["Total Points"].is_integer():
+                    self.stats_details[game]["Total Points"] = int(
+                        self.stats_details[game]["Total Points"]
+                    )
                 # ? Add Board Representations display, replay games with PGN, etc.
             else:
                 self.stats_details[game]["Total Games Played"] = len(stats)
