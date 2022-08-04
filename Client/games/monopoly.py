@@ -2173,9 +2173,7 @@ class Monopoly(tk.Toplevel):
     # endregion
 
     def action_frame_popup(self, txt):
-        self.action_frame = tk.Frame(
-            self.main_frame,
-        )
+        self.action_frame = tk.Frame(self.main_frame)
         self.action_frame.place(relx=0, rely=0, relwidth=1, relheight=0.4, anchor="nw")
 
         if self.me not in self.uuids:
@@ -2269,9 +2267,7 @@ class Monopoly(tk.Toplevel):
     def mortgage_unmortgage(self, mortgage):
         if self.turn == self.me and self.timer:
             self.timer.reset()
-        self.mortgage_frame = tk.Frame(
-            self.action_frame,
-        )
+        self.mortgage_frame = tk.Frame(self.action_frame)
         self.mortgage_frame.place(
             relx=0.5, rely=0.5, relwidth=1, relheight=1, anchor="center"
         )
@@ -3120,11 +3116,7 @@ class Monopoly(tk.Toplevel):
             self.select_prop = {}
             self.select_cash = {}
 
-            self.trade_options_frame = tk.Frame(
-                self.trade_frame,
-                width=(self.board_side - 2) // 1,
-                height=(self.board_side - 2) // 3,
-            )
+            self.trade_options_frame = tk.Frame(self.trade_frame)
             self.trade_options_frame.place(
                 relx=0.5, rely=0.5, anchor="center", relheight=0.5, relwidth=0.75
             )

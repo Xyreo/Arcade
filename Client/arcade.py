@@ -1559,19 +1559,20 @@ class Arcade(tk.Toplevel):
             for i in tree.get_children():
                 tree.delete(i)
             for i, j in self.leaderboard_details[game]:
-                tree.insert(
-                    parent="",
-                    index="end",
-                    iid=i,
-                    text="",
-                    image=self.pfps[game][i],
-                    values=(
-                        self.leaderboard_details[game].index((i, j)) + 1,
-                        i,
-                        int(j) if float(j).is_integer() else j,
-                    ),
-                    tag=i,
-                )
+                if j:
+                    tree.insert(
+                        parent="",
+                        index="end",
+                        iid=i,
+                        text="",
+                        image=self.pfps[game][i],
+                        values=(
+                            self.leaderboard_details[game].index((i, j)) + 1,
+                            i,
+                            int(j) if float(j).is_integer() else j,
+                        ),
+                        tag=i,
+                    )
             tree.tag_configure(self.name, background="#15a8cd")
 
         tk.Button(
@@ -1626,19 +1627,20 @@ class Arcade(tk.Toplevel):
         )
 
         for i, j in self.leaderboard_details[game]:
-            tree.insert(
-                parent="",
-                index="end",
-                iid=i,
-                text="",
-                image=self.pfps[game][i],
-                values=(
-                    self.leaderboard_details[game].index((i, j)) + 1,
-                    i,
-                    int(j) if float(j).is_integer() else j,
-                ),
-                tag=i,
-            )
+            if j:
+                tree.insert(
+                    parent="",
+                    index="end",
+                    iid=i,
+                    text="",
+                    image=self.pfps[game][i],
+                    values=(
+                        self.leaderboard_details[game].index((i, j)) + 1,
+                        i,
+                        int(j) if float(j).is_integer() else j,
+                    ),
+                    tag=i,
+                )
         tree.tag_configure(self.name, background="#15a8cd")
 
     def stats(self, game):

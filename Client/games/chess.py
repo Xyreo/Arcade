@@ -1019,12 +1019,10 @@ class Chess(tk.Toplevel):
             txt = f"{self.players[self.opponent]['NAME'] if self.me==winner else 'You'} ran out of time!\n\nPoints:\n\n{self.players[self.me]['NAME']}: {1 if self.me==winner else 0}\n\n{self.players[self.opponent]['NAME']}: {1 if self.opponent==winner else 0}"
         else:
             print(f"ERROR: {type} is invalid!")
-        self.end_game_frame = tk.Frame(
-            self,
-            height=Chess.size,
-            width=Chess.size // 2,
+        self.end_game_frame = tk.Frame(self)
+        self.end_game_frame.place(
+            relx=0.95, rely=0.5, relheight=0.95, relwidth=0.25, anchor="e"
         )
-        self.end_game_frame.place(relx=0.9, rely=0.5, anchor="e")
         tk.Label(
             self.end_game_frame,
             text=txt,

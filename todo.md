@@ -1,8 +1,8 @@
-(A) Connection Reset Errors @ProAltro
+(A) Errors: ConnectionReset, Timeout @ProAltro
 (B) TakeBack @ProAltro
 (B) GUI: Game Settings in Lobby @Chaitanya-Keyal
 (C) Images Resizer @Chaitanya-Keyal
-(D) Improve Rules @Chaitanya-Keyal
+(D) Rules @Chaitanya-Keyal
 (D) Setting to disable confirmatory popups @Chaitanya-Keyal
 (X) Music, Sounds +Arcade
 (Y) PGN Moves @chess
