@@ -1228,7 +1228,9 @@ class Monopoly(tk.Toplevel):
             if self.end_button.winfo_exists():
                 self.end_button.configure(state="disabled")
 
-        self.player_details[player]["PLACES"][self.properties[pos].name] = (
+        self.player_details[player]["PLACES"][
+            self.properties[pos].name.replace("'", "").replace('"', "")
+        ] = (
             self.player_details[player]["PLACES"].setdefault(
                 self.properties[pos].name.replace("'", "").replace('"', ""), 0
             )
