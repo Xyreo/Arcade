@@ -2240,6 +2240,7 @@ if __name__ == "__main__":
     if not os.path.exists(SETTINGS_FILE):
         with open(SETTINGS_FILE, "wb") as f:
             pickle.dump({"THEME": "dark", "DEFAULT_GAME": 0}, f)
+            CURR_THEME = "dark"
     else:
         with open(SETTINGS_FILE, "rb") as f:
             d = pickle.load(f)
