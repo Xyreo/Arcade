@@ -2875,13 +2875,13 @@ class Monopoly(tk.Toplevel):
                     house_image = ImageTk.PhotoImage(
                         Image.open(
                             os.path.join(HOUSES, f"{d[j.houses][0]}_{rotation}.png")
+                        ).resize(
+                            (
+                                int((self.property_height) * size[0]),
+                                int((self.property_height) * size[1]),
+                            ),
+                            Image.Resampling.LANCZOS,
                         )
-                    ).resize(
-                        (
-                            int((self.property_height) * size[0]),
-                            int((self.property_height) * size[1]),
-                        ),
-                        Image.Resampling.LANCZOS,
                     )
 
                     self.house_images.append(house_image)
