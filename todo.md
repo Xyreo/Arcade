@@ -1,4 +1,5 @@
 (A) TakeBack @ProAltro
+(A) Make Remember Me File Binary @Chaitanya-Keyal
 (A) GUI: Game Settings in Lobby @Chaitanya-Keyal
 (B) Images Resizer @Chaitanya-Keyal
 (C) Rules @Chaitanya-Keyal
