@@ -15,7 +15,6 @@ from tkinter import messagebox as msgb
 while True:
     try:
         import pyperclip as clipboard
-        import requests
         from PIL import Image, ImageChops, ImageDraw, ImageTk
         from plyer import notification as noti
 
@@ -1899,7 +1898,7 @@ class Login(tk.Frame):
                 self.check_login = HTTP.login(
                     uname.strip(), pwd.strip(), remember_me=self.remember_me.get()
                 )
-            except requests.exceptions.ConnectionError:
+            except:
                 self.destroy()
                 msgb.showerror(
                     "Connection Error",
@@ -2184,7 +2183,7 @@ class Register(tk.Frame):
                     self.pwdentry.delete(0, tk.END)
                     msg = "User Already Registered"
                     self.prompt(msg)
-            except requests.exceptions.ConnectionError:
+            except:
                 self.destroy()
                 msgb.showerror(
                     "Try Again Later",
@@ -2259,7 +2258,7 @@ if __name__ == "__main__":
     try:
         arc.start_arcade()
         root.mainloop()
-    except requests.exceptions.ConnectionError:
+    except:
         msgb.showerror(
             "Try Again Later",
             "Unable to connect to the Server at the moment, please try again later!\nThings you can do:\n1. Check your network connection\n2. Restart your system\n3. If this issue persists, wait for sometime. The server might be down, We are working on it!",

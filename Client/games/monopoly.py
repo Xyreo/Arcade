@@ -1230,7 +1230,7 @@ class Monopoly(tk.Toplevel):
 
         self.player_details[player]["PLACES"][self.properties[pos].name] = (
             self.player_details[player]["PLACES"].setdefault(
-                self.properties[pos].name, 0
+                self.properties[pos].name.replace("'", "").replace('"', ""), 0
             )
             + 1
         )
@@ -3737,7 +3737,9 @@ class Monopoly(tk.Toplevel):
         self.result = {
             i["Name"]: {
                 "NETWORTH": i["NETWORTH"],
-                "PROPERTIES": [j.name for j in i["Properties"]],
+                "PROPERTIES": [
+                    j.name.replace("'", "").replace('"', "") for j in i["Properties"]
+                ],
                 "PLACES": i["PLACES"],
             }
             for i in self.player_details.values()
