@@ -861,6 +861,8 @@ class Monopoly(tk.Toplevel):
                         self.unmortgage_button.configure(state="disabled")
 
     def end_turn(self, received=False, force=False, auto=False):
+        if self.isEnded:
+            return
         self.toggle_action_buttons()
         if not (received or force or auto):
             if self.show_message(
@@ -991,6 +993,8 @@ class Monopoly(tk.Toplevel):
         if not received:
             self.send_msg(("ROLL", dice_roll))
         for i in range(18):
+            if self.isEnded:
+                return
             self.dice_spot1.configure(image=self.die_dict[random.randint(1, 6)])
             self.dice_spot2.configure(image=self.die_dict[random.randint(1, 6)])
             self.dice_spot1.update()
@@ -1001,6 +1005,8 @@ class Monopoly(tk.Toplevel):
         self.dice_spot1.update()
         self.dice_spot2.update()
         self.current_move = sum(dice_roll)
+        if self.isEnded:
+            return
         if self.player_details[self.turn]["Injail"][0]:
             if dice_roll[0] == dice_roll[1]:
                 self.player_details[self.turn]["Injail"][0] = False
@@ -1172,6 +1178,8 @@ class Monopoly(tk.Toplevel):
 
     def move(self, player, move, endturn=False, showmove=True, start_timer=True):
         self.roll_button_state("disabled")
+        if self.isEnded:
+            return
         if self.turn == player == self.me:
             self.end_button.configure(state="disabled")
         colour = self.player_details[player]["Colour"]
@@ -1184,6 +1192,8 @@ class Monopoly(tk.Toplevel):
 
         if move and showmove:
             for i in range(move):
+                if self.isEnded:
+                    return
                 self.player_details[player]["Position"] += 1
                 x1, y1 = self.position_to_tokenxy(
                     player, self.player_details[player]["Position"]
@@ -1194,6 +1204,8 @@ class Monopoly(tk.Toplevel):
                 if not self.player_details[player]["Position"] % 40:
                     self.pass_go(player)
         else:
+            if self.isEnded:
+                return
             self.player_details[player]["Position"] += move
             x1, y1 = self.position_to_tokenxy(
                 player, self.player_details[player]["Position"]
@@ -2986,7 +2998,7 @@ class Monopoly(tk.Toplevel):
         self.collective["TRADE"] = ("RECV", offeror)
         if self.get_active_window() != "Monopoly" and isWin:
             noti.notify(
-                message=f"{offeror} has a Trade Offer!",
+                message=f"{self.player_details[offeror]['Name']} has a Trade Offer!",
                 app_name="Arcade",
                 timeout=5,
             )
@@ -3564,6 +3576,7 @@ class Monopoly(tk.Toplevel):
                         self.send_msg(("GAME_ENDED",))
                         self.end_game()
                 else:
+                    self.endgame_frame.destroy()
                     self.update_game(
                         "The Majority of players wish to continue the game!"
                     )
@@ -3659,6 +3672,8 @@ class Monopoly(tk.Toplevel):
 
     def end_game(self, winner=None):
         self.isEnded = True
+        if self.turn == self.me and self.timer:
+            self.timer.stop()
         self.player_details.update(self.dead_player_details)
         for i in self.player_details.values():
             s = 0
