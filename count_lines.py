@@ -2,7 +2,7 @@ import requests
 from tabulate import tabulate as tab
 
 a = requests.get(
-    "https://api.codetabs.com/v1/loc?github=Chaitanya-Keyal/Arcade&ignored=.github,LICENSE,.gitignore,.md"
+    "https://api.codetabs.com/v1/loc?github=Chaitanya-Keyal/Arcade&ignored=.github,LICENSE,.gitignore,.md,.csv,.txt"
 ).json()
 print(
     tab(
@@ -14,6 +14,4 @@ print(
         showindex=list(range(1, len(a))) + [None],
     )
 )
-while True:
-    if not input():
-        break
+input()
