@@ -664,7 +664,11 @@ class Arcade(tk.Toplevel):
                 if HTTP.change_password(pwd.strip()):
                     msg = "Confirming and Logging you out..."
                     prompt(msg)
-                    self.after(2000, self.log_out())
+                    try:
+                        os.remove(REMEMBER_ME_FILE)
+                    except FileNotFoundError:
+                        pass
+                    self.after(2000, self.log_out)
                 else:
                     self.pwdentry.delete(0, tk.END)
                     msg = "ERROR"
@@ -675,7 +679,7 @@ class Arcade(tk.Toplevel):
                 destroyprompt()
                 self.notifc += 1
                 color = "red"
-                if msg == "Confirming...":
+                if msg.startswith("Confirming"):
                     color = "green"
                 self.notif = (
                     tk.Label(self.change_frame, text=msg, fg=color),
@@ -1776,7 +1780,11 @@ class Login(tk.Frame):
                 elif self.check_login == -1:
                     lbl.configure(text="Already Logged in on another device!", fg="red")
                 else:
-                    lbl.configure(text="File has been corrupted!", fg="red")
+                    lbl.configure(text="Auto Login Error!", fg="red")
+                    try:
+                        os.remove(REMEMBER_ME_FILE)
+                    except FileNotFoundError:
+                        pass
 
                 def thing():
                     log_win.destroy()
@@ -2217,7 +2225,6 @@ class Register(tk.Frame):
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Arcade")
-    root.iconbitmap(os.path.join(HOME_ASSETS, "icon.ico"))
     try:
         os.mkdir(os.path.join(HOME_ASSETS, "cached_pfp"))
     except:
