@@ -1303,7 +1303,7 @@ class Monopoly(tk.Toplevel):
             text += ",\nPay 50 or Use your Get out of Jail Free Card"
         else:
             text += " or Pay 50"
-        if isWin:
+        if isWin and self.me == player:
             noti.notify(
                 message=text,
                 app_name="Arcade",
@@ -2086,7 +2086,10 @@ class Monopoly(tk.Toplevel):
         scroll.place(relx=1, rely=0, relwidth=0.06, anchor="ne", relheight=1)
 
         self.player_tree = ttk.Treeview(
-            self.player_frame, columns=("Player", "Value"), yscrollcommand=scroll.set
+            self.player_frame,
+            columns=("Player", "Value"),
+            style="12.Treeview",
+            yscrollcommand=scroll.set,
         )
 
         scroll.configure(command=self.player_tree.yview)
@@ -2097,15 +2100,15 @@ class Monopoly(tk.Toplevel):
         )
         self.player_tree.column(
             "Player",
-            width=int((self.board_side - 2) // 4.25) - 10,
+            width=int((self.board_side - 2) // 4),
             anchor="center",
-            minwidth=int((self.board_side - 2) // 4.7),
+            minwidth=int((self.board_side - 2) // 4),
         )
         self.player_tree.column(
             "Value",
-            width=int((self.board_side - 2) // 4.25) - 10,
+            width=int((self.board_side - 2) // 7),
             anchor="center",
-            minwidth=int((self.board_side - 2) // 4.7),
+            minwidth=int((self.board_side - 2) // 7),
         )
         self.player_tree.heading("#0", text="")
         self.player_tree.heading("Player", text="Player → Properties", anchor="center")
@@ -4047,8 +4050,12 @@ if __name__ == "__main__":
     except:
         pass
     hobj = Http("http://167.71.231.52:5000")
-    uname = "user1"
-    pwd = "pass1"
+    try:
+        with open("testcred.txt") as f:
+            uname, pwd = eval(f.read())
+    except:
+        with open("Client/testcred.txt") as f:
+            uname, pwd = eval(f.read())
     hobj.login(uname, pwd)
     mono = Monopoly(
         {

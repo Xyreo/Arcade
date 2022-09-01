@@ -2216,6 +2216,8 @@ class Register(tk.Frame):
 
 if __name__ == "__main__":
     root = tk.Tk()
+    root.title("Arcade")
+    root.iconbitmap(os.path.join(HOME_ASSETS, "icon.ico"))
     try:
         os.mkdir(os.path.join(HOME_ASSETS, "cached_pfp"))
     except:

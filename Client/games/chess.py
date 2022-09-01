@@ -302,9 +302,6 @@ class Chess(tk.Toplevel):
             self.theme_button.grid(row=1, column=1, sticky="e", pady=2)
 
     def initialize_board(self):
-
-        # region  Board Assets Generation
-
         offset = 4
         for i in range(8):
             for j in range(8):
@@ -371,9 +368,6 @@ class Chess(tk.Toplevel):
                 else f"{Chess.color['black']}",
                 font=font,
             )
-        # endregion
-
-        # region Initializing pieces on Board
 
         board = self.board.fen["B"]
 
@@ -387,8 +381,6 @@ class Chess(tk.Toplevel):
                     )
                 else:
                     self.board[j * 10 + i] = None
-
-        # endregion
 
     # region # Timers
 
@@ -1108,6 +1100,8 @@ class Chess(tk.Toplevel):
             Chess.http.logout()
             root.quit()
         else:
+            for i in self.timers.values():
+                i.stop()
             self.send(("LEAVE", reason))
             self.destroy()
             try:
@@ -1635,7 +1629,6 @@ class Board:
             if self[i] != None and self[i].piece == "KING" and self[i].color == color:
                 return i
 
-    # region data stuff
     def keys(self):
         return self.board.keys()
 
@@ -1664,8 +1657,6 @@ class Board:
                 s += "\n"
         return s
 
-    # endregion
-
 
 if __name__ == "__main__":
     root = tk.Tk()
@@ -1693,13 +1684,19 @@ if __name__ == "__main__":
     except:
         pass
     hobj = Http("http://167.71.231.52:5000")
-    hobj.login("user1", "pass1")
+    try:
+        with open("testcred.txt") as f:
+            uname, pwd = eval(f.read())
+    except:
+        with open("Client/testcred.txt") as f:
+            uname, pwd = eval(f.read())
+    hobj.login(uname, pwd)
     chess = Chess(
         {
             "ME": "456789",
             "PLAYERS": {
-                "123456": {"NAME": "user1", "SIDE": "BLACK"},
-                "456789": {"NAME": "user1", "SIDE": "WHITE"},
+                "123456": {"NAME": uname, "SIDE": "BLACK"},
+                "456789": {"NAME": uname, "SIDE": "WHITE"},
             },
             "TIME": 600,
             "ADD_TIME": 5,
