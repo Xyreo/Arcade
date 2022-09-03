@@ -1773,24 +1773,24 @@ class Login(tk.Frame):
             lbl.pack()
             with open(REMEMBER_ME_FILE) as f:
                 uname, pwd = eval(f.readlines()[-1])
-                self.check_login = HTTP.login(uname, pwd, remember_login=True)
-                if self.check_login == 1:
-                    lbl.configure(text="Loading...")
-                    self.complete(uname, HTTP.TOKEN)
-                elif self.check_login == -1:
-                    lbl.configure(text="Already Logged in on another device!", fg="red")
-                else:
-                    lbl.configure(text="Auto Login Error!", fg="red")
-                    try:
-                        os.remove(REMEMBER_ME_FILE)
-                    except FileNotFoundError:
-                        pass
+            self.check_login = HTTP.login(uname, pwd, remember_login=True)
+            if self.check_login == 1:
+                lbl.configure(text="Loading...")
+                self.complete(uname, HTTP.TOKEN)
+            elif self.check_login == -1:
+                lbl.configure(text="Already Logged in on another device!", fg="red")
+            else:
+                lbl.configure(text="Auto Login Error!", fg="red")
+                try:
+                    os.remove(REMEMBER_ME_FILE)
+                except FileNotFoundError:
+                    pass
 
-                def thing():
-                    log_win.destroy()
-                    master.deiconify()
+            def thing():
+                log_win.destroy()
+                master.deiconify()
 
-                self.after(1500, thing)
+            self.after(1500, thing)
 
         tk.Label(
             self, text="Welcome to the Arcade!\nPlease Enter your Credentials to Login:"
