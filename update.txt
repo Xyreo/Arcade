@@ -1,0 +1,2 @@
+1.1.2
+https://github.com/Chaitanya-Keyal/Arcade/releases/download/v1.1.2/arcade.exe
