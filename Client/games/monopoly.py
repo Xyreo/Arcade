@@ -355,7 +355,7 @@ class Monopoly(tk.Toplevel):
                     self.property_frame_popup(self.property_pos_displayed)
                 self.resize_no = 0
         except tk.TclError as e:
-            print("tcl:", e)
+            print("Monopoly Resizer - TclError:", e)
 
     def create_gui_divisions(self):
         self.board_canvas = tk.Canvas(

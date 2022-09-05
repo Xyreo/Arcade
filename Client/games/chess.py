@@ -469,7 +469,7 @@ class Chess(tk.Toplevel):
         try:
             lbl.configure(text=things)
         except tk.TclError as e:
-            print("tcl:", e)
+            print("Chess Timer Display - TclError:", e)
 
     # endregion
 
@@ -1161,7 +1161,7 @@ class Piece:
         # Castling
         if self.piece == "KING":
             if abs(self.pos - pos) == 20:
-                print("CASTLE")
+                print("Castle")
                 if self.pos > pos:
                     print("Queen Side")
                     self.board[pos - 20].moved(pos + 10)

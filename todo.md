@@ -1,6 +1,5 @@
 (A) TakeBack @ProAltro
 (A) Display Chance and Community @Chaitanya-Keyal
-(A) Make Remember Me File Binary @Chaitanya-Keyal
 (B) GUI: Game Settings in Lobby @Chaitanya-Keyal
 (B) Images Resizer @Chaitanya-Keyal
 (C) Rules @Chaitanya-Keyal

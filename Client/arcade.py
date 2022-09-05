@@ -74,14 +74,14 @@ REMEMBER_ME_FILE = (
         "AppData",
         "Local",
         "Arcade",
-        "remember_login.txt",
+        "cred.dat",
     )
     if isWin
     else os.path.join(
         os.environ["HOME"],
         "Applications",
         "Arcade",
-        "remember_login.txt",
+        "cred.dat",
     )
 )
 
@@ -102,6 +102,9 @@ SETTINGS_FILE = (
     )
 )
 
+UPDATER_EXE = os.path.join(
+    os.environ["USERPROFILE"], "AppData", "Local", "Arcade", "Updater.exe"
+)
 if not isWin:
     print("I don't like your Operating System. Install Windows.")
 
@@ -499,6 +502,7 @@ class Arcade(tk.Toplevel):
                     self.log_out_button,
                     self.change_pass_button,
                     self.change_pfp_button,
+                    self.check_updates_button,
                     self.acc_frame,
                     self.acc_button,
                     self.theme_button,
@@ -543,10 +547,20 @@ class Arcade(tk.Toplevel):
                 row=2, column=0, columnspan=2, sticky="nsew", pady=2
             )
 
+            self.check_updates_button = ttk.Button(
+                self.acc_frame,
+                text="Check for Updates",
+                style="12.TButton",
+                command=lambda: os.startfile(UPDATER_EXE),
+            )
+            self.check_updates_button.grid(
+                row=3, column=0, columnspan=2, sticky="nsew", pady=2
+            )
+
             theme_var = tk.StringVar(value=theme.curr_theme())
 
             tk.Label(self.acc_frame, text="Dark Mode", font=("rockwell", 14)).grid(
-                row=3, column=0, sticky="e", pady=2, padx=6
+                row=4, column=0, sticky="e", pady=2, padx=6
             )
             self.theme_button = ttk.Checkbutton(
                 self.acc_frame,
@@ -556,15 +570,15 @@ class Arcade(tk.Toplevel):
                 offvalue="light",
                 command=theme.toggle_theme,
             )
-            self.theme_button.grid(row=3, column=1, sticky="e", pady=2)
+            self.theme_button.grid(row=4, column=1, sticky="e", pady=2)
 
             ttk.Separator(self.acc_frame, orient="horizontal").grid(
-                row=4, column=0, columnspan=2, sticky="nsew", pady=2
+                row=5, column=0, columnspan=2, sticky="nsew", pady=2
             )
 
             tk.Label(
                 self.acc_frame, text="Default Game", font=("rockwell", 12, "underline")
-            ).grid(row=5, column=0, columnspan=2, sticky="nsew")
+            ).grid(row=6, column=0, columnspan=2, sticky="nsew")
 
             default = tk.IntVar()
 
@@ -586,7 +600,7 @@ class Arcade(tk.Toplevel):
                 value=0,
                 command=default_game,
             )
-            self.ch_rb.grid(row=6, column=0, columnspan=2, sticky="nsew")
+            self.ch_rb.grid(row=7, column=0, columnspan=2, sticky="nsew")
             self.mo_rb = ttk.Radiobutton(
                 self.acc_frame,
                 text="Monopoly",
@@ -594,7 +608,7 @@ class Arcade(tk.Toplevel):
                 value=1,
                 command=default_game,
             )
-            self.mo_rb.grid(row=7, column=0, columnspan=2, sticky="nsew", pady=2)
+            self.mo_rb.grid(row=8, column=0, columnspan=2, sticky="nsew", pady=2)
 
     def change_password(self):
         self.acc_frame.destroy()
@@ -973,7 +987,7 @@ class Arcade(tk.Toplevel):
                 yesno = msgb.askyesno(title, message, master=self.mbwin)
                 return yesno
         except:
-            print("Error")
+            print("Messagebox Error")
 
     # region # Lobby
 
@@ -1771,8 +1785,11 @@ class Login(tk.Frame):
                 log_win, text="Logging in...", font=("rockwell", 13), fg="green"
             )
             lbl.pack()
-            with open(REMEMBER_ME_FILE) as f:
-                uname, pwd = eval(f.readlines()[-1])
+            with open(REMEMBER_ME_FILE, "rb") as f:
+                try:
+                    uname, pwd = pickle.load(f)
+                except:
+                    uname = pwd = ""
             self.check_login = HTTP.login(uname, pwd, remember_login=True)
             if self.check_login == 1:
                 lbl.configure(text="Loading...")
@@ -1936,11 +1953,9 @@ class Login(tk.Frame):
     def store_password(self, uname, pwd):
         with open(
             REMEMBER_ME_FILE,
-            "w",
+            "wb",
         ) as f:
-            f.write(
-                f"WARNING!\nDo NOT Alter, Rename or Delete the contents of this file!\nThis File is required to remember Your Login Details\n\n{(uname,pwd)}"
-            )
+            pickle.dump((uname, pwd), f)
 
     def prompt(self, msg):
         try:
@@ -2268,7 +2283,8 @@ if __name__ == "__main__":
     try:
         arc.start_arcade()
         root.mainloop()
-    except:
+    except Exception as e:
+        print(e)
         msgb.showerror(
             "Try Again Later",
             "Unable to connect to the Server at the moment, please try again later!\nThings you can do:\n1. Check your network connection\n2. Restart your system\n3. If this issue persists, wait for sometime. The server might be down, We are working on it!",
