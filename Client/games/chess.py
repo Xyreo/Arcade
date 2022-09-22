@@ -5,6 +5,7 @@ import sys
 import threading
 import tkinter as tk
 import tkinter.ttk as ttk
+from datetime import date
 from io import BytesIO
 from time import sleep
 from tkinter import messagebox as msgb
@@ -114,6 +115,7 @@ class Chess(tk.Toplevel):
         self.old_hover = None
         self.COLOREDSQUARES: dict = {"check": None, "move": []}
         self.last_move: list = [-1, -1]
+        self.pgn_moves = []
         self.pawn_promotion = None
         self.send = update
         self.turn = "WHITE"
@@ -749,6 +751,7 @@ class Chess(tk.Toplevel):
                 self.draw_ack(False, True)
 
         self.last_move = [start, end]
+        old_board = Board(self.board.fen.value)
         self.board[start].moved(end)
         self.oldimg = self.board[start]
         color = self.board[end].color
@@ -834,6 +837,16 @@ class Chess(tk.Toplevel):
                 "CHECKMATE" if check else "STALEMATE",
                 self.me if self.side == color else self.opponent,
             )
+
+        self.pgn_moves.append(
+            PGN.get_pgn(
+                *sent,
+                old_board,
+                ("#" if check else "$")
+                if self.check_for_mate(Chess.swap[color])
+                else ("+" if check else ""),
+            )
+        )
 
     def enable_canvas(self):
         self.canvas.bind("<Button-1>", self.clicked)
@@ -1028,13 +1041,43 @@ class Chess(tk.Toplevel):
             command=lambda: self.quit_game("ENDED"),
         ).place(relx=0.5, rely=0.8, anchor="center")
 
+        # region # PGN File
+
+        white_player = (
+            self.players[self.me]
+            if self.players[self.me]["SIDE"] == "WHITE"
+            else self.players[self.opponent]
+        )
+        black_player = (
+            self.players[self.me]
+            if self.players[self.me]["SIDE"] == "BLACK"
+            else self.players[self.opponent]
+        )
+        pgn = f"""[Date \"{date.today()}\"]
+[White \"{white_player['NAME']}\"]
+[Black \"{black_player['NAME']}\"]
+[Result \"{"1/2-1/2" if type=="DRAW" else ("1-0" if winner == list(white_player.keys())[0] else "0-1")}\"]
+
+"""
+        for i in range(0, len(self.pgn_moves), 2):
+            pgn += f"{i//2 + 1}. {self.pgn_moves[i]} {self.pgn_moves[i+1] if i+1<len(self.pgn_moves) else ''} "
+
+        pgn += (
+            "1/2-1/2"
+            if type == "DRAW"
+            else ("1-0" if winner == list(white_player.keys())[0] else "0-1")
+        )
+        print(pgn)
+
+        # endregion
+
         if self.me == winner or (winner is None and self.side == "WHITE"):
             Chess.http.addgame(
                 "CHESS",
                 self.players[winner]["NAME"] if winner else "none",
-                {"board": self.board.fen.value},
+                {"pgn": pgn},
                 [self.players[self.me]["NAME"], self.players[self.opponent]["NAME"]],
-            )  # ? Add PGN
+            )
 
     def draw_ack(self, ack, cancel=False):
         self.draw_frame.destroy()
@@ -1563,12 +1606,35 @@ class FEN:
 
 
 class PGN:
-    pieces = FEN.pieces
-    pieces2 = FEN.pieces2
-
     @staticmethod
-    def load_move(pgn):
-        pass
+    def get_pgn(startint, endint, promote, oldboard, check):
+        start = Chess.grid_to_square(startint)
+        end = Chess.grid_to_square(endint)
+        startpiece = FEN.pieces2[oldboard[startint].piece].upper()
+        startpiece = "" if startpiece == "P" else startpiece
+
+        capture = "x" if oldboard[endint] else ""
+
+        castled = (
+            ("O-O-O" if startint > endint else "O-O")
+            if startpiece == "K" and abs(startint - endint) == 20
+            else ""
+        )
+
+        other_possible_start = oldboard.get_alternate(oldboard[startint], endint)
+
+        promote = "=" + FEN.pieces2[promote].upper() if promote else ""
+
+        if other_possible_start:
+            if Chess.grid_to_square(other_possible_start) == start[0]:
+                startpiece += start[1]
+            else:
+                startpiece += start[0]
+
+        if capture and not startpiece:
+            startpiece = start[0]
+
+        return (castled if castled else startpiece + capture + end + promote) + check
 
 
 class Board:
@@ -1628,6 +1694,14 @@ class Board:
         for i in self.keys():
             if self[i] != None and self[i].piece == "KING" and self[i].color == color:
                 return i
+
+    def get_alternate(self, piece, end):
+        for i in self.board.values():
+            if i != None and i.piece == piece.piece and i.color == piece.color:
+                m = i.gen_moves()
+                if end in m and i.pos != piece.pos:
+                    return i.pos
+        return False
 
     def keys(self):
         return self.board.keys()

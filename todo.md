@@ -5,7 +5,7 @@
 (C) Rules @Chaitanya-Keyal
 (C) Setting to disable confirmatory popups @Chaitanya-Keyal
 (D) Music, Sounds
-(X) PGN Moves @chess
+(X) Replay Games, Download PGN File, Show Past Games in Stats @chess
 (X) Select Turn Order by diceroll @monopoly
 (Y) Pre Moves @chess
 (Y) Choose Color when joining room @monopoly
