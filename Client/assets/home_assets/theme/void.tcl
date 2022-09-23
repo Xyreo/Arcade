@@ -186,6 +186,12 @@ proc init {mode path} {
             }
         }
 
+        ttk::style layout ActionCard.TFrame {
+            ActionCard.field {
+                ActionCard.padding -expand 1 
+            }
+        }
+
         ttk::style layout TLabelframe {
             Labelframe.border {
                 Labelframe.padding -expand 1 -children {
@@ -518,6 +524,10 @@ proc init {mode path} {
 
         # Card
         ttk::style element create Card.field image $I(card) \
+            -border 10 -padding 4 -sticky news        
+        
+        # ActionCard
+        ttk::style element create ActionCard.field image $I(actioncard) \
             -border 10 -padding 4 -sticky news
 
         # Labelframe

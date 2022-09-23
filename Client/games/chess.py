@@ -156,6 +156,7 @@ class Chess(tk.Toplevel):
             self,
             image=self.help_img,
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=lambda: Rules("Chess"),
         ).place(relx=0.999, rely=0.001, anchor="ne")
@@ -201,6 +202,7 @@ class Chess(tk.Toplevel):
             image=self.players[self.me]["PFP"],
             text=f" {self.players[self.me]['NAME']} ▾",
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             font=("arial black", 14),
             compound="left",

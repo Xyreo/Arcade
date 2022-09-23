@@ -270,6 +270,7 @@ class Arcade(tk.Toplevel):
             self,
             image=self.help_img,
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=lambda: Rules("Arcade"),
         ).place(relx=0.999, rely=0.001, anchor="ne")
@@ -285,6 +286,7 @@ class Arcade(tk.Toplevel):
             image=self.my_pfp,
             text=f" {self.name} ▾",
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             font=("arial black", 14),
             compound="left",
@@ -622,6 +624,7 @@ class Arcade(tk.Toplevel):
             self.change_frame,
             text="← Cancel",
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=self.change_frame.destroy,
         ).place(relx=0.01, rely=0.01, anchor="nw")
@@ -736,6 +739,7 @@ class Arcade(tk.Toplevel):
             self.change_frame,
             image=self.show_password,
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=lambda: toggle_hide_password(False),
         )
@@ -743,6 +747,7 @@ class Arcade(tk.Toplevel):
             self.change_frame,
             image=self.show_password,
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=lambda: toggle_hide_password(True),
         )
@@ -786,6 +791,7 @@ class Arcade(tk.Toplevel):
             self.change_frame,
             text="← Cancel",
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=self.change_frame.destroy,
         ).place(relx=0.01, rely=0.01, anchor="nw")
@@ -821,6 +827,7 @@ class Arcade(tk.Toplevel):
         self.remove_button = tk.Button(
             self.change_frame,
             image=self.remove_image,
+            cursor="hand2",
             border=0,
             highlightthickness=0,
             command=set_default,
@@ -1003,6 +1010,7 @@ class Arcade(tk.Toplevel):
             frame,
             text="← BACK",
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=lambda: self.leave_lobby(game),
         ).place(relx=0.01, rely=0.01, anchor="nw")
@@ -1200,6 +1208,7 @@ class Arcade(tk.Toplevel):
             frame,
             text="← BACK",
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=lambda: self.leave_room(
                 self.current_room, game, delete=hostname == "You"
@@ -1229,6 +1238,7 @@ class Arcade(tk.Toplevel):
             frame,
             image=self.copy_icon,
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=clip_copy,
         ).place(relx=0.69, rely=0.049, anchor="center")
@@ -1596,6 +1606,7 @@ class Arcade(tk.Toplevel):
             frame,
             image=self.refresh,
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=lambda: self.after(200, refresh),
         ).place(relx=0.98, rely=0.025, anchor="e")
@@ -1736,6 +1747,7 @@ class Arcade(tk.Toplevel):
             frame,
             image=self.refresh,
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=refresh,
         )
@@ -1870,6 +1882,7 @@ class Login(tk.Frame):
             text="New User? Click Here To Sign Up",
             fg="#15a8cd",
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=register,
         ).place(relx=0.5, rely=0.6, anchor="center")
@@ -1890,6 +1903,7 @@ class Login(tk.Frame):
             self,
             image=self.show_password,
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=toggle_hide_password,
         )
@@ -1993,6 +2007,7 @@ class Register(tk.Frame):
             self,
             text="← Sign In",
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=self.destroy,
         ).place(relx=0.01, rely=0.01, anchor="nw")
@@ -2052,6 +2067,7 @@ class Register(tk.Frame):
             self,
             image=self.show_password,
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=lambda: toggle_hide_password(False),
         )
@@ -2059,6 +2075,7 @@ class Register(tk.Frame):
             self,
             image=self.show_password,
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=lambda: toggle_hide_password(True),
         )
@@ -2122,6 +2139,7 @@ class Register(tk.Frame):
         self.remove_button = tk.Button(
             self,
             image=self.remove_image,
+            cursor="hand2",
             border=0,
             highlightthickness=0,
             command=set_default,

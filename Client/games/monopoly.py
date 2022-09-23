@@ -307,6 +307,9 @@ class Monopoly(tk.Toplevel):
         self.trade_button = ttk.Button()
         self.trade_button.destroy()
 
+        self.card_display = tk.Frame()
+        self.card_display.destroy()
+
         self.property_pos_displayed = None
         self.current_txt = ""
 
@@ -374,6 +377,7 @@ class Monopoly(tk.Toplevel):
             image=self.player_details[self.me]["PFP"],
             text=f" {self.player_details[self.me]['Name']} ▾",
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             font=("arial black", 14),
             compound="left",
@@ -393,6 +397,7 @@ class Monopoly(tk.Toplevel):
             self,
             image=self.help_img,
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=lambda: Rules("Monopoly"),
         ).place(relx=0.999, rely=0.001, anchor="ne")
@@ -431,6 +436,20 @@ class Monopoly(tk.Toplevel):
                 os.path.join(MONOPOLY_ASSETS, "utility_imgs", "electric.png")
             ).resize(
                 (int(2 * self.property_width), int(2.25 * self.property_width)),
+                Image.Resampling.LANCZOS,
+            )
+        )
+
+        self.chance_image = ImageTk.PhotoImage(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "chance.png")).resize(
+                (int(0.75 * self.property_width), int(1.575 * self.property_width)),
+                Image.Resampling.LANCZOS,
+            )
+        )
+
+        self.community_image = ImageTk.PhotoImage(
+            Image.open(os.path.join(MONOPOLY_ASSETS, "community.png")).resize(
+                (int(1.5 * self.property_width), int(1.5 * self.property_width)),
                 Image.Resampling.LANCZOS,
             )
         )
@@ -546,13 +565,14 @@ class Monopoly(tk.Toplevel):
         self.roll_button = tk.Button(
             self.board_canvas,
             image=self.roll_normal,
+            cursor="hand2",
             border=0,
             highlightthickness=0,
             activebackground="#d6f6e1",
             background="#d6f6e1",
             command=self.roll_dice,
         )
-        self.roll_button.place(relx=0.5, rely=0.5, anchor="center")
+        self.roll_button.place(relx=0.5, rely=0.55, anchor="center")
 
         if self.turn != self.me:
             self.roll_button_state("disabled")
@@ -564,7 +584,7 @@ class Monopoly(tk.Toplevel):
             highlightthickness=0,
             bg="#d6f6e1",
         )
-        self.dice_spot1.place(relx=0.485, rely=0.46, anchor="se")
+        self.dice_spot1.place(relx=0.485, rely=0.5, anchor="se")
 
         self.dice_spot2 = tk.Label(
             self.board_canvas,
@@ -573,11 +593,12 @@ class Monopoly(tk.Toplevel):
             highlightthickness=0,
             bg="#d6f6e1",
         )
-        self.dice_spot2.place(relx=0.515, rely=0.46, anchor="sw")
+        self.dice_spot2.place(relx=0.515, rely=0.5, anchor="sw")
 
         self.red_token = tk.Button(
             self.board_canvas,
             image=self.red_token_image,
+            cursor="hand2",
             border=0,
             highlightthickness=0,
             activebackground="#d6f6e1",
@@ -587,6 +608,7 @@ class Monopoly(tk.Toplevel):
         self.green_token = tk.Button(
             self.board_canvas,
             image=self.green_token_image,
+            cursor="hand2",
             border=0,
             highlightthickness=0,
             activebackground="#d6f6e1",
@@ -596,6 +618,7 @@ class Monopoly(tk.Toplevel):
         self.blue_token = tk.Button(
             self.board_canvas,
             image=self.blue_token_image,
+            cursor="hand2",
             border=0,
             activebackground="#d6f6e1",
             highlightthickness=0,
@@ -605,6 +628,7 @@ class Monopoly(tk.Toplevel):
         self.yellow_token = tk.Button(
             self.board_canvas,
             image=self.yellow_token_image,
+            cursor="hand2",
             border=0,
             highlightthickness=0,
             activebackground="#d6f6e1",
@@ -886,6 +910,8 @@ class Monopoly(tk.Toplevel):
         if not (received or force):
             self.send_msg(("END",))
 
+        if self.card_display.winfo_exists():
+            self.card_display.destroy()
         if self.timer:
             self.timer.stop()
         self.timer_label.place_forget()
@@ -1257,9 +1283,11 @@ class Monopoly(tk.Toplevel):
         elif pos in [0, 10, 20]:
             self.update_game()
         elif pos in [2, 17, 33]:
-            self.update_game(self.community())
+            self.update_game("Do as directed on card!")
+            self.display_action_card(False, self.community())
         elif pos in [7, 22, 36]:
-            self.update_game(self.chance())
+            self.update_game("Do as directed on card!")
+            self.display_action_card(True, self.chance())
         elif pos:
             self.property_frame_popup(pos)
             if self.properties[pos].owner:
@@ -1374,6 +1402,7 @@ class Monopoly(tk.Toplevel):
             activeforeground="black",
             bg="#F9FBFF",
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             activebackground=self.property_frame.cget("bg"),
             command=self.property_frame.destroy,
@@ -1398,6 +1427,7 @@ class Monopoly(tk.Toplevel):
         tk.Button(
             self.property_frame,
             image=self.help_img,
+            cursor="hand2",
             border=0,
             highlightthickness=0,
             activebackground=canvas.cget("bg"),
@@ -1525,7 +1555,10 @@ class Monopoly(tk.Toplevel):
         else:
             utility_image = self.electric_image
         utility_label = tk.Label(
-            self.property_frame, image=utility_image, border=0, highlightthickness=0
+            self.property_frame,
+            image=utility_image,
+            border=0,
+            highlightthickness=0,
         )
         utility_label.place(relx=0.5, rely=0.2, anchor="center")
 
@@ -1545,6 +1578,7 @@ class Monopoly(tk.Toplevel):
             activeforeground="black",
             bg="#F9FBFF",
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             activebackground=self.property_frame.cget("bg"),
             command=self.property_frame.destroy,
@@ -1570,6 +1604,7 @@ class Monopoly(tk.Toplevel):
         tk.Button(
             self.property_frame,
             image=self.help_img,
+            cursor="hand2",
             border=0,
             highlightthickness=0,
             activebackground=canvas.cget("bg"),
@@ -1745,6 +1780,7 @@ class Monopoly(tk.Toplevel):
             activeforeground="black",
             bg=self.properties[position].hex,
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             activebackground=self.properties[position].hex,
             command=self.property_frame.destroy,
@@ -1771,6 +1807,7 @@ class Monopoly(tk.Toplevel):
         tk.Button(
             self.property_frame,
             image=self.help_img,
+            cursor="hand2",
             border=0,
             highlightthickness=0,
             activebackground=canvas.cget("bg"),
@@ -2056,6 +2093,7 @@ class Monopoly(tk.Toplevel):
                 activeforeground="red",
                 bg="#F9FBFF",
                 highlightthickness=0,
+                cursor="hand2",
                 border=0,
                 activebackground="#F9FBFF",
                 command=dest,
@@ -2279,6 +2317,39 @@ class Monopoly(tk.Toplevel):
 
                 self.toggle_action_buttons(True)
 
+    def display_action_card(self, chance, text):
+        if self.card_display.winfo_exists():
+            self.card_display.destroy()
+        self.card_display = ttk.Frame(self.board_canvas, style="ActionCard.TFrame")
+        self.card_display.place(
+            relx=0.65 if chance else 0.35,
+            rely=0.71 if chance else 0.28,
+            relheight=0.23,
+            relwidth=0.36,
+            anchor="center",
+        )
+
+        tk.Label(
+            self.card_display,
+            image=self.chance_image if chance else self.community_image,
+        ).place(relx=0.12 if chance else 0.04, rely=0.5, anchor="w")
+
+        self.txt = tk.Text(self.card_display, wrap="word", relief="flat")
+        self.txt.place(relx=0.375, rely=0.5, relwidth=0.6, relheight=0.4675, anchor="w")
+        self.txt.tag_config("center", justify="center")
+        self.txt.insert("end", text, ("center",))
+        self.txt.configure(state="disabled")
+
+        tk.Button(
+            self.card_display,
+            text="✕",
+            font=("courier", (self.board_side - 2) // 60),
+            highlightthickness=0,
+            cursor="hand2",
+            border=0,
+            command=self.card_display.destroy,
+        ).place(relx=0.99, rely=0.01, anchor="ne")
+
     # region # Mortgage, Unmortgage
 
     def mortgage_unmortgage(self, mortgage):
@@ -2294,6 +2365,7 @@ class Monopoly(tk.Toplevel):
             text="← BACK",
             font=("times", (self.board_side - 2) // 60),
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=self.mortgage_frame.destroy,
         ).place(relx=0.1, rely=0.05, anchor="ne")
@@ -2477,6 +2549,7 @@ class Monopoly(tk.Toplevel):
             text="← BACK",
             font=("times", (self.board_side - 2) // 60),
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=self.build_frame.destroy,
         ).place(relx=0.1, rely=0.05, anchor="ne")
@@ -3080,6 +3153,7 @@ class Monopoly(tk.Toplevel):
             text="← BACK",
             font=("times", (self.board_side - 2) // 60),
             highlightthickness=0,
+            cursor="hand2",
             border=0,
             command=self.trade_frame.destroy,
         ).place(relx=0.1, rely=0.05, anchor="ne")
@@ -3436,6 +3510,8 @@ class Monopoly(tk.Toplevel):
     # region # End Game
 
     def quit_game(self):
+        if self.timer:
+            self.timer.stop()
         if __name__ == "__main__":
             self.http.logout()
             for file in os.scandir(os.path.join(HOME_ASSETS, "cached_pfp")):
@@ -3829,7 +3905,7 @@ class Chance:
             "Advance to GO.",
             "Advance to Trafalgar Square.",
             "Advance to Pall Mall.",
-            "Advance to the nearest Utility.\nIf unowned, you may buy it from the Bank.\nIf owned, pay owner rent based on previous roll.",
+            "Advance to the nearest Utility.",
             "Advance to the nearest Railroad.",
             "Advance to the nearest Railroad.",
             "Take a ride to King's Cross Station.",
@@ -3842,7 +3918,7 @@ class Chance:
             "Pay school fees of 150.",
             "Bank Error in your favour.\nReceive 200.",
             "Go to Jail. Go directly to Jail.\nDo not pass GO, do not collect 200.",
-            "Get out of Jail Free.\nThis card maybe used only once.",
+            "Get out of Jail Free.\nThis card will be visible next to your properties",
             "Go Back Three Spaces.",
             "Make general repairs on all your property:\nFor each house pay 25, For each hotel pay 100.",
             "You have been elected Chairman of the Board.\nPay each player 50.",
@@ -3960,7 +4036,7 @@ class Community:
             "Grand Opera Opening. Collect 50 from each player.",
             "It's your birthday. Collect 10 from each player.",
             "Go to Jail. Go directly to Jail.\nDo not pass GO, do not collect 200.",
-            "Get out of Jail Free.\nThis card maybe used only once.",
+            "Get out of Jail Free.\nThis card will be visible next to your properties",
             "Go back to Old Kent Road.",
             "You are assessed for street repairs:\nFor each house pay 40, For each hotel pay 115.",
             "Pay your insurance premium worth 100.",
@@ -4057,6 +4133,8 @@ if __name__ == "__main__":
         with open("Client/testcred.txt") as f:
             uname, pwd = eval(f.read())
     hobj.login(uname, pwd)
+    order = list(range(20))
+    random.shuffle(order)
     mono = Monopoly(
         {
             "QWERTY": {
@@ -4067,7 +4145,7 @@ if __name__ == "__main__":
         "QWERTY",
         print,
         hobj,
-        order=[list(range(20)), list(range(20))],
+        order=[order, order],
         theme=theme,
     )
     root.mainloop()
