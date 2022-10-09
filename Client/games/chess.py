@@ -1759,7 +1759,7 @@ if __name__ == "__main__":
         os.mkdir(os.path.join(HOME_ASSETS, "cached_pfp"))
     except:
         pass
-    hobj = Http("http://167.71.231.52:5000")
+    hobj = Http("https://pramitpal.me/api")
     try:
         with open("testcred.txt") as f:
             uname, pwd = eval(f.read())

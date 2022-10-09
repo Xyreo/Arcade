@@ -113,13 +113,13 @@ class Http:
         r = None
 
         if method == "post":
-            r = requests.post(url, json=data, headers=headers, verify=False)
+            r = requests.post(url, json=data, headers=headers)
         elif method == "put":
-            r = requests.put(url, json=data, headers=headers, verify=False)
+            r = requests.put(url, json=data, headers=headers)
         elif method == "get":
-            r = requests.get(url, headers=headers, verify=False)
+            r = requests.get(url, headers=headers)
         elif method == "delete":
-            r = requests.delete(url, headers=headers, verify=False)
+            r = requests.delete(url, headers=headers)
         else:
             return "INVALID REQUEST"
         return r

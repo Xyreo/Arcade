@@ -64,8 +64,8 @@ HOME_ASSETS = os.path.join(ASSET, "home_assets")
 MONOPOLY_ASSETS = os.path.join(ASSET, "mnply_assets")
 CHESS_ASSETS = os.path.join(ASSET, "chess_assets")
 
-HTTP = Http("http://167.71.231.52:5000")
-CLIENT_ADDRESS = "167.71.231.52"
+HTTP = Http("https://pramitpal.me/api")
+CLIENT_ADDRESS = "pramitpal.me"
 isWin = os.name == "nt"
 
 REMEMBER_ME_FILE = (
@@ -102,10 +102,11 @@ SETTINGS_FILE = (
     )
 )
 
-UPDATER_EXE = os.path.join(
-    os.environ["USERPROFILE"], "AppData", "Local", "Arcade", "Updater.exe"
-)
-if not isWin:
+if isWin:
+    UPDATER_EXE = os.path.join(
+        os.environ["USERPROFILE"], "AppData", "Local", "Arcade", "Updater.exe"
+    )
+else:
     print("I don't like your Operating System. Install Windows.")
 
 
@@ -1808,12 +1809,14 @@ class Login(tk.Frame):
                 self.complete(uname, HTTP.TOKEN)
             elif self.check_login == -1:
                 lbl.configure(text="Already Logged in on another device!", fg="red")
-            else:
-                lbl.configure(text="Auto Login Error!", fg="red")
+            elif self.check_login == 0:
+                lbl.configure(text="Invalid Credentials! File Corrupted!", fg="red")
                 try:
                     os.remove(REMEMBER_ME_FILE)
                 except FileNotFoundError:
                     pass
+            else:
+                lbl.configure(text="Server Login Error!", fg="red")
 
             def thing():
                 log_win.destroy()
