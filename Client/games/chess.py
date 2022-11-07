@@ -158,7 +158,7 @@ class Chess(tk.Toplevel):
             highlightthickness=0,
             cursor="hand2",
             border=0,
-            command=lambda: Rules("Chess"),
+            command=lambda: Rules(self, "Chess"),
         ).place(relx=0.999, rely=0.001, anchor="ne")
 
         self.disimg = ImageTk.PhotoImage(
@@ -613,7 +613,6 @@ class Chess(tk.Toplevel):
         if self.state == "Nothing":
             if self.selected != None:
                 self.unselect()
-                self.display_moves(False)
 
         elif self.state == "PieceSelected":
             if self.selected != k:
@@ -639,12 +638,7 @@ class Chess(tk.Toplevel):
             x1, y1, x2, y2 = self.grid_to_coords(k)
 
             if self.old_selected == self.selected:
-                if self.hover is None:
-                    self.unselect()
-
-                    self.selected = None
-
-                elif self.hover == self.selected:
+                if self.hover is None or self.hover == self.selected:
                     self.unselect()
 
                 elif self.hover in self.possible_moves:
@@ -911,6 +905,8 @@ class Chess(tk.Toplevel):
 
         elif msg[0] == "MOVE":
             self.opp_move(msg[1], msg[2])
+            self.unselect()
+
         elif msg[0] == "DRAW":
             if msg[1] == "REQ":
                 self.draw_reply()

@@ -62,10 +62,14 @@ class Lobby(Channels):
         self.rooms.append(room)
 
     def join_room(self, player, id):
-        if id in rooms:
-            rooms[id].join(player)
-        else:
-            player.send_instruction((self.game, "JOIN_ERR", id))
+        if id not in rooms:
+            return False
+        if rooms[id].status not in ["PUBLIC", "PRIVATE"]:
+            return False
+        if rooms[id].game != self.game:
+            return False
+        rooms[id].join(player)
+        return True
 
     def join(self, player):
         super().join(player)
@@ -203,6 +207,7 @@ class Room(Channels):
         old_status = self.settings["STATUS"]
         self.settings.update(settings)
         new_status = self.settings["STATUS"]
+        self.status = self.settings["STATUS"]
         self.broadcast_to_members(("SETTINGS", settings))
 
         if old_status == "PUBLIC" and new_status == "PRIVATE":
@@ -316,7 +321,8 @@ class Client(threading.Thread):
     def lobby_handler(self, lobby, msg):
         action = msg[0]
         if action == "JOIN":
-            lobbies[lobby].join_room(self, msg[1])
+            if not lobbies[lobby].join_room(self, msg[1]):
+                self.send_instruction((lobby, "JOIN_ERR", msg[1]))
         elif action == "CREATE":
             lobbies[lobby].create_room(self, msg[1])
         else:
@@ -386,11 +392,6 @@ class Driver:
             log(f"Active connections {threading.active_count()-1}")
             client_thread = Client(conn, addr)
             client_thread.start()
-
-
-lobbies: list[Lobby]
-rooms: list[Room]
-players: dict[int, Client]
 
 
 if __name__ == "__main__":

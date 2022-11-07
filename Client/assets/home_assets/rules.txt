@@ -1,18 +1,18 @@
-Temporary Rules
+Welcome to the Arcade!
+You can play two games here: Chess and Monopoly
 
-Arcade Consists of Two Games Chess, Monopoly
+-   You can create your own room or join a room.
+-   Public Rooms can be joined by selecting the room from the room list.
+-   Private Rooms can be joined by entering the room id which is to be shared by the host.
 
-1. You can create your own room or join a room
-2. Public Rooms can be joined by selecting the room from list
-3. Private Rooms can be joined by entering the room id shared by host and
-
-FEATURES:
 Under the tab on top right corner, you can:
-1. Switch between Dark and Light mode
-2. Change Password
-3. Change Profile Picture
-4. Choose a default game tab to open at startup
-5. stats
-6. Leaderboard
+    -   Switch between Dark and Light mode
+    -   Change your Password
+    -   Edit your Profile Picture
+    -   Choose a default game tab to open at startup
 
-Everything is pretty straightforward. Have fun.
+User data:
+    -   Stats
+    -   Leaderboard
+
+Everything is pretty straightforward and simple. If you have any queries or ideas, drop them here. Have fun!

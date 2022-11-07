@@ -25,11 +25,6 @@ from utilities.rules import Rules
 from utilities.theme import Theme
 from utilities.timer import Timer
 
-try:
-    from utilities.musicplayer import play as music
-except:
-    print("No Output Devices Found")
-
 isWin = os.name == "nt"
 SETTINGS_FILE = (
     os.path.join(
@@ -399,7 +394,7 @@ class Monopoly(tk.Toplevel):
             highlightthickness=0,
             cursor="hand2",
             border=0,
-            command=lambda: Rules("Monopoly"),
+            command=lambda: Rules(self, "Monopoly"),
         ).place(relx=0.999, rely=0.001, anchor="ne")
 
         self.timer_label = tk.Label(self, font=("consolas", 12))
@@ -1009,10 +1004,6 @@ class Monopoly(tk.Toplevel):
     def roll_dice(self, roll=None, received=False, cli=False):
         if self.turn == self.me and self.timer:
             self.timer.reset()
-        try:
-            music(os.path.join(MONOPOLY_ASSETS, "die", "diceroll.mp3"))
-        except:
-            pass
         self.roll_button_state("disabled")
         dice_roll = roll if received else (random.randint(1, 6), random.randint(1, 6))
         dice_roll = roll if cli else dice_roll

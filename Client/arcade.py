@@ -273,7 +273,7 @@ class Arcade(tk.Toplevel):
             highlightthickness=0,
             cursor="hand2",
             border=0,
-            command=lambda: Rules("Arcade"),
+            command=lambda: Rules(self, "Arcade"),
         ).place(relx=0.999, rely=0.001, anchor="ne")
 
         with open(SETTINGS_FILE, "rb") as f:

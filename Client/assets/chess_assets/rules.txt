@@ -1,1 +1,24 @@
-https://www.fide.com/FIDE/handbook/LawsOfChess.pdf
+I.      Click here to see the basic rules of chess.
+II.     The nature and objectives of the game of chess:
+    1.  The game of chess is played between two opponents who move their pieces alternately on a square board called a 'chessboard'. The player with the white pieces commences the game. A player is said to 'have the move', when his opponent's move has been made.
+    2.  The objective of each player is to place the opponent's king 'under attack' in such a way that the opponent has no legal move. The player who achieves this goal is said to have 'checkmated' the opponent's king and to have won the game. Leaving one's own king under attack, exposing one's own king to attack and also 'capturing' the opponent's king are not allowed. The opponent whose king has been checkmated has lost the game.
+    3.  If the position is such that neither player can possibly checkmate, the game is drawn.
+III.    The act of moving the pieces:
+    1.  Each move must be made by dragging and dropping the desired piece, or by selecting it, and clicking on the desired destination
+    2.  When, as a legal move or part of a legal move, a piece has been released on a square, it cannot be moved to another square on this move. The move is then considered to have been made:
+        a.  in the case of a capture, when the captured piece has been removed from the chessboard and the player, having placed his own piece on its new square, has released this capturing piece from his hand
+        b.  in the case of castling, when the player's hand has released the rook on the square previously crossed by the king. When the player has released the king from his hand, the move is not yet made, but the player no longer has the right to make any move other than castling on that side, if this is legal
+        c.  in the case of the promotion of a pawn, when the pawn has been removed from the chessboard and the player's hand has released the new piece after placing it on the promotion square. If the player has released from his hand the pawn that has reached the promotion square, the move is not yet made, but the player no longer has the right to play the pawn to another square.
+IV.     The completion of the game:
+    1.  Victory:
+        a.  The game is won by the player who has checkmated his opponent's king. This immediately ends the game, provided that the move producing the checkmate position was a legal move.
+        b.  The game is won by the player whose opponent declares he resigns. This immediately ends the game.
+    2.  Draw:
+        a.  The game is drawn when the player to move has no legal move and his king is not in check. The game is said to end in 'stalemate'. This immediately ends the game, provided that the move producing the stalemate position was legal.
+        b.  The game is drawn when a position has arisen in which neither player can checkmate the opponent's king with any series of legal moves. The game is said to end in a 'dead position'. This immediately ends the game, provided that the move producing the position was legal. 
+        c.  The game is drawn upon agreement between the two players during the game. This immediately ends the game.
+V.      The chess clock:
+    1.  Before the start of the game the host decides the time limit of the game, and the increment time per move.
+    2.  At the time determined for the start of the game the clock of the player who has the white pieces is started.
+VI.     Points:
+        A player who wins his game, or wins by forfeit, scores one point (1), a player who loses his game, or forfeits scores no points (0) and a player who draws his game scores a half point (1/2).

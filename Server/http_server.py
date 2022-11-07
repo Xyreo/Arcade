@@ -153,16 +153,6 @@ def remember_login():
     return jsonify("Either username or password is incorrect"), 400
 
 
-@app.route("/exit")
-def exit_flask():
-    password = request.args.get("password").encode("utf-8")
-    storedpw = db.execute(f'SELECT password,name FROM user where name = "root"')
-    if bcrypt.checkpw(password, storedpw[0][0].encode("utf-8")):
-        db.close()
-
-    return jsonify("Wrong Password"), 400
-
-
 @req_authorisation.before_request
 def check_session():
     authorisation = request.headers.get("Authorization")
@@ -226,7 +216,6 @@ def change_pfp():
 
 
 # endregion
-
 
 # region Monopoly
 @monopoly.route("/details")
@@ -331,7 +320,7 @@ def chess_game_add():
         winner = data["winner"]
         result = data["result"]
         players = data["players"]
-        result = str(result).replace("'", "!@#$").replace('"', "!@#$")
+        result = result.replace("'", "!@#$").replace('"', "!@#$")
         winner = str(winner).replace("'", "!@#$").replace('"', "!@#$")
         s = "insert into game_user(user,game) values "
         for i in players:
@@ -358,7 +347,7 @@ def chess_stats(name):
             return jsonify("Bad Request"), 400
         res = []
         for i in details:
-            result = eval(i[3].replace("!@#$", '"'))
+            result = i[3].replace("!@#$", '"')
             winner = i[4].replace("!@#$", '"')
             res.append((i[2], result, winner))
         return jsonify(res), 200
@@ -377,7 +366,7 @@ def chess_leaderboard():
     try:
         res = {}
         for i in det:
-            result = eval(i[3].replace("!@#$", '"'))
+            result = i[3].replace("!@#$", '"')
             winner = i[4].replace("!@#$", '"')
             if i[1] in res:
                 res[i[1]]["games"].append((i[2], result, winner))
@@ -425,6 +414,7 @@ def load_img(user):
 
 
 # endregion
+
 req_authorisation.register_blueprint(monopoly, url_prefix="/monopoly")
 req_authorisation.register_blueprint(chess, url_prefix="/chess")
 app.register_blueprint(req_authorisation)

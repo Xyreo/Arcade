@@ -1,77 +1,61 @@
-Sincere Apologies for this view. Will Improve in next Update.
-
-I.	Start:
-    1.	Each player is given $1500 cash
-    2.	The Bank pays salaries, collects all taxes, fines, interest, and the price of all properties which it sells.
-
-II.	Objective of the Game:
-    1.	Become the wealthiest player through buying, renting, and selling of property and force other players into bankruptcy.
-
-III.	Game Play:
-    1.	The first player starts by rolling the dice and moving forward the number of spaces shown on the dice.
-    2.	Depending on the space the token reaches, you may buy the property, or be obliged to pay rent, pay taxes, draw a Chance or Community Chest card, Go to Jail, etc.
-    3.	If you throw doubles, you move your token and are subject to any privileges or penalties pertaining to the space on which you land. Then you can throw again and move your token as before. But watch out, if you ever throw doubles three times in succession, you have to go immediately to jail.
-
-IV.	Go:
-    1.	Each time a player's token lands on or passes over GO, whether by throw of the dice or by drawing a card, the Bank pays that player a $200 salary.
-    2.	However, $200 is paid only once each time around the board. If a player, passing "GO" on the throw of the dice, lands 2 spaces beyond it on "Community Chest", or 7 spaces beyond it on "Chance", and draws the card "Advance to GO", he collects $200 for passing "GO" the first time and another $200 for reaching it the second time by instructions on the card.
-
-V.	Buying Property:
-    1.	When you land on an unowned property you can buy that property from the Bank at its printed price.
-    2.	You receive the Title Deed card showing ownership.
-
-VI.	Paying Rent:
-    1.	When you land on a property that is owned by another player, the owner collects rent from you in accordance with the list printed on its Title Deed card.
-    2.	If the property is mortgaged, its Title Deed card is placed face down in front of the owner and he cannot collect a rent.
-    3.	It is an advantage to hold all the Title Deed cards in a color-group because the owner may then charge double rent for unimproved properties in that color-group. This rule applies to unmortgaged properties even if another property in that color-group is mortgaged.
-    4.	It is more advantageous to have houses or hotels on properties because then rents become much higher.
-
-VII.	Chance And Community Chest:
-    1.	When you land on either of these spaces, follow the instructions on the card.
-    2.	The "Get Out of Jail Free" card is held until used and then returned to the bottom of the deck.
-
-VIII.	Tax:
-    1.	When you land on any "Tax" spot you are forced to pay the amount printed on that spot
-
-IX.	Jail:
-    1.	When you are sent to jail, you must move directly into jail, and you cannot collect $200 salary if you need to pass to Go. Also, your turn ends when you are sent to jail.
-    2.	If you are not "sent to jail" but in the ordinary course of play lands on that space, you are "Just Visiting" and you move ahead in the usual manner on your next turn.
-    3.	Even though you are in jail, you may buy and sell property, houses and hotels and collect rents.
-    4.	Get out of jail by rolling doubles in the next three turns, or by paying 50 before your first turn, or by using a get out of jail free card if available
-
-X.	Free Parking:
-    1.	This is just a "free" resting place, so the player landing on it doesn't receive money, property, reward or penalty of any kind.
-
-XI.	Houses And Hotels:
-    1.	When a player owns all the properties in a color-group, he or she may buy houses from the Bank.
-    2.	You may buy as many houses as your judgment and financial standing will allow, but you cannot erect more than one house on any one property of any color-group until you have built one house on every property of that group.
-    3.	The price you must pay the Bank for each house is shown on your Title Deed card for the property on which you erect the house.
-    4.	The owner still collects double rent from an opponent who lands on the unimproved properties of his/her complete color-group.
-    5.	When a player has four houses on each property of a complete color-group, they may buy a hotel from the Bank and erect it on any property of the color-group. Only one hotel may be erected on any one property.
-    6.	As you build evenly, you must also break down evenly if you sell houses back to the Bank.
-
-XII.	Selling Property:
-    1.	Unimproved properties, railroads and utilities may be sold to any player as a private transaction for any amount the owner can get.
-    2.	However, properties cannot be sold to another player if buildings are standing on any properties of that color-group.
-    3.	The buildings must be sold back to the Bank before the owner can sell any property of that color-group
-    4.	Houses and Hotels can be sold back to the bank at any time for one-half the price paid for them.
-
-XIII.	Mortgages:
-    1.	Unimproved properties can be mortgaged through the Bank at any time. The mortgage value is printed on each Title Deed card.
-    2.	When properties have buildings, then these must be sold back to the back at half price first.
-    3.	No rent can be collected on mortgaged properties or utilities.
-    4.	To lift the mortgage, the owner must pay the Bank the amount of mortgage plus 10% interest.
-    5.	When all the properties of a color-group are no longer mortgaged, the owner may begin to buy back houses or hotels.
-    6.	The player who mortgages property retains possession of it and no other player may secure it by lifting the mortgage from the Bank.
-    7.	But the owner may sell this mortgaged property to another player at any agreed price and the new owner can lift the mortgage by paying off the mortgage plus 10% interest to the Bank.
-
-XIV.	Bankruptcy:
-    1.	You are declared bankrupt if you owe more than you can pay to another player or to the Bank.
-    2.	If your debt is to another player, you must turn over all that you have to that player.
-    3.	If you own houses or hotels, you must return these to the Bank in exchange for money to the extent of one-half the amount paid for them, and this cash is given to the creditor.
-    4.	If you have mortgaged property, you also turn this property over to your creditor, but the new owner must at once pay the Bank the amount of interest on the loan, which is 10% of the value of the property.
-    5.	Money can be loaned to a player only by the Bank (by mortgaging property) and no other player may borrow from or lend money to another player.
-
-XV.	End of the Game:
-    1.	Bankrupt players must retire from the game and the last player left in the game is the winner.
-    2.	If majority agrees to end game, the player with highest net worth wins.
+I.      Start:
+    1.  Each player is given $1500 cash
+    2.  The Bank pays salaries, collects all taxes, fines, interest, and the price of all properties which it sells.
+II.     Objective of the Game:
+        Become the wealthiest player through buying, renting, and selling of property and force other players into bankruptcy.
+III.    Game Play:
+    1.  The first player starts by rolling the dice and moving forward the number of spaces shown on the dice.
+    2.  Depending on the space the token reaches, you may buy the property, or be obliged to pay rent, pay taxes, draw a Chance or Community Chest card, Go to Jail, etc.
+    3.  If you throw doubles, you move your token and are subject to any privileges or penalties pertaining to the space on which you land. Then you can throw again and move your token as before. But watch out, if you ever throw doubles three times in succession, you have to go immediately to jail.
+IV.     Go:
+    1.  Each time a player's token lands on or passes over GO, whether by throw of the dice or by drawing a card, the Bank pays that player a $200 salary.
+    2.  However, $200 is paid only once each time around the board. If a player, passing "GO" on the throw of the dice, lands 2 spaces beyond it on "Community Chest", or 7 spaces beyond it on "Chance", and draws the card "Advance to GO", he collects $200 for passing "GO" the first time and another $200 for reaching it the second time by instructions on the card.
+V.      Buying Property:
+    1.  When you land on an unowned property you can buy that property from the Bank at its printed price.
+    2.  You receive the Title Deed card showing ownership.
+VI.     Paying Rent:
+    1.  When you land on a property that is owned by another player, the owner collects rent from you in accordance with the list printed on its Title Deed card.
+    2.  If the property is mortgaged, its Title Deed card is placed face down in front of the owner and he cannot collect a rent.
+    3.  It is an advantage to hold all the Title Deed cards in a color-group because the owner may then charge double rent for unimproved properties in that color-group. This rule applies to unmortgaged properties even if another property in that color-group is mortgaged.
+    4.  It is more advantageous to have houses or hotels on properties because then rents become much higher.
+VII.    Chance And Community Chest:
+    1.  When you land on either of these spaces, follow the instructions on the card.
+    2.  The "Get Out of Jail Free" card is held until used and then returned to the bottom of the deck.
+VIII.   Tax:
+        When you land on any "Tax" spot you are forced to pay the amount printed on that spot
+IX.     Jail:
+    1.  When you are sent to jail, you must move directly into jail, and you cannot collect $200 salary if you need to pass to Go. Also, your turn ends when you are sent to jail.
+    2.  If you are not "sent to jail" but in the ordinary course of play lands on that space, you are "Just Visiting" and you move ahead in the usual manner on your next turn.
+    3.  Even though you are in jail, you may buy and sell property, houses and hotels and collect rents.
+    4.  Get out of jail by rolling doubles in the next three turns, or by paying 50 before your first turn, or by using a get out of jail free card if available
+X.      Free Parking:
+        This is just a "free" resting place, so the player landing on it doesn't receive money, property, reward or penalty of any kind.
+XI.     Houses And Hotels:
+    1.  When a player owns all the properties in a color-group, he or she may buy houses from the Bank.
+    2.  You may buy as many houses as your judgment and financial standing will allow, but you cannot erect more than one house on any one property of any color-group until you have built one house on every property of that group.
+    3.  The price you must pay the Bank for each house is shown on your Title Deed card for the property on which you erect the house.
+    4.  The owner still collects double rent from an opponent who lands on the unimproved properties of his/her complete color-group.
+    5.  When a player has four houses on each property of a complete color-group, they may buy a hotel from the Bank and erect it on any property of the color-group. Only one hotel may be erected on any one property.
+    6.  As you build evenly, you must also break down evenly if you sell houses back to the Bank.
+XII.    Selling Property:
+    1.  Unimproved properties, railroads and utilities may be sold to any player as a private transaction for any amount the owner can get.
+    2.  However, properties cannot be sold to another player if buildings are standing on any properties of that color-group.
+    3.  The buildings must be sold back to the Bank before the owner can sell any property of that color-group
+    4.  Houses and Hotels can be sold back to the bank at any time for one-half the price paid for them.
+XIII.   Mortgages:
+    1.  Unimproved properties can be mortgaged through the Bank at any time. The mortgage value is printed on each Title Deed card.
+    2.  When properties have buildings, then these must be sold back to the back at half price first.
+    3.  No rent can be collected on mortgaged properties or utilities.
+    4.  To lift the mortgage, the owner must pay the Bank the amount of mortgage plus 10% interest.
+    5.  When all the properties of a color-group are no longer mortgaged, the owner may begin to buy back houses or hotels.
+    6.  The player who mortgages property retains possession of it and no other player may secure it by lifting the mortgage from the Bank.
+    7.  But the owner may sell this mortgaged property to another player at any agreed price and the new owner can lift the mortgage by paying off the mortgage plus 10% interest to the Bank.
+XIV.    Bankruptcy:
+    1.  You are declared bankrupt if you owe more than you can pay to another player or to the Bank.
+    2.  If your debt is to another player, you must turn over all that you have to that player.
+    3.  If you own houses or hotels, you must return these to the Bank in exchange for money to the extent of one-half the amount paid for them, and this cash is given to the creditor.
+    4.  If you have mortgaged property, you also turn this property over to your creditor, but the new owner must at once pay the Bank the amount of interest on the loan, which is 10% of the value of the property.
+    5.  Money can be loaned to a player only by the Bank (by mortgaging property) and no other player may borrow from or lend money to another player.
+XV.     End of the Game:
+    1.  Bankrupt players must retire from the game and the last player left in the game is the winner.
+    2.  If majority agrees to end game, the player with highest net worth wins.
