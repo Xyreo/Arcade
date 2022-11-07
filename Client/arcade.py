@@ -1833,7 +1833,7 @@ class Login(tk.Frame):
         tk.Label(self, text="Username: ").place(relx=0.44, rely=0.3, anchor="e")
 
         def no_special(e):
-            if not any(i in ["'", '"', ";", " "] for i in e) and len(e) <= 32:
+            if not any(i in ["'", '"', ";", " ", "\\"] for i in e) and len(e) <= 32:
                 return True
             else:
                 return False
@@ -2018,7 +2018,7 @@ class Register(tk.Frame):
         tk.Label(self, text="Create Username: ").place(relx=0.24, rely=0.3, anchor="e")
 
         def no_special(e):
-            if not any(i in ["'", '"', ";", " "] for i in e) and len(e) <= 32:
+            if not any(i in ["'", '"', ";", " ", "\\"] for i in e) and len(e) <= 32:
                 return True
             else:
                 return False

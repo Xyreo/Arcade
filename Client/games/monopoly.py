@@ -971,7 +971,7 @@ class Monopoly(tk.Toplevel):
         self.timer = Timer(time)
         self.timer.start()
         while True:
-            if not self.timer.is_alive():
+            if not self.timer.is_alive() or self.isEnded:
                 break
             if self.turn == self.me and self.timer.time_left() <= 0:
                 self.timer.stop()
@@ -3514,8 +3514,6 @@ class Monopoly(tk.Toplevel):
             self.timer.stop()
         if __name__ == "__main__":
             self.http.logout()
-            for file in os.scandir(os.path.join(HOME_ASSETS, "cached_pfp")):
-                os.remove(file.path)
             root.quit()
         else:
             self.destroy()

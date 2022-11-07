@@ -443,7 +443,7 @@ class Chess(tk.Toplevel):
         self.timers[player] = Timer(self.time)
         self.timers[player].start()
         while True:
-            if not self.timers[player].is_alive():
+            if not self.timers[player].is_alive() or self.isEnded:
                 break
             if self.timers[player].time_left() <= 0:
                 self.timers[player].stop()
@@ -1077,7 +1077,7 @@ class Chess(tk.Toplevel):
             Chess.http.addgame(
                 "CHESS",
                 self.players[winner]["NAME"] if winner else "none",
-                {"pgn": pgn},
+                pgn,
                 [self.players[self.me]["NAME"], self.players[self.opponent]["NAME"]],
             )
 
