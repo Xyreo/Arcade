@@ -483,8 +483,19 @@ class Arcade(tk.Toplevel):
             time.sleep(t)
         else:
             self.sent_time = time.perf_counter() + 0.1
-        print("Sent:", msg)
-        self.cobj.send(msg)
+        try:
+            self.cobj.send(msg)
+            print("Sent:", msg)
+        except:
+            self.show_message(
+                "Connection Lost!",
+                "You have been disconnected from the server! Please Restart to Continue!",
+                type="error",
+            )
+            self.cobj.close()
+            HTTP.logout()
+            root.destroy()
+            quit()
 
     # endregion
 
@@ -755,9 +766,6 @@ class Arcade(tk.Toplevel):
         self.show_hide_pass.place(relx=0.8, rely=0.25, anchor="w")
         self.show_hide_conf_pass.place(relx=0.8, rely=0.4, anchor="w")
 
-        for i in self.winfo_children():
-            i.bind("<Escape>", lambda a: self.destroy())
-
         def toggle_hide_password(conf):
             if conf:
                 if self.conf_pass_hidden:
@@ -874,6 +882,7 @@ class Arcade(tk.Toplevel):
                 os.remove(REMEMBER_ME_FILE)
             except FileNotFoundError:
                 pass
+        HTTP.logout()
         self.main_notebook.destroy()
         self.acc_button.destroy()
         self.acc_frame.destroy()

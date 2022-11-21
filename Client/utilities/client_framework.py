@@ -31,6 +31,7 @@ class Client:
                 instruction = self.conn.recv(1024)
                 if not instruction:
                     print("Server Unexpectedly Quit")
+                    self.conn.close()
                     break
                 instruction = pickle.loads(instruction)
                 self.updater(instruction)

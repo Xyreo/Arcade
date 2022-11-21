@@ -905,7 +905,8 @@ class Chess(tk.Toplevel):
 
         elif msg[0] == "MOVE":
             self.opp_move(msg[1], msg[2])
-            self.unselect()
+            if self.selected != None:
+                self.unselect()
 
         elif msg[0] == "DRAW":
             if msg[1] == "REQ":
