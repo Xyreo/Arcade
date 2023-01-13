@@ -1,5 +1,6 @@
 import base64
 import copy
+import logging
 import os
 import pickle
 import random
@@ -34,7 +35,8 @@ while True:
 
         break
 
-    except ImportError:
+    except ImportError as e:
+        print(e)
 
         def load():
             cur = os.path.abspath(os.curdir)
@@ -102,12 +104,38 @@ SETTINGS_FILE = (
     )
 )
 
+LOG_FILE = (
+    os.path.join(
+        os.environ["USERPROFILE"],
+        "AppData",
+        "Local",
+        "Arcade",
+        "log.log",
+    )
+    if isWin
+    else os.path.join(
+        os.environ["HOME"],
+        "Applications",
+        "Arcade",
+        "log.log",
+    )
+)
+
+
+logger = logging
+
+logging.basicConfig(
+    filename=LOG_FILE,
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+
 if isWin:
     UPDATER_EXE = os.path.join(
         os.environ["USERPROFILE"], "AppData", "Local", "Arcade", "Updater.exe"
     )
 else:
-    print("I don't like your Operating System. Install Windows.")
+    logging.warning("I don't like your Operating System. Install Windows.")
 
 
 class Rooms(dict):
@@ -213,7 +241,8 @@ class Arcade(tk.Toplevel):
         try:
             self.cobj = Client((CLIENT_ADDRESS, 6969), self.event_handler, token)
             self.cobj.send((self.name,))
-        except ConnectionRefusedError:
+        except ConnectionRefusedError as e:
+            logging.exception(e)
             HTTP.logout()
             self.destroy()
             msgb.showerror(
@@ -349,120 +378,138 @@ class Arcade(tk.Toplevel):
     # region # Event Handling
 
     def event_handler(self, msg):
-        dest = msg[0]
-        print("Recv:", msg)
-        room = None
-        if dest == "NAME":
-            self.me = msg[1]
-        elif dest == "GAME":
-            if msg[1] == "SESSION_EXP":
-                self.show_message(
-                    "Session Expired",
-                    "You have been inactive for too long! Please Re-login to Continue!",
-                    type="error",
-                )
-                self.cobj.close()
-                self.log_out(True)
-        elif dest in ["CHESS", "MNPLY"]:
-            if msg[1] == "INIT":
-                self.rooms.initialize(dest, msg[2])
-            elif msg[1] == "JOIN_ERR":
-                self.show_message(
-                    "Invalid ID",
-                    "The Room you're trying to join is invalid! Please Enter the Correct Room ID.",
-                    "warning",
-                    4000,
-                )
-                self.join_pvt_entry.delete(0, "end")
-            elif msg[1] == "ROOM":
-                room = msg[3]
-                if msg[2] == "ADD":
-                    self.rooms.add_room(dest, room)
-                elif msg[2] == "REMOVE":
-                    self.rooms.remove_room(dest, msg[3])
-            elif msg[1] == "PLAYER":
-                if msg[2] == "ADD":
-                    self.rooms.add_player(msg[4], msg[3])
-                elif msg[2] == "REMOVE":
-                    self.rooms.remove_player(msg[4], msg[3])
-            elif msg[1] == "SETTINGS":
-                self.rooms.change_settings(msg[3], msg[2])
-            self.update_lobby(dest)  # TODO Settings GUI in Lobby
+        try:
+            dest = msg[0]
+            logging.info(f"Recv: {msg}")
+            room = None
+            if dest == "NAME":
+                self.me = msg[1]
+            elif dest == "GAME":
+                if msg[1] == "SESSION_EXP":
+                    self.show_message(
+                        "Session Expired",
+                        "You have been inactive for too long! Please Re-login to Continue!",
+                        type="error",
+                    )
+                    self.cobj.close()
+                    self.log_out(True)
+            elif dest in ["CHESS", "MNPLY"]:
+                if msg[1] == "INIT":
+                    self.rooms.initialize(dest, msg[2])
+                elif msg[1] == "JOIN_ERR":
+                    self.show_message(
+                        "Invalid ID",
+                        "The Room you're trying to join is invalid! Please Enter the Correct Room ID.",
+                        "warning",
+                        4000,
+                    )
+                    self.join_pvt_entry.delete(0, "end")
+                elif msg[1] == "ROOM":
+                    room = msg[3]
+                    if msg[2] == "ADD":
+                        self.rooms.add_room(dest, room)
+                    elif msg[2] == "REMOVE":
+                        self.rooms.remove_room(dest, msg[3])
+                elif msg[1] == "PLAYER":
+                    if msg[2] == "ADD":
+                        self.rooms.add_player(msg[4], msg[3])
+                    elif msg[2] == "REMOVE":
+                        self.rooms.remove_player(msg[4], msg[3])
+                elif msg[1] == "SETTINGS":
+                    self.rooms.change_settings(msg[3], msg[2])
+                self.update_lobby(dest)  # TODO Settings GUI in Lobby
 
-        elif dest == "ROOM":
-            if msg[1] == "ADD":
-                self.rooms.add_room(msg[2], msg[3])
-                self.join_room(msg[3]["id"], msg[2])
-            elif msg[1] == "REJECT":
-                self.join_lobby(msg[2])
-                self.show_message(
-                    "Room Full",
-                    "The Room you tried to Join is full and can't accept any more players!",
-                    timeout=4000,
-                    type="warning",
-                )
+            elif dest == "ROOM":
+                if msg[1] == "ADD":
+                    self.rooms.add_room(msg[2], msg[3])
+                    self.join_room(msg[3]["id"], msg[2])
+                elif msg[1] == "REJECT":
+                    self.join_lobby(msg[2])
+                    self.show_message(
+                        "Room Full",
+                        "The Room you tried to Join is full and can't accept any more players!",
+                        timeout=4000,
+                        type="warning",
+                    )
 
-        elif dest == self.current_room:
-            game = "CHESS" if dest in self.rooms["CHESS"] else "MNPLY"
-            if msg[1] == "PLAYER":
-                if msg[2] == "ADD":
-                    self.rooms.add_player(dest, msg[3])
-                    if self.get_active_window() != "Arcade" and isWin:
-                        noti.notify(
-                            message=f"{msg[3]['name']} has joined the room!",
-                            app_name="Arcade",
-                            timeout=5,
-                        )
-                elif msg[2] == "REMOVE":
-                    if self.get_active_window() != "Arcade" and isWin:
-                        noti.notify(
-                            message=f"{msg[3]['name']} has left the room!",
-                            app_name="Arcade",
-                            timeout=5,
-                        )
-                    self.rooms.remove_player(dest, msg[3])
-                self.update_room(self.rooms[game][dest])
+            elif dest == self.current_room:
+                game = "CHESS" if dest in self.rooms["CHESS"] else "MNPLY"
+                if msg[1] == "PLAYER":
+                    if msg[2] == "ADD":
+                        self.rooms.add_player(dest, msg[3])
+                        if self.get_active_window() != "Arcade" and isWin:
+                            noti.notify(
+                                message=f"{msg[3]['name']} has joined the room!",
+                                app_name="Arcade",
+                                timeout=5,
+                            )
+                    elif msg[2] == "REMOVE":
+                        if self.get_active_window() != "Arcade" and isWin:
+                            noti.notify(
+                                message=f"{msg[3]['name']} has left the room!",
+                                app_name="Arcade",
+                                timeout=5,
+                            )
+                        self.rooms.remove_player(dest, msg[3])
+                    self.update_room(self.rooms[game][dest])
 
-            elif msg[1] == "SETTINGS":
-                self.rooms.change_settings(dest, msg[2])
-                self.update_room(self.rooms[game][dest])
+                elif msg[1] == "SETTINGS":
+                    self.rooms.change_settings(dest, msg[2])
+                    self.update_room(self.rooms[game][dest])
 
-            elif msg[1] == "ROOM":
-                self.room_frames[game].destroy()
-                self.room_frames[game] = None
-                if msg[2] == "REMOVE":
-                    if isWin:
-                        noti.notify(
-                            message=f"The Host Left the Room!",
-                            app_name="Arcade",
-                            timeout=5,
-                        )
-                    self.rooms.remove_room(game, dest)
-                    self.current_room = None
-                elif msg[2] == "START":
-                    self.withdraw()
-                    if game == "CHESS":
-                        self.game = Chess(
-                            msg[3],
-                            lambda move: self.send((dest, "MSG", move)),
-                            HTTP,
-                            back=self.end_game,
-                            theme=theme,
-                        )
-                    elif game == "MNPLY":
-                        details = msg[3]
-                        self.game = Monopoly(
-                            details[0],
-                            details[1],
-                            lambda msg: self.send((dest, *msg)),
-                            HTTP,
-                            details[2],
-                            back=self.end_game,
-                            theme=theme,
-                        )
+                elif msg[1] == "ROOM":
+                    self.room_frames[game].destroy()
+                    self.room_frames[game] = None
+                    if msg[2] == "REMOVE":
+                        if isWin:
+                            noti.notify(
+                                message=f"The Host Left the Room!",
+                                app_name="Arcade",
+                                timeout=5,
+                            )
+                        self.rooms.remove_room(game, dest)
+                        self.current_room = None
+                    elif msg[2] == "START":
+                        self.withdraw()
+                        if game == "CHESS":
+                            self.game = Chess(
+                                logging.getLogger(),
+                                msg[3],
+                                lambda move: self.send((dest, "MSG", move)),
+                                HTTP,
+                                back=self.end_game,
+                                theme=theme,
+                            )
+                        elif game == "MNPLY":
+                            details = msg[3]
+                            self.game = Monopoly(
+                                logging.getLogger(),
+                                details[0],
+                                details[1],
+                                lambda msg: self.send((dest, *msg)),
+                                HTTP,
+                                details[2],
+                                back=self.end_game,
+                                theme=theme,
+                            )
 
-            elif msg[1] == "MSG":
-                self.game.event_handler(msg[2])
+                elif msg[1] == "MSG":
+                    self.game.event_handler(msg[2])
+        except tk.TclError as e1:
+            logging.warning(f"TclError: {e}")
+        except Exception as e:
+            logging.exception(e)
+            HTTP.logout()
+            self.destroy()
+            if msgb.askokcancel(
+                "ERROR",
+                """An Error Occured! Please Restart to Continue!
+Click 'Ok' if you'd like to view the crash logs! Feel free to report any bugs you find!""",
+                icon=msgb.ERROR,
+                master=root,
+            ):
+                os.startfile(LOG_FILE)
+            root.destroy()
 
     def send(self, msg):
         time_gap = 0.1
@@ -485,8 +532,9 @@ class Arcade(tk.Toplevel):
             self.sent_time = time.perf_counter() + 0.1
         try:
             self.cobj.send(msg)
-            print("Sent:", msg)
-        except:
+            logging.info(f"Sent: {msg}")
+        except Exception as e:
+            logging.exception(e)
             self.show_message(
                 "Connection Lost!",
                 "You have been disconnected from the server! Please Restart to Continue!",
@@ -935,8 +983,8 @@ class Arcade(tk.Toplevel):
             b = base64.b64decode(img.encode("latin1"))
             c = Image.open(BytesIO(b))
             return c
-        except:
-            print("Couldn't Access Profile Picture")
+        except Exception as e:
+            logging.exception(f"Couldn't Access Profile Picture\n{e}")
             return Image.open(os.path.join(HOME_ASSETS, "default_pfp.png"))
 
     @staticmethod
@@ -1003,8 +1051,8 @@ class Arcade(tk.Toplevel):
             elif type == "yesno":
                 yesno = msgb.askyesno(title, message, master=self.mbwin)
                 return yesno
-        except:
-            print("Messagebox Error")
+        except Exception as e:
+            logging.exception(e)
 
     # region # Lobby
 
@@ -1949,7 +1997,8 @@ class Login(tk.Frame):
                 self.check_login = HTTP.login(
                     uname.strip(), pwd.strip(), remember_me=self.remember_me.get()
                 )
-            except:
+            except Exception as e:
+                logging.exception(e)
                 self.destroy()
                 msgb.showerror(
                     "Connection Error",
@@ -1960,11 +2009,14 @@ class Login(tk.Frame):
             if self.check_login:
                 if self.check_login != -1:
                     msg = "Logging in..."
+                    self.pwdentry.config(state="disabled")
+                    self.uentry.config(state="disabled")
+                    self.login_button.config(state="disabled")
+                    self.pwdentry.unbind("<Return>")
+                    self.uentry.unbind("<Return>")
                     self.prompt(msg)
                     if isinstance(self.check_login, str):
                         self.store_password(uname.strip(), self.check_login)
-                    else:
-                        self.delete_stored_login()
                     self.after(1500, lambda: self.complete(uname, HTTP.TOKEN))
                 else:
                     msg = "User logged in on another device!"
@@ -1972,9 +2024,6 @@ class Login(tk.Frame):
             else:
                 msg = "Incorrect Username or Password"
                 self.prompt(msg)
-
-    def delete_stored_login(self):
-        pass
 
     def store_password(self, uname, pwd):
         with open(
@@ -2236,7 +2285,8 @@ class Register(tk.Frame):
                     self.pwdentry.delete(0, tk.END)
                     msg = "User Already Registered"
                     self.prompt(msg)
-            except:
+            except Exception as e:
+                logging.exception(e)
                 self.destroy()
                 msgb.showerror(
                     "Try Again Later",
@@ -2308,13 +2358,17 @@ if __name__ == "__main__":
                     f.seek(0)
                     pickle.dump(d, f)
 
+    if os.path.exists(LOG_FILE):
+        with open(LOG_FILE, "a") as f:
+            f.write("\n\n\n")
+
     theme = Theme(root, CURR_THEME)
     arc = Arcade()
     try:
         arc.start_arcade()
         root.mainloop()
     except Exception as e:
-        print(e)
+        logging.exception(e)
         msgb.showerror(
             "Try Again Later",
             "Unable to connect to the Server at the moment, please try again later!\nThings you can do:\n1. Check your network connection\n2. Restart your system\n3. If this issue persists, wait for sometime. The server might be down, We are working on it!",

@@ -114,6 +114,7 @@ class Property:
 class Monopoly(tk.Toplevel):
     def __init__(
         self,
+        logger,
         playerdetails,
         me,
         send,
@@ -123,6 +124,7 @@ class Monopoly(tk.Toplevel):
         theme: Theme = None,
     ):
         super().__init__()
+        self.logging = logger
         self.back_to_arcade = back
         self.player_details = dict(
             sorted(playerdetails.items(), key=lambda i: i[1]["Name"])
@@ -132,7 +134,7 @@ class Monopoly(tk.Toplevel):
         self.chance = Chance(self, order[0])
         self.community = Community(self, order[1])
         Monopoly.http = hobj
-        print(self.player_details[self.me])
+        self.logging.info(self.player_details[self.me])
         self.resize_no = 0
         self.send_msg = lambda msg: send(("MSG", msg))
         self.send_leave = lambda reason: send(("LEAVE", reason))
@@ -167,9 +169,11 @@ class Monopoly(tk.Toplevel):
             details = self.http.mply_details()
             for i in range(40):
                 self.properties[i] = Property(details[i])
-        except:
-            print("Couldn't Access Property Details! Invalid Session.")
-            exit()
+        except Exception as e:
+            self.logging.exception(
+                f"Couldn't Access Property Details! Invalid Session.\n{e}"
+            )
+            quit()
         Property.game = self
 
         for i in self.player_details:
@@ -185,10 +189,6 @@ class Monopoly(tk.Toplevel):
                     "PFP": Monopoly.get_pfp(self.player_details[i]["Name"], (32, 32)),
                 }
             )  # Properties will store obj from properties dict
-
-        if isWin:
-            self.cli_thread = threading.Thread(target=self.CLI, daemon=True)
-            self.cli_thread.start()
 
     def event_handler(self, msg):
         if msg[1] == "ROLL":
@@ -312,6 +312,7 @@ class Monopoly(tk.Toplevel):
         self.turn = self.uuids[0]
         self.doubles_counter = 0
         self.collective = {}
+        self.mortgage_list = []
 
         self.isInDebt = False
         self.debt_details = []
@@ -353,7 +354,7 @@ class Monopoly(tk.Toplevel):
                     self.property_frame_popup(self.property_pos_displayed)
                 self.resize_no = 0
         except tk.TclError as e:
-            print("Monopoly Resizer - TclError:", e)
+            self.logging.info(f"Monopoly Resizer - TclError: {e}")
 
     def create_gui_divisions(self):
         self.board_canvas = tk.Canvas(
@@ -731,8 +732,8 @@ class Monopoly(tk.Toplevel):
             elif type == "yesno":
                 yesno = msgb.askyesno(title, message, master=self.mbwin)
                 return yesno
-        except:
-            print("Messagebox Error")
+        except Exception as e:
+            self.logging.exception(e)
 
     def count_colour(self, propertypos):
         owner = self.properties[propertypos].owner
@@ -1001,12 +1002,11 @@ class Monopoly(tk.Toplevel):
         else:
             self.roll_button.configure(image=self.roll_normal)
 
-    def roll_dice(self, roll=None, received=False, cli=False):
+    def roll_dice(self, roll=None, received=False):
         if self.turn == self.me and self.timer:
             self.timer.reset()
         self.roll_button_state("disabled")
         dice_roll = roll if received else (random.randint(1, 6), random.randint(1, 6))
-        dice_roll = roll if cli else dice_roll
         if not received:
             self.send_msg(("ROLL", dice_roll))
         for i in range(18):
@@ -1167,7 +1167,7 @@ class Monopoly(tk.Toplevel):
                         x1 - self.property_height * 0.3 + self.token_width / 2 + 3
                     ), int(y1 + self.property_height * 0.95 - self.token_width / 2)
                 else:
-                    print("Position Error")
+                    self.logging.error("Position Error")
         elif not position % 10:
             x = x1 - (self.property_height * 0.5)
             y = y1 + (self.property_height * 0.5)
@@ -2904,7 +2904,9 @@ class Monopoly(tk.Toplevel):
     def build_sell(self, property, number, sell=False, received=False):
         if self.properties[property].owner:
             if self.properties[property].houses + number > 5:
-                print(f"ERROR! Can't {'sell' if sell else 'build'} more than 5")
+                self.logging.error(
+                    f"ERROR! Can't {'sell' if sell else 'build'} more than 5"
+                )
             else:
                 self.properties[property].houses += number
                 self.player_details[self.properties[property].owner]["Money"] -= int(
@@ -2913,7 +2915,7 @@ class Monopoly(tk.Toplevel):
             self.place_houses()
             self.update_game()
         else:
-            print("You dont own this property")
+            self.logging.error("You dont own this property")
 
         if not received:
             self.send_msg(("BUILD", property, number, sell))
@@ -3022,10 +3024,10 @@ class Monopoly(tk.Toplevel):
                         if i.colour == self.properties[propertypos].colour:
                             i.houses = 0
             else:
-                print("Owned")
+                self.logging.error("Owned")
 
         else:
-            print("Can't Buy")
+            self.logging.error("Can't Buy")
 
         if not self.isInDebt:
             self.update_game()
@@ -3653,8 +3655,10 @@ class Monopoly(tk.Toplevel):
                     self.isEnding = False
                 del self.collective[thing]
 
-                if self.timer:
+                try:
                     self.timer.resume()
+                except:
+                    pass
 
             if not received:
                 self.send_msg(("POLL", ("UPDATE", "ENDGAME", res)))
@@ -3726,14 +3730,14 @@ class Monopoly(tk.Toplevel):
                 text="YES",
                 style="14.TButton",
                 command=lambda: ans(True),
-            ).place(relx=0.4, rely=0.75, anchor="center")
+            ).place(relx=0.35, rely=0.75, anchor="center")
 
             ttk.Button(
                 self.endgame_frame,
                 text="NO",
                 style="14.TButton",
                 command=lambda: ans(False),
-            ).place(relx=0.6, rely=0.75, anchor="center")
+            ).place(relx=0.65, rely=0.75, anchor="center")
 
         if self.timer:
             self.timer.pause()
@@ -3781,7 +3785,7 @@ class Monopoly(tk.Toplevel):
 
         if len(winners) == 1:
             txt = (
-                f"{self.player_details[winner]['Name']} has"
+                f"{self.player_details[winners[0]]['Name']} has"
                 if winner != self.me
                 else "You have"
             ) + " won the game!"
@@ -3839,30 +3843,6 @@ class Monopoly(tk.Toplevel):
             )
 
     # endregion
-
-    def CLI(self):
-        while True:
-            t = tuple(i for i in input().split())
-            if t:
-                if t[0] == "roll":
-                    try:
-                        self.roll_dice(roll=(int(t[1]), int(t[2])), cli=True)
-                    except:
-                        pass
-                elif t[0] == "buy":
-                    for i in t[1:]:
-                        self.buy_property(int(i), self.me)
-
-                elif t[0] == "build":
-                    try:
-                        self.build_sell(int(t[1]), int(t[2]))
-                    except:
-                        pass
-                else:
-                    print("Invalid")
-            else:
-                print("Closed CLI Thread")
-                break
 
 
 class Chance:

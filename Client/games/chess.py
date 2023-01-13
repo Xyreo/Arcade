@@ -76,6 +76,7 @@ class Chess(tk.Toplevel):
 
     def __init__(
         self,
+        logger,
         initialize,
         update,
         http: Http,
@@ -93,6 +94,7 @@ class Chess(tk.Toplevel):
         self.add_time = initialize["ADD_TIME"]
         self.back_to_arcade = back
         Chess.http = http
+        self.logging = logger
 
         for i in self.players:
             self.players[i].update(
@@ -473,7 +475,7 @@ class Chess(tk.Toplevel):
         try:
             lbl.configure(text=things)
         except tk.TclError as e:
-            print("Chess Timer Display - TclError:", e)
+            Chess.logging.info(f"Chess Timer Display - TclError: {e}")
 
     # endregion
 
@@ -833,6 +835,7 @@ class Chess(tk.Toplevel):
                 "CHECKMATE" if check else "STALEMATE",
                 self.me if self.side == color else self.opponent,
             )
+        # endregion
 
         self.pgn_moves.append(
             PGN.get_pgn(
@@ -987,8 +990,8 @@ class Chess(tk.Toplevel):
             elif type == "yesno":
                 yesno = msgb.askyesno(title, message, master=self.mbwin)
                 return yesno
-        except:
-            print("Messagebox Error")
+        except Exception as e:
+            self.logging.exception(e)
 
     def draw_req(self):
         self.poll["DRAW"] = "REQ"
@@ -1022,7 +1025,7 @@ class Chess(tk.Toplevel):
         elif type == "TIME":
             txt = f"{self.players[self.opponent]['NAME'] if self.me==winner else 'You'} ran out of time!\n\nPoints:\n\n{self.players[self.me]['NAME']}: {1 if self.me==winner else 0}\n\n{self.players[self.opponent]['NAME']}: {1 if self.opponent==winner else 0}"
         else:
-            print(f"ERROR: {type} is invalid!")
+            self.logging.error(f"ERROR: {type} is invalid!")
         self.end_game_frame = tk.Frame(self)
         self.end_game_frame.place(
             relx=0.95, rely=0.5, relheight=0.95, relwidth=0.25, anchor="e"
@@ -1191,7 +1194,7 @@ class Piece:
         isEnpassant = False
         if self.piece == "PAWN":
             if pos == Chess.square_to_grid(self.board.fen["EP"]):
-                print("Enpassant")
+                self.logging.info("Enpassant")
                 isEnpassant = True
                 if pos % 10 == 2:
                     self.board[pos + 1] = None
@@ -1203,12 +1206,12 @@ class Piece:
         # Castling
         if self.piece == "KING":
             if abs(self.pos - pos) == 20:
-                print("Castle")
+                self.logging.info("Castle")
                 if self.pos > pos:
-                    print("Queen Side")
+                    self.logging.info("Queen Side")
                     self.board[pos - 20].moved(pos + 10)
                 else:
-                    print("King Side")
+                    self.logging.info("King Side")
                     self.board[pos + 10].moved(pos - 10)
 
         self.board[pos], self.board[self.pos] = self.board[self.pos], None
@@ -1664,7 +1667,6 @@ class Board:
         moves = []
         for i in pmoves:
             fen = self.fen.value
-            # print(fen)
             b = Board(fen)
             b.moved(k, i)
             if not b.is_in_check(b[i].color):
