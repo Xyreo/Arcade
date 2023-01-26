@@ -1206,12 +1206,9 @@ class Piece:
         # Castling
         if self.piece == "KING":
             if abs(self.pos - pos) == 20:
-                self.logging.info("Castle")
                 if self.pos > pos:
-                    self.logging.info("Queen Side")
                     self.board[pos - 20].moved(pos + 10)
                 else:
-                    self.logging.info("King Side")
                     self.board[pos + 10].moved(pos - 10)
 
         self.board[pos], self.board[self.pos] = self.board[self.pos], None
