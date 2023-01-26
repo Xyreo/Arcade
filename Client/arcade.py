@@ -194,14 +194,10 @@ class Arcade(tk.Toplevel):
         self.current_room = None
         self.sent_time = time.perf_counter()
         self.refresh = ImageTk.PhotoImage(
-            Image.open(os.path.join(HOME_ASSETS, "refresh.png")).resize(
-                (16, 16), Image.Resampling.LANCZOS
-            )
+            Image.open(os.path.join(HOME_ASSETS, "refresh.png"))
         )
         self.copy_icon = ImageTk.PhotoImage(
-            Image.open(os.path.join(HOME_ASSETS, "copy.png")).resize(
-                (20, 20), Image.Resampling.LANCZOS
-            )
+            Image.open(os.path.join(HOME_ASSETS, "copy.png"))
         )
 
         self.help_img = ImageTk.PhotoImage(
@@ -1299,7 +1295,7 @@ Click 'Ok' if you'd like to view the crash logs! Feel free to report any bugs yo
             cursor="hand2",
             border=0,
             command=clip_copy,
-        ).place(relx=0.69, rely=0.049, anchor="center")
+        ).place(relx=0.68, rely=0.047, anchor="center")
 
         tk.Label(frame, text=f"Host: {hostname}", font=("rockwell", 13)).place(
             relx=0.5, rely=0.1, anchor="center"

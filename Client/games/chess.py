@@ -3,13 +3,15 @@ import os
 import pickle
 import sys
 import threading
+import time
 import tkinter as tk
 import tkinter.ttk as ttk
 from datetime import date
 from io import BytesIO
-from time import sleep
+from tkinter import filedialog as fd
 from tkinter import messagebox as msgb
 
+import pyperclip as clipboard
 from PIL import Image, ImageChops, ImageDraw, ImageTk
 from plyer import notification as noti
 
@@ -152,6 +154,14 @@ class Chess(tk.Toplevel):
                 (20, 20),
                 Image.Resampling.LANCZOS,
             )
+        )
+
+        self.copy_icon = ImageTk.PhotoImage(
+            Image.open(os.path.join(HOME_ASSETS, "copy.png"))
+        )
+
+        self.download_icon = ImageTk.PhotoImage(
+            Image.open(os.path.join(CHESS_ASSETS, "download.png"))
         )
 
         tk.Button(
@@ -458,7 +468,7 @@ class Chess(tk.Toplevel):
                 self.display_timer(
                     self.timers[player], self.timer_labels[player], precision
                 )
-            sleep(0.09)
+            time.sleep(0.09)
 
     @staticmethod
     def display_timer(timer: Timer, lbl: tk.Label, precision="sec"):
@@ -588,7 +598,7 @@ class Chess(tk.Toplevel):
         for i in range(1, n + 1):
             start = int(x + (i / n) * x1)
             end = int(y + (i / n) * y1)
-            sleep(t / n)
+            time.sleep(t / n)
             self.move_obj(self.board[e], start, end)
         self.oldimg = None
         if not simul:
@@ -1041,7 +1051,7 @@ class Chess(tk.Toplevel):
             text="EXIT GAME",
             style="20.TButton",
             command=lambda: self.quit_game("ENDED"),
-        ).place(relx=0.5, rely=0.8, anchor="center")
+        ).place(relx=0.5, rely=0.7, anchor="center")
 
         # region # PGN File
 
@@ -1069,7 +1079,53 @@ class Chess(tk.Toplevel):
             if type == "DRAW"
             else ("1-0" if winner == list(white_player.keys())[0] else "0-1")
         )
-        Chess.logging.info(pgn)
+
+        tk.Label(
+            self.end_game_frame,
+            text="PGN:",
+            font=("rockwell", 14),
+        ).place(relx=0.3, rely=0.85, anchor="center")
+
+        def prompt(msg, color):
+            prompt = tk.Label(
+                self.end_game_frame, text=msg, font=("rockwell", 12), fg=color
+            )
+            prompt.place(relx=0.6, rely=0.9, anchor="center")
+            self.after(2500, prompt.destroy)
+
+        def clip_copy():
+            clipboard.copy(pgn)
+            prompt("Copied!", "green")
+
+        def save_pgn():
+            f = fd.asksaveasfile(
+                parent=self,
+                title="Save PGN File",
+                initialdir=r"%userprofile%",
+                initialfile=f"{white_player['NAME']} vs {black_player['NAME']} {date.today()}_{time.strftime('%H-%M-%S')}",
+                mode="w",
+                defaultextension=".pgn",
+                filetypes=[("Portable Game Notation", "*.pgn")],
+            )
+            try:
+                f.write(pgn)
+                txt = "Saved!"
+                f.close()
+            except:
+                txt = "Error!"
+            prompt(txt, "green" if txt == "Saved!" else "red")
+
+        ttk.Button(
+            self.end_game_frame,
+            image=self.copy_icon,
+            command=clip_copy,
+        ).place(relx=0.5, rely=0.85, anchor="center")
+
+        ttk.Button(
+            self.end_game_frame,
+            image=self.download_icon,
+            command=save_pgn,
+        ).place(relx=0.7, rely=0.85, anchor="center")
 
         # endregion
 
