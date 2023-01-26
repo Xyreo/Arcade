@@ -124,7 +124,7 @@ class Monopoly(tk.Toplevel):
         theme: Theme = None,
     ):
         super().__init__()
-        self.logging = logger
+        Monopoly.logging = logger
         self.back_to_arcade = back
         self.player_details = dict(
             sorted(playerdetails.items(), key=lambda i: i[1]["Name"])
@@ -134,7 +134,7 @@ class Monopoly(tk.Toplevel):
         self.chance = Chance(self, order[0])
         self.community = Community(self, order[1])
         Monopoly.http = hobj
-        self.logging.info(self.player_details[self.me])
+        Monopoly.logging.info(self.player_details[self.me])
         self.resize_no = 0
         self.send_msg = lambda msg: send(("MSG", msg))
         self.send_leave = lambda reason: send(("LEAVE", reason))
@@ -170,7 +170,7 @@ class Monopoly(tk.Toplevel):
             for i in range(40):
                 self.properties[i] = Property(details[i])
         except Exception as e:
-            self.logging.exception(
+            Monopoly.logging.exception(
                 f"Couldn't Access Property Details! Invalid Session.\n{e}"
             )
             quit()
@@ -354,7 +354,7 @@ class Monopoly(tk.Toplevel):
                     self.property_frame_popup(self.property_pos_displayed)
                 self.resize_no = 0
         except tk.TclError as e:
-            self.logging.info(f"Monopoly Resizer - TclError: {e}")
+            Monopoly.logging.info(f"Monopoly Resizer - TclError: {e}")
 
     def create_gui_divisions(self):
         self.board_canvas = tk.Canvas(
@@ -733,7 +733,7 @@ class Monopoly(tk.Toplevel):
                 yesno = msgb.askyesno(title, message, master=self.mbwin)
                 return yesno
         except Exception as e:
-            self.logging.exception(e)
+            Monopoly.logging.exception(e)
 
     def count_colour(self, propertypos):
         owner = self.properties[propertypos].owner
@@ -1167,7 +1167,7 @@ class Monopoly(tk.Toplevel):
                         x1 - self.property_height * 0.3 + self.token_width / 2 + 3
                     ), int(y1 + self.property_height * 0.95 - self.token_width / 2)
                 else:
-                    self.logging.error("Position Error")
+                    Monopoly.logging.error("Position Error")
         elif not position % 10:
             x = x1 - (self.property_height * 0.5)
             y = y1 + (self.property_height * 0.5)
@@ -2904,7 +2904,7 @@ class Monopoly(tk.Toplevel):
     def build_sell(self, property, number, sell=False, received=False):
         if self.properties[property].owner:
             if self.properties[property].houses + number > 5:
-                self.logging.error(
+                Monopoly.logging.error(
                     f"ERROR! Can't {'sell' if sell else 'build'} more than 5"
                 )
             else:
@@ -2915,7 +2915,7 @@ class Monopoly(tk.Toplevel):
             self.place_houses()
             self.update_game()
         else:
-            self.logging.error("You dont own this property")
+            Monopoly.logging.error("You dont own this property")
 
         if not received:
             self.send_msg(("BUILD", property, number, sell))
@@ -3024,10 +3024,10 @@ class Monopoly(tk.Toplevel):
                         if i.colour == self.properties[propertypos].colour:
                             i.houses = 0
             else:
-                self.logging.error("Owned")
+                Monopoly.logging.error("Owned")
 
         else:
-            self.logging.error("Can't Buy")
+            Monopoly.logging.error("Can't Buy")
 
         if not self.isInDebt:
             self.update_game()
@@ -4104,7 +4104,10 @@ if __name__ == "__main__":
     hobj.login(uname, pwd)
     order = list(range(20))
     random.shuffle(order)
+    import logging as log
+
     mono = Monopoly(
+        log,
         {
             "QWERTY": {
                 "Name": uname,

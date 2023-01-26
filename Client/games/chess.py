@@ -94,7 +94,7 @@ class Chess(tk.Toplevel):
         self.add_time = initialize["ADD_TIME"]
         self.back_to_arcade = back
         Chess.http = http
-        self.logging = logger
+        Chess.logging = logger
 
         for i in self.players:
             self.players[i].update(
@@ -991,7 +991,7 @@ class Chess(tk.Toplevel):
                 yesno = msgb.askyesno(title, message, master=self.mbwin)
                 return yesno
         except Exception as e:
-            self.logging.exception(e)
+            Chess.logging.exception(e)
 
     def draw_req(self):
         self.poll["DRAW"] = "REQ"
@@ -1025,7 +1025,7 @@ class Chess(tk.Toplevel):
         elif type == "TIME":
             txt = f"{self.players[self.opponent]['NAME'] if self.me==winner else 'You'} ran out of time!\n\nPoints:\n\n{self.players[self.me]['NAME']}: {1 if self.me==winner else 0}\n\n{self.players[self.opponent]['NAME']}: {1 if self.opponent==winner else 0}"
         else:
-            self.logging.error(f"ERROR: {type} is invalid!")
+            Chess.logging.error(f"ERROR: {type} is invalid!")
         self.end_game_frame = tk.Frame(self)
         self.end_game_frame.place(
             relx=0.95, rely=0.5, relheight=0.95, relwidth=0.25, anchor="e"
@@ -1058,7 +1058,7 @@ class Chess(tk.Toplevel):
         pgn = f"""[Date \"{date.today()}\"]
 [White \"{white_player['NAME']}\"]
 [Black \"{black_player['NAME']}\"]
-[Result \"{"1/2-1/2" if type=="DRAW" else ("1-0" if winner == list(white_player.keys())[0] else "0-1")}\"]
+[Result \"{"1/2-1/2" if type=="DRAW" else ("1-0" if self.players[winner]['SIDE']=="WHITE" else "0-1")}\"]
 
 """
         for i in range(0, len(self.pgn_moves), 2):
@@ -1069,7 +1069,7 @@ class Chess(tk.Toplevel):
             if type == "DRAW"
             else ("1-0" if winner == list(white_player.keys())[0] else "0-1")
         )
-        print(pgn)
+        Chess.logging.info(pgn)
 
         # endregion
 
@@ -1194,7 +1194,6 @@ class Piece:
         isEnpassant = False
         if self.piece == "PAWN":
             if pos == Chess.square_to_grid(self.board.fen["EP"]):
-                self.logging.info("Enpassant")
                 isEnpassant = True
                 if pos % 10 == 2:
                     self.board[pos + 1] = None
@@ -1763,7 +1762,10 @@ if __name__ == "__main__":
         with open("Client/testcred.txt") as f:
             uname, pwd = eval(f.read())
     hobj.login(uname, pwd)
+    import logging as log
+
     chess = Chess(
+        log,
         {
             "ME": "456789",
             "PLAYERS": {

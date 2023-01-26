@@ -1,3 +1,3 @@
 [Update]
-Version=3.2.0
-URL=https://github.com/Chaitanya-Keyal/Arcade/releases/download/v3.2.0/Arcade_Installer.exe
+Version=3.2.1
+URL=https://github.com/Chaitanya-Keyal/Arcade/releases/download/v3.2.1/Arcade_Installer.exe
