@@ -485,7 +485,7 @@ class Chess(tk.Toplevel):
         try:
             lbl.configure(text=things)
         except tk.TclError as e:
-            Chess.logging.info(f"Chess Timer Display - TclError: {e}")
+            print(f"Chess Timer Display - TclError: {e}")
 
     # endregion
 
@@ -1077,7 +1077,7 @@ class Chess(tk.Toplevel):
         pgn += (
             "1/2-1/2"
             if type == "DRAW"
-            else ("1-0" if winner == list(white_player.keys())[0] else "0-1")
+            else ("1-0" if self.players[winner]["SIDE"] == "WHITE" else "0-1")
         )
 
         tk.Label(

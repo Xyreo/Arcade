@@ -1655,6 +1655,11 @@ Click 'Ok' if you'd like to view the crash logs! Feel free to report any bugs yo
                         tag=i,
                     )
             tree.tag_configure(self.name, background="#15a8cd")
+            self.config(cursor="")
+
+        def load():
+            self.config(cursor="watch")
+            self.after(500, refresh)
 
         tk.Button(
             frame,
@@ -1662,7 +1667,7 @@ Click 'Ok' if you'd like to view the crash logs! Feel free to report any bugs yo
             highlightthickness=0,
             cursor="hand2",
             border=0,
-            command=lambda: self.after(200, refresh),
+            command=load,
         ).place(relx=0.98, rely=0.025, anchor="e")
 
         tree = ttk.Treeview(
