@@ -840,13 +840,6 @@ class Chess(tk.Toplevel):
             self.set(i, "check")
             self.COLOREDSQUARES["check"] = i
 
-        if self.check_for_mate(Chess.swap[color]):
-            self.final_frame(
-                "CHECKMATE" if check else "STALEMATE",
-                self.me if self.side == color else self.opponent,
-            )
-        # endregion
-
         self.pgn_moves.append(
             PGN.get_pgn(
                 *sent,
@@ -856,6 +849,13 @@ class Chess(tk.Toplevel):
                 else ("+" if check else ""),
             )
         )
+
+        if self.check_for_mate(Chess.swap[color]):
+            self.final_frame(
+                "CHECKMATE" if check else "STALEMATE",
+                self.me if self.side == color else self.opponent,
+            )
+        # endregion
 
     def enable_canvas(self):
         self.canvas.bind("<Button-1>", self.clicked)
