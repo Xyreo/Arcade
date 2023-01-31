@@ -661,7 +661,7 @@ class Chess(tk.Toplevel):
                 if self.hover is None:
                     self.set(self.selected, "normal", preserve_select=True)
 
-                elif self.hover in self.possible_moves:
+                elif self.hover in self.possible_moves and not self.isEnded:
                     self.start_move(self.selected, self.hover, snap=True)
                     didMove = True
             if not didMove:
@@ -909,6 +909,7 @@ class Chess(tk.Toplevel):
 
     def event_handler(self, msg):
         if msg[0] == "LEAVE":
+            self.released(None)
             if msg[1] == "CONN_ERR":
                 if not self.isEnded:
                     self.final_frame("CONN", winner=self.me)
