@@ -1033,7 +1033,10 @@ class Chess(tk.Toplevel):
         elif type == "CONN":
             txt = f"{self.players[self.opponent]['NAME']} disconnected!\n\nPoints:\n\n{self.players[self.me]['NAME']}: 1\n\n{self.players[self.opponent]['NAME']}: 0"
         elif type == "RESIGN":
-            txt = f"{self.players[self.opponent]['NAME']} resigned!\n\nPoints:\n\n{self.players[self.me]['NAME']}: 1\n\n{self.players[self.opponent]['NAME']}: 0"
+            if winner == self.me:
+                txt = f"{self.players[self.opponent]['NAME']} resigned!\n\nPoints:\n\n{self.players[self.me]['NAME']}: 1\n\n{self.players[self.opponent]['NAME']}: 0"
+            else:
+                txt = f"You resigned!\n\nPoints:\n\n{self.players[self.me]['NAME']}: 0\n\n{self.players[self.opponent]['NAME']}: 1"
         elif type == "TIME":
             txt = f"{self.players[self.opponent]['NAME'] if self.me==winner else 'You'} ran out of time!\n\nPoints:\n\n{self.players[self.me]['NAME']}: {1 if self.me==winner else 0}\n\n{self.players[self.opponent]['NAME']}: {1 if self.opponent==winner else 0}"
         else:
@@ -1191,10 +1194,11 @@ class Chess(tk.Toplevel):
     def resign(self):
         if self.show_message(
             "Resign the Game?",
-            "Are you sure you wish to resign? This will cause your opponent to win by default",
+            "Are you sure you wish to resign? This will cause your opponent to win the game.",
             type="okcancel",
         ):
-            self.quit_game("RESIGN")
+            self.send(("LEAVE", "RESIGN"))
+            self.final_frame("RESIGN", winner=self.opponent)
         else:
             return
 
