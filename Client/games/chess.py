@@ -931,6 +931,7 @@ class Chess(tk.Toplevel):
                 del self.poll["DRAW"]
 
     def opp_move(self, msg, times):
+        self.released(None)
         start, end, pawn = msg
         self.chess_notifier(
             "Opponent",
