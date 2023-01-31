@@ -1681,12 +1681,11 @@ class PGN:
             else ""
         )
 
-        other_possible_start = oldboard.get_alternate(oldboard[startint], endint)
-
         promote = "=" + FEN.pieces2[promote].upper() if promote else ""
 
+        other_possible_start = oldboard.get_alternate(oldboard[startint], endint)
         if other_possible_start:
-            if Chess.grid_to_square(other_possible_start) == start[0]:
+            if Chess.grid_to_square(other_possible_start)[0] == start[0]:
                 startpiece += start[1]
             else:
                 startpiece += start[0]
