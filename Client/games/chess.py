@@ -451,22 +451,28 @@ class Chess(tk.Toplevel):
             self.timers[i].pause()
             self.timers[i].set_time(self.time)
 
-    def timer_init(self, player, precision="minsec"):
+    def timer_init(self, player, precision="sec"):
         self.timers[player] = Timer(self.time)
         self.timers[player].start()
         while True:
             if not self.timers[player].is_alive() or self.isEnded:
                 break
             if self.timers[player].time_left() <= 0:
-                self.timers[player].stop()
-                self.final_frame(
-                    "TIME",
-                    [i for i in self.players if i != player][0],
-                )
-                break
+                time.sleep(0.1)
+                if self.timers[player].time_left() <= 0:
+                    self.timers[player].stop()
+                    self.final_frame(
+                        "TIME",
+                        [i for i in self.players if i != player][0],
+                    )
+                    break
             else:
                 self.display_timer(
-                    self.timers[player], self.timer_labels[player], precision
+                    self.timers[player],
+                    self.timer_labels[player],
+                    precision=precision
+                    if round(self.timers[player].time_left(), 2) >= 60
+                    else "ms",
                 )
             time.sleep(0.09)
 
@@ -477,13 +483,13 @@ class Chess(tk.Toplevel):
             min, sec, ms = 0, 0, 0
         min, sec, ms = int(a // 60), int(a % 60), int(a * 100 % 100)
         if precision == "sec":
-            things = f"{sec:02d}"
-        elif precision == "minsec":
             things = f"{min:02d}:{sec:02d}"
-        else:
-            things += f"{min:02d}:{sec:02d}:{ms:02d}"
+        elif precision == "ms":
+            things = f"{sec:02d}:{ms:02d}"
         try:
             lbl.configure(text=things)
+            if precision == "ms":
+                lbl.configure(fg="red")
         except tk.TclError as e:
             print(f"Chess Timer Display - TclError: {e}")
 
@@ -850,11 +856,20 @@ class Chess(tk.Toplevel):
             )
         )
 
-        if self.check_for_mate(Chess.swap[color]):
+        is_mate = self.check_for_mate(Chess.swap[color])
+        if is_mate:
             self.final_frame(
                 "CHECKMATE" if check else "STALEMATE",
                 self.me if self.side == color else self.opponent,
             )
+
+        self.chess_notifier(
+            "Opponent",
+            old_board[start].piece,
+            Chess.grid_to_square(end),
+            captured=old_board[end],
+            isEnded=is_mate,
+        )
         # endregion
 
     def enable_canvas(self):
@@ -909,7 +924,6 @@ class Chess(tk.Toplevel):
 
     def event_handler(self, msg):
         if msg[0] == "LEAVE":
-            self.released(None)
             if msg[1] == "CONN_ERR":
                 if not self.isEnded:
                     self.final_frame("CONN", winner=self.me)
@@ -934,12 +948,6 @@ class Chess(tk.Toplevel):
     def opp_move(self, msg, times):
         self.released(None)
         start, end, pawn = msg
-        self.chess_notifier(
-            "Opponent",
-            self.board[start].piece,
-            Chess.grid_to_square(end),
-            captured=self.board[end],
-        )
         if pawn:
             self.pawn_promotion = pawn
         self.start_move(start, end, multi=True, times=times)
@@ -957,17 +965,26 @@ class Chess(tk.Toplevel):
         else:
             return None
 
-    def chess_notifier(self, opponent, piece, dest, captured=None):
+    def chess_notifier(self, opponent, piece, dest, captured, isEnded):
+        if not (self.get_active_window() != "Chess" and isWin):
+            return
+        if isEnded:
+            noti.notify(
+                message="Game Ended!",
+                app_name="Arcade",
+                timeout=5,
+            )
+            return
         message = f"{opponent} played {piece.title()} to {dest.upper()}"
         if captured:
             message += f", capturing your {captured.piece.title()}"
-        if self.get_active_window() != "Chess" and isWin:
-            noti.notify(
-                title="Your Turn has started",
-                app_name="Arcade",
-                message=message,
-                timeout=5,
-            )
+
+        noti.notify(
+            title="Your Turn has started",
+            app_name="Arcade",
+            message=message,
+            timeout=5,
+        )
 
     @staticmethod
     def grid_to_square(k):
@@ -1020,6 +1037,7 @@ class Chess(tk.Toplevel):
 
     def final_frame(self, type, winner=None):
         self.isEnded = True
+        self.released(None)
         self.disable_canvas(greyed=True)
         self.protocol("WM_DELETE_WINDOW", lambda: self.quit_game("ENDED"))
         txt = ""
