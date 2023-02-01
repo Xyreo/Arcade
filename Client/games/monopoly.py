@@ -3086,7 +3086,7 @@ Click 'Ok' if you'd like to view the crash logs! Feel free to report any bugs yo
             if self.count_colour(property.position) == colour_set:
                 for i in self.properties.values():
                     if i.colour == property.colour:
-                        i.houses = 0
+                        i.houses = 0 if i.houses == -1 else i.houses
 
     # region # Trade
 
