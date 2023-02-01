@@ -127,6 +127,9 @@ class Property:
 
         return val
 
+    def __str__(self):
+        return f"{self.name}\nPosition:{self.position}\nHouses:{self.houses}\nMortgaged:{self.isMortgaged}\nOwner:{self.owner}\n"
+
 
 class Monopoly(tk.Toplevel):
     def __init__(
@@ -1237,7 +1240,10 @@ Click 'Ok' if you'd like to view the crash logs! Feel free to report any bugs yo
         if self.isEnded:
             return
         if self.turn == player == self.me:
-            self.end_button.configure(state="disabled")
+            try:
+                self.end_button.configure(state="disabled")
+            except:
+                pass
         colour = self.player_details[player]["Colour"]
         self.colour_token_dict = {
             "red": self.red_token,
@@ -3045,7 +3051,7 @@ Click 'Ok' if you'd like to view the crash logs! Feel free to report any bugs yo
                     self.properties[propertypos]
                 )
                 self.pay(buyer, self.properties[propertypos].price)
-                self.updates_player_properties(buyer)
+                self.update_player_properties(buyer)
             else:
                 Monopoly.logging.error("Owned")
 
@@ -3055,18 +3061,20 @@ Click 'Ok' if you'd like to view the crash logs! Feel free to report any bugs yo
         if not self.isInDebt:
             self.update_game()
 
-    def updates_player_properties(self, player):
+    def update_player_properties(self, player):
+        l = self.player_details[player]["Properties"]
+        l.sort(key=lambda i: i.position)
+        normal, stations, utility = [], [], []
+        for i in l:
+            if i.colour == "Station":
+                stations.append(i)
+            elif i.colour == "Utility":
+                utility.append(i)
+            else:
+                normal.append(i)
+        l = normal + stations + utility
+        self.player_details[player].update({"Properties": l})
         for property in self.player_details[player]["Properties"]:
-            l = self.player_details[player]["Properties"]
-            l.sort(key=lambda i: i.position)
-            for i in range(len(l)):
-                if l[i].colour == "Station":
-                    l.append(l.pop(i))
-            for i in range(len(l)):
-                if l[i].colour == "Utility":
-                    l.append(l.pop(i))
-
-            self.player_details[player].update({"Properties": l})
             if property.colour in [
                 "Brown",
                 "Dark Blue",
@@ -3092,8 +3100,8 @@ Click 'Ok' if you'd like to view the crash logs! Feel free to report any bugs yo
                 j.owner = offeree
                 self.player_details[offeree]["Properties"].append(j)
                 self.player_details[offeror]["Properties"].remove(j)
-        self.updates_player_properties(offeror)
-        self.updates_player_properties(offeree)
+        self.update_player_properties(offeror)
+        self.update_player_properties(offeree)
         self.pay(offeree, cash, offeror)
         self.update_game()
 
