@@ -492,7 +492,7 @@ class Arcade(tk.Toplevel):
                 elif msg[1] == "MSG":
                     self.game.event_handler(msg[2])
         except tk.TclError as e1:
-            logging.warning(f"TclError: {e}")
+            logging.warning(f"TclError: {e1}")
         except Exception as e:
             logging.exception(e)
             HTTP.logout()

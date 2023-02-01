@@ -43,6 +43,23 @@ SETTINGS_FILE = (
     )
 )
 
+LOG_FILE = (
+    os.path.join(
+        os.environ["USERPROFILE"],
+        "AppData",
+        "Local",
+        "Arcade",
+        "log.log",
+    )
+    if isWin
+    else os.path.join(
+        os.environ["HOME"],
+        "Applications",
+        "Arcade",
+        "log.log",
+    )
+)
+
 
 def resource_path(relative_path):
     try:
@@ -781,28 +798,45 @@ class Monopoly(tk.Toplevel):
     # region # Update Game
 
     def update_game(self, action_frame_text=None, playerleft=None):
-        if self.property_frame.winfo_exists():
-            self.property_frame.destroy()
-            self.property_frame_popup(self.property_pos_displayed)
-        l = []
-        for i in self.player_details:
-            if self.player_tree.item(i, "open"):
-                l.append(i)
-        self.player_tree.destroy()
-        self.player_frame_popup(l)
-        self.house_images = []
-        self.place_houses()
-        if not any(i in self.collective for i in ["TRADE", "ENDGAME"]):
-            self.action_frame.destroy()
-            if playerleft:
-                self.action_frame_popup(f"{playerleft} is bankrupt!")
-            else:
-                if action_frame_text:
-                    self.action_frame_popup(action_frame_text)
+        try:
+            if self.property_frame.winfo_exists():
+                self.property_frame.destroy()
+                self.property_frame_popup(self.property_pos_displayed)
+            l = []
+            for i in self.player_details:
+                if self.player_tree.item(i, "open"):
+                    l.append(i)
+            self.player_tree.destroy()
+            self.player_frame_popup(l)
+            self.house_images = []
+            self.place_houses()
+            if not any(i in self.collective for i in ["TRADE", "ENDGAME"]):
+                self.action_frame.destroy()
+                if playerleft:
+                    self.action_frame_popup(f"{playerleft} is bankrupt!")
                 else:
-                    self.action_frame_popup(self.current_txt)
-        if self.turn != self.me:
-            self.roll_button_state("disabled")
+                    if action_frame_text:
+                        self.action_frame_popup(action_frame_text)
+                    else:
+                        self.action_frame_popup(self.current_txt)
+            if self.turn != self.me:
+                self.roll_button_state("disabled")
+
+        except tk.TclError as e1:
+            Monopoly.logging.warning(f"TclError: {e1}")
+        except Exception as e:
+            Monopoly.logging.exception(e)
+            self.http.logout()
+            self.destroy()
+            if msgb.askokcancel(
+                "ERROR",
+                """An Error Occured! Please Restart to Continue!
+Click 'Ok' if you'd like to view the crash logs! Feel free to report any bugs you find!""",
+                icon=msgb.ERROR,
+                master=root,
+            ):
+                os.startfile(LOG_FILE)
+            root.destroy()
 
         try:
             self.acc_frame.place_forget()
@@ -931,6 +965,7 @@ class Monopoly(tk.Toplevel):
             )
             self.after(900, self.timer_thr.start)
             if self.player_details[self.turn]["Injail"][0]:
+                self.roll_button_state("disabled")
                 if self.player_details[self.turn]["Injail"][1] == 0:
                     text = "Do you wish to pay 50"
                     if self.player_details[self.turn]["GOJF"]:
@@ -946,6 +981,7 @@ class Monopoly(tk.Toplevel):
                         self.ask_pay_jail()
                     else:
                         self.update_game("Roll doubles to get out of jail!")
+                        self.roll_button_state("normal")
                 elif self.player_details[self.turn]["Injail"][1] == 2:
                     text = "Roll Doubles to get out of jail or you have to"
                     if self.player_details[self.turn]["GOJF"]:
@@ -953,10 +989,13 @@ class Monopoly(tk.Toplevel):
                     else:
                         text += " Pay 50"
                     self.update_game(text)
+                    self.roll_button_state("normal")
                 else:
                     self.update_game("Roll doubles to get out of jail!")
+                    self.roll_button_state("normal")
             else:
                 self.update_game("It's your turn now! Click on Roll Dice")
+                self.roll_button_state("normal")
         self.update_game()
 
     # endregion
@@ -2042,6 +2081,8 @@ class Monopoly(tk.Toplevel):
 
     def property_frame_popup(self, position):
         position %= 40
+        if position in [2, 17, 33, 7, 22, 36, 0, 4, 38, 20, 10, 30]:
+            return
         if self.property_frame.winfo_exists():
             self.property_frame.destroy()
         self.property_pos_displayed = position
@@ -2973,6 +3014,8 @@ class Monopoly(tk.Toplevel):
     # endregion
 
     def buy_property(self, propertypos, buyer, received=False):
+        if propertypos in [2, 17, 33, 7, 22, 36, 0, 4, 38, 20, 10, 30]:
+            return
         if self.turn == self.me and self.timer:
             self.timer.reset()
         self.toggle_action_buttons()
@@ -2998,31 +3041,11 @@ class Monopoly(tk.Toplevel):
         if self.properties[propertypos].colour:
             if not self.properties[propertypos].owner:
                 self.properties[propertypos].owner = buyer
-                l = self.player_details[buyer]["Properties"]
-                l.append(self.properties[propertypos])
+                self.player_details[buyer]["Properties"].append(
+                    self.properties[propertypos]
+                )
                 self.pay(buyer, self.properties[propertypos].price)
-                # Inserting Properties in Sorted order
-                l.sort(key=lambda i: i.position)
-                for i in range(len(l)):
-                    if l[i].colour == "Station":
-                        l.append(l.pop(i))
-                for i in range(len(l)):
-                    if l[i].colour == "Utility":
-                        l.append(l.pop(i))
-
-                self.player_details[buyer].update({"Properties": l})
-                if self.properties[propertypos].colour in [
-                    "Brown",
-                    "Dark Blue",
-                ]:
-                    colour_set = 2
-                else:
-                    colour_set = 3
-
-                if self.count_colour(propertypos) == colour_set:
-                    for i in self.properties.values():
-                        if i.colour == self.properties[propertypos].colour:
-                            i.houses = 0
+                self.updates_player_properties(buyer)
             else:
                 Monopoly.logging.error("Owned")
 
@@ -3032,34 +3055,45 @@ class Monopoly(tk.Toplevel):
         if not self.isInDebt:
             self.update_game()
 
+    def updates_player_properties(self, player):
+        for property in self.player_details[player]["Properties"]:
+            l = self.player_details[player]["Properties"]
+            l.sort(key=lambda i: i.position)
+            for i in range(len(l)):
+                if l[i].colour == "Station":
+                    l.append(l.pop(i))
+            for i in range(len(l)):
+                if l[i].colour == "Utility":
+                    l.append(l.pop(i))
+
+            self.player_details[player].update({"Properties": l})
+            if property.colour in [
+                "Brown",
+                "Dark Blue",
+            ]:
+                colour_set = 2
+            else:
+                colour_set = 3
+
+            if self.count_colour(property.position) == colour_set:
+                for i in self.properties.values():
+                    if i.colour == property.colour:
+                        i.houses = 0
+
     # region # Trade
 
     def exec_trade(self, offeror, offeree, propertyrecv, propertygive, cash):
         for j in self.properties.values():
             if j.name == propertyrecv:
                 j.owner = offeror
-                l = self.player_details[offeror]["Properties"]
-                l.append(j)
-                l.sort(key=lambda y: y.position)
-                for x in range(len(l)):
-                    if l[x].colour == "Station":
-                        l.append(l.pop(x))
-                for x in range(len(l)):
-                    if l[x].colour == "Utility":
-                        l.append(l.pop(x))
+                self.player_details[offeror]["Properties"].append(j)
                 self.player_details[offeree]["Properties"].remove(j)
             if j.name == propertygive:
                 j.owner = offeree
-                l = self.player_details[offeree]["Properties"]
-                l.append(j)
-                l.sort(key=lambda y: y.position)
-                for x in range(len(l)):
-                    if l[x].colour == "Station":
-                        l.append(l.pop(x))
-                for x in range(len(l)):
-                    if l[x].colour == "Utility":
-                        l.append(l.pop(x))
+                self.player_details[offeree]["Properties"].append(j)
                 self.player_details[offeror]["Properties"].remove(j)
+        self.updates_player_properties(offeror)
+        self.updates_player_properties(offeree)
         self.pay(offeree, cash, offeror)
         self.update_game()
 
@@ -3498,7 +3532,10 @@ class Monopoly(tk.Toplevel):
                 )
             self.toggle_action_buttons(True)
             if self.turn == self.me and self.timer:
-                self.timer.resume()
+                try:
+                    self.timer.resume()
+                except:
+                    pass
 
     # region # End Game
 
@@ -3677,7 +3714,11 @@ class Monopoly(tk.Toplevel):
     def get_input(self, bankrupt, ender):
         self.isEnding = True
         self.roll_button_state("disabled")
-        if self.get_active_window() != "Monopoly" and isWin:
+        if (
+            self.get_active_window() != "Monopoly"
+            and isWin
+            and ender != self.player_details[self.me]["Name"]
+        ):
             noti.notify(
                 title=f"{ender} wants to End the Game!",
                 app_name="Arcade",
